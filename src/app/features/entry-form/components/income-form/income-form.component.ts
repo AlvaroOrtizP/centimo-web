@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal, effect } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AccountType } from '../../../../models/account-type';
@@ -77,7 +77,11 @@ export class IncomeFormComponent {
   readonly year = input.required<number>();
   readonly month = input.required<number>();
 
-  protected readonly accountId = signal('');
+  protected readonly accountId = computed(() => {
+    const accs = this.accounts();
+    const checking = accs.find(a => a.type === AccountType.Checking);
+    return checking?.id ?? accs[0]?.id ?? '';
+  });
 
   protected readonly snapshotId = computed(() => {
     const accId = this.accountId();
@@ -95,14 +99,6 @@ export class IncomeFormComponent {
   protected readonly amount = signal(0);
   protected readonly description = signal('');
   protected readonly saved = signal(false);
-
-  constructor() {
-    effect(() => {
-      const accs = this.accounts();
-      const checking = accs.find(a => a.type === AccountType.Checking);
-      this.accountId.set(checking?.id ?? accs[0]?.id ?? '');
-    });
-  }
 
   protected save(): void {
     const accId = this.accountId();

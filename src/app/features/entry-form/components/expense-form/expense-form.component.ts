@@ -16,6 +16,16 @@ import { Expense } from '../../../../models/expense';
       <h3 class="mb-4 text-sm font-semibold text-gray-900">Añadir Gasto</h3>
 
       <div class="flex flex-wrap gap-2">
+        <select
+          class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          [(ngModel)]="accountId"
+        >
+          <option value="">Cuenta</option>
+          @for (acc of accounts(); track acc.id) {
+            <option [value]="acc.id">{{ acc.name }}</option>
+          }
+        </select>
+
         <select class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" [(ngModel)]="category">
           <option value="">Categoría</option>
           <option [value]="ExpenseCategory.Comida">Comida</option>

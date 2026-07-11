@@ -54,7 +54,7 @@ ng generate enum models/status
 ### Data Layer
 
 - **`FinancialDataService`** (`core/services/`) is the single source of truth — all signals, no HTTP.
-- Mock data in `financial-data.mock.ts`: 9 platforms, ~72 snapshots, ~21 holdings, 8 trades, ~40 expenses, 13 incomes.
+- Initial data loaded from JSON files in `src/assets/data/` (platforms, accounts, snapshots, holdings, trades, incomes, expenses, crowdlending).
 - Mutations via `add*`, `update*`, `delete*` methods that `.update()` signals in-memory.
 - `monthlySummary` is a `computed()` signal derived from `currentYear`/`currentMonth` signals.
 

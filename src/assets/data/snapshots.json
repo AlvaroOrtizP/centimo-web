@@ -1,0 +1,14 @@
+[
+  { "id": "bbva-checking-2026-06", "accountId": "bbva-checking", "year": 2026, "month": 6, "balance": 0, "income": 0, "expenses": 0 },
+  { "id": "myinvestor-checking-2026-06", "accountId": "myinvestor-checking", "year": 2026, "month": 6, "balance": 0, "income": 0, "expenses": 0 },
+  { "id": "myinvestor-investment-2026-06", "accountId": "myinvestor-investment", "year": 2026, "month": 6, "balance": 0, "income": 0, "expenses": 0 },
+  { "id": "b100-checking-2026-06", "accountId": "b100-checking", "year": 2026, "month": 6, "balance": 0, "income": 0, "expenses": 0 },
+  { "id": "b100-savings-2026-06", "accountId": "b100-savings", "year": 2026, "month": 6, "balance": 0, "income": 0, "expenses": 0 },
+  { "id": "b100-investment-2026-06", "accountId": "b100-investment", "year": 2026, "month": 6, "balance": 0, "income": 0, "expenses": 0 },
+  { "id": "revolut-main-2026-06", "accountId": "revolut-main", "year": 2026, "month": 6, "balance": 0, "income": 0, "expenses": 0 },
+  { "id": "mintos-main-2026-06", "accountId": "mintos-main", "year": 2026, "month": 6, "balance": 0, "income": 0, "expenses": 0 },
+  { "id": "equito-main-2026-06", "accountId": "equito-main", "year": 2026, "month": 6, "balance": 0, "income": 0, "expenses": 0 },
+  { "id": "urbanitae-main-2026-06", "accountId": "urbanitae-main", "year": 2026, "month": 6, "balance": 0, "income": 0, "expenses": 0 },
+  { "id": "etoro-main-2026-06", "accountId": "etoro-main", "year": 2026, "month": 6, "balance": 0, "income": 0, "expenses": 0 },
+  { "id": "bitvavo-main-2026-06", "accountId": "bitvavo-main", "year": 2026, "month": 6, "balance": 0, "income": 0, "expenses": 0 }
+]

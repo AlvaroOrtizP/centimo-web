@@ -258,13 +258,13 @@ interface MonthlySummary {
 
 ## Mock data (sin API)
 
-Mientras no haya backend, los datos vivirán en un servicio mock que devuelve datos de ejemplo:
+Mientras no haya backend, los datos iniciales se cargan desde archivos JSON en:
 
 ```
-src/app/core/services/financial-data.mock.ts
+src/assets/data/
 ```
 
-Con datos de ejemplo para 3-6 meses simulando valores realistas de cada plataforma.
+Los formularios de entrada mutan las signals en memoria. Cuando llegue la API Spring, se sustituirán los imports JSON por `HttpClient.get()`.
 
 ---
 

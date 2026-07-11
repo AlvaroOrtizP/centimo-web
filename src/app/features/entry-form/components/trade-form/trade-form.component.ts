@@ -48,6 +48,16 @@ const ASSET_SUGGESTIONS: Record<string, AssetSuggestion[]> = {
 
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
+          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Cuenta</label>
+          <select class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500" [(ngModel)]="selectedAccountId">
+            <option value="">Selecciona cuenta</option>
+            @for (acc of accounts(); track acc.id) {
+              <option [value]="acc.id">{{ acc.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div>
           <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Tipo</label>
           <div class="mt-1 flex gap-2">
             <button

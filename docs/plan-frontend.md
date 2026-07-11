@@ -76,7 +76,7 @@ npm install chart.js                   # gráficos (incluye types propios)
 
 **Archivos a crear:**
 - `src/app/core/services/financial-data.service.ts`
-- `src/app/core/services/financial-data.mock.ts`
+- `src/assets/data/*.json` (platforms, accounts, snapshots, holdings, trades, incomes, expenses, crowdlending)
 
 **`FinancialDataService`** expone señales:
 ```typescript
@@ -95,13 +95,14 @@ getPlatformHistory(platformId: string): PlatformHistory
 // etc.
 ```
 
-**Mock data** (`financial-data.mock.ts`):
+**JSON seed data** (`src/assets/data/*.json`):
 - 9 plataformas con colores e iconos
-- 12+ cuentas (B100 tiene 3, MyInvestor tiene 2, etc.)
-- Snapshots mensuales para enero–junio 2026 con valores realistas
-- Trades de ejemplo (3-4 compras de BTC, 2 de ETH, 1 venta; algunas acciones en eToro; aportaciones a fondos en MyInvestor)
-- Gastos categorizados (3-5 gastos por mes repartidos en las categorías)
-- Ingresos (nómina en BBVA, intereses en Mintos, etc.)
+- 12 cuentas (B100 tiene 3, MyInvestor tiene 2, etc.)
+- Snapshots mensuales para mayo–junio 2026
+- 4 trades de ejemplo
+- Gastos categorizados del mes actual (~6)
+- Ingresos del mes actual (~3)
+- 4 inversiones crowdlending
 
 **Mock data se inyecta en el servicio si no hay backend.** Para ello se crea un `HttpClient`-like mock o simplemente se cargan los datos directamente en el servicio con un flag `isMock`.
 

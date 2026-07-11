@@ -1,0 +1,11 @@
+[
+  { "id": "bbva", "name": "BBVA", "type": "bank", "color": "#004481", "icon": "landmark", "order": 1, "fixedNotes": "Llamar para revisar condiciones de la hipoteca." },
+  { "id": "myinvestor", "name": "MyInvestor", "type": "bank", "color": "#00A3E0", "icon": "piggy-bank", "order": 2, "fixedNotes": "Máximo anual aportado: 6000€. Revisar objetivo." },
+  { "id": "b100", "name": "B100", "type": "bank", "color": "#6C3FD1", "icon": "building", "order": 3 },
+  { "id": "revolut", "name": "Revolut", "type": "bank", "color": "#EB008B", "icon": "credit-card", "order": 4 },
+  { "id": "mintos", "name": "Mintos", "type": "p2p", "color": "#00BFA5", "icon": "trending-up", "order": 5 },
+  { "id": "equito", "name": "Equito", "type": "crowdlending", "color": "#FF6B35", "icon": "home", "order": 6 },
+  { "id": "urbanitae", "name": "Urbanitae", "type": "crowdlending", "color": "#E63946", "icon": "building-2", "order": 7 },
+  { "id": "etoro", "name": "eToro", "type": "investment", "color": "#A0C4FF", "icon": "bar-chart", "order": 8 },
+  { "id": "bitvavo", "name": "Bitvavo", "type": "crypto", "color": "#F7931A", "icon": "bitcoin", "order": 9, "fixedNotes": "Hacer DCA semanal de 50€." }
+]
