@@ -15,7 +15,7 @@ interface CardConfig {
   template: `
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       @for (card of cards; track card.label) {
-        <div class="group relative overflow-hidden rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm transition-all duration-200 hover:shadow-md">
+        <div class="group relative overflow-hidden rounded-xl border border-gray-200/80 bg-white p-5 shadow-lg transition-all duration-200 hover:shadow-xl">
           <div class="absolute right-0 top-0 h-24 w-24 translate-x-6 -translate-y-6 rounded-full opacity-10 transition-all duration-300 group-hover:opacity-20" [style.background]="card.gradient"></div>
           <div class="flex items-start justify-between">
             <div>

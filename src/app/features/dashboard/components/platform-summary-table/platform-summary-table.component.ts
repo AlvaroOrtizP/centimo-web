@@ -1,9 +1,17 @@
-import { Component, computed, input } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, computed, input, output, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { Platform } from '../../../../models/platform';
 import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
 import { Account } from '../../../../models/account';
+
+type PlatformFilter = 'all' | 'liquidez' | 'fija' | 'variable';
+
+const PLATFORM_GROUPS: Record<string, string[]> = {
+  liquidez: ['bbva', 'b100', 'revolut', 'caixabank'],
+  fija: ['mintos', 'equito', 'urbanitae'],
+  variable: ['myinvestor', 'etoro', 'bitvavo'],
+};
 
 interface PlatformRow {
   platform: Platform;
@@ -16,18 +24,35 @@ interface PlatformRow {
 @Component({
   selector: 'app-platform-summary-table',
   standalone: true,
-  imports: [RouterLink],
+  imports: [FormsModule],
   template: `
-    <div class="rounded-xl border border-gray-200/80 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
+    <div class="rounded-xl border border-gray-200/80 bg-white shadow-lg transition-shadow duration-200 hover:shadow-xl">
       <div class="border-b border-gray-100 px-5 py-4">
         <div class="flex items-center justify-between">
           <h2 class="text-base font-semibold text-gray-900">Plataformas</h2>
-          <span class="text-xs font-medium text-gray-400">{{ rows().length }} cuentas</span>
+          <div class="flex items-center gap-3">
+            <select
+              class="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 focus:border-gray-300 focus:outline-none"
+              [(ngModel)]="filter"
+            >
+              <option value="all">Todas</option>
+              <option value="liquidez">Liquidez</option>
+              <option value="fija">Fija</option>
+              <option value="variable">Variable</option>
+            </select>
+            <span class="text-xs font-medium text-gray-400">{{ filteredRows().length }} cuentas</span>
+          </div>
         </div>
       </div>
       <div class="divide-y divide-gray-100">
-        @for (row of rows(); track row.platform.id) {
-          <a [routerLink]="['/platform', row.platform.id]" class="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-gray-50/80">
+        @for (row of filteredRows(); track row.platform.id) {
+          <div
+            class="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-gray-50/80"
+            [class.cursor-pointer]="row.platform.id !== 'gastos'"
+            [class.ring-2]="selectedPlatformId() === row.platform.id"
+            [class.ring-gray-300]="selectedPlatformId() === row.platform.id"
+            (click)="row.platform.id !== 'gastos' && platformClick.emit(row.platform.id)"
+          >
             <span class="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-110" [style.background-color]="row.platform.color + '15'">
               <span class="h-2.5 w-2.5 rounded-full" [style.background-color]="row.platform.color"></span>
             </span>
@@ -44,7 +69,7 @@ interface PlatformRow {
                 <span class="text-red-600">{{ row.expenses > 0 ? row.expenses.toLocaleString('es-ES') + ' €' : '-' }}</span>
               </div>
             </div>
-          </a>
+          </div>
         }
       </div>
     </div>
@@ -54,6 +79,19 @@ export class PlatformSummaryTableComponent {
   readonly platforms = input.required<Platform[]>();
   readonly accounts = input.required<Account[]>();
   readonly snapshots = input.required<MonthlySnapshot[]>();
+  readonly selectedPlatformId = input<string | null>(null);
+
+  readonly platformClick = output<string>();
+
+  protected readonly filter = signal<PlatformFilter>('all');
+
+  protected readonly filteredRows = computed(() => {
+    const allRows = this.rows();
+    const f = this.filter();
+    if (f === 'all') { return allRows; }
+    const allowedIds = new Set(PLATFORM_GROUPS[f] ?? []);
+    return allRows.filter(r => allowedIds.has(r.platform.id));
+  });
 
   protected rows = () => {
     const platforms = this.platforms();
