@@ -10,27 +10,25 @@ import { Expense } from '../../models/expense';
 import { IncomeSource } from '../../models/income-source';
 import { MonthlySummary } from '../../models/monthly-summary';
 
-import {
-  MOCK_PLATFORMS,
-  MOCK_ACCOUNTS,
-  MOCK_SNAPSHOTS,
-  MOCK_HOLDINGS,
-  MOCK_TRADES,
-  MOCK_CROWDLENDING,
-  MOCK_INCOMES,
-  MOCK_EXPENSES,
-} from './financial-data.mock';
+import PLATFORMS from '../../../assets/data/platforms.json';
+import ACCOUNTS from '../../../assets/data/accounts.json';
+import SNAPSHOTS from '../../../assets/data/snapshots.json';
+import HOLDINGS from '../../../assets/data/holdings.json';
+import TRADES from '../../../assets/data/trades.json';
+import INCOMES from '../../../assets/data/incomes.json';
+import EXPENSES from '../../../assets/data/expenses.json';
+import CROWDLENDING from '../../../assets/data/crowdlending.json';
 
 @Injectable({ providedIn: 'root' })
 export class FinancialDataService {
-  readonly platforms = signal<Platform[]>(MOCK_PLATFORMS);
-  readonly accounts = signal<Account[]>(MOCK_ACCOUNTS);
-  readonly snapshots = signal<MonthlySnapshot[]>(MOCK_SNAPSHOTS);
-  readonly holdings = signal<InvestmentHolding[]>(MOCK_HOLDINGS);
-  readonly trades = signal<InvestmentTransaction[]>(MOCK_TRADES);
-  readonly crowdlending = signal<CrowdlendingInvestment[]>(MOCK_CROWDLENDING);
-  readonly expenses = signal<Expense[]>(MOCK_EXPENSES);
-  readonly incomes = signal<IncomeSource[]>(MOCK_INCOMES);
+  readonly platforms = signal<Platform[]>(PLATFORMS as Platform[]);
+  readonly accounts = signal<Account[]>(ACCOUNTS as Account[]);
+  readonly snapshots = signal<MonthlySnapshot[]>(SNAPSHOTS as MonthlySnapshot[]);
+  readonly holdings = signal<InvestmentHolding[]>(HOLDINGS as InvestmentHolding[]);
+  readonly trades = signal<InvestmentTransaction[]>(TRADES as InvestmentTransaction[]);
+  readonly crowdlending = signal<CrowdlendingInvestment[]>(CROWDLENDING as CrowdlendingInvestment[]);
+  readonly expenses = signal<Expense[]>(EXPENSES as Expense[]);
+  readonly incomes = signal<IncomeSource[]>(INCOMES as IncomeSource[]);
 
   readonly currentYear = signal(2026);
   readonly currentMonth = signal(6);
