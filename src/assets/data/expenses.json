@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "id": "exp-comida-jun-001",
+    "snapshotId": "gastos-main-2026-06",
+    "category": "comida",
+    "amount": 450,
+    "date": "2026-06-15",
+    "description": "Supermercado y restaurantes junio"
+  },
+  {
+    "id": "exp-coche-jun-001",
+    "snapshotId": "gastos-main-2026-06",
+    "category": "coche",
+    "amount": 440,
+    "date": "2026-06-20",
+    "description": "Gasolina y mantenimiento junio"
+  }
+]

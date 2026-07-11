@@ -19,12 +19,12 @@ describe('FinancialDataService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should have 9 mock platforms', () => {
-    expect(service.platforms().length).toBe(9);
+  it('should have 11 mock platforms', () => {
+    expect(service.platforms().length).toBe(11);
   });
 
-  it('should have 12 mock accounts', () => {
-    expect(service.accounts().length).toBe(12);
+  it('should have 15 mock accounts', () => {
+    expect(service.accounts().length).toBe(15);
   });
 
   describe('getPlatform', () => {

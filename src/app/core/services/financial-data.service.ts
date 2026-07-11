@@ -6,6 +6,8 @@ import { MonthlySnapshot } from '../../models/monthly-snapshot';
 import { InvestmentHolding } from '../../models/investment-holding';
 import { InvestmentTransaction } from '../../models/investment-transaction';
 import { CrowdlendingInvestment } from '../../models/crowdlending-investment';
+import { MyInvestorFund } from '../../models/myinvestor-fund';
+import { FundBalance } from '../../models/fund-balance';
 import { Expense } from '../../models/expense';
 import { IncomeSource } from '../../models/income-source';
 import { MonthlySummary } from '../../models/monthly-summary';
@@ -18,6 +20,8 @@ import TRADES from '../../../assets/data/trades.json';
 import INCOMES from '../../../assets/data/incomes.json';
 import EXPENSES from '../../../assets/data/expenses.json';
 import CROWDLENDING from '../../../assets/data/crowdlending.json';
+import MYINVESTOR_FUNDS from '../../../assets/data/myinvestor-funds.json';
+import FUND_BALANCES from '../../../assets/data/fund-balances.json';
 
 @Injectable({ providedIn: 'root' })
 export class FinancialDataService {
@@ -27,6 +31,8 @@ export class FinancialDataService {
   readonly holdings = signal<InvestmentHolding[]>(HOLDINGS as InvestmentHolding[]);
   readonly trades = signal<InvestmentTransaction[]>(TRADES as InvestmentTransaction[]);
   readonly crowdlending = signal<CrowdlendingInvestment[]>(CROWDLENDING as CrowdlendingInvestment[]);
+  readonly myInvestorFunds = signal<MyInvestorFund[]>(MYINVESTOR_FUNDS as MyInvestorFund[]);
+  readonly fundBalances = signal<FundBalance[]>(FUND_BALANCES as FundBalance[]);
   readonly expenses = signal<Expense[]>(EXPENSES as Expense[]);
   readonly incomes = signal<IncomeSource[]>(INCOMES as IncomeSource[]);
 
@@ -221,5 +227,41 @@ export class FinancialDataService {
 
   deleteHolding(id: string): void {
     this.holdings.update(arr => arr.filter(h => h.id !== id));
+  }
+
+  addMyInvestorFund(fund: MyInvestorFund): void {
+    this.myInvestorFunds.update(arr => [...arr, fund]);
+  }
+
+  updateMyInvestorFund(id: string, data: Partial<MyInvestorFund>): void {
+    this.myInvestorFunds.update(arr => arr.map(f => f.id === id ? { ...f, ...data } : f));
+  }
+
+  deleteMyInvestorFund(id: string): void {
+    this.myInvestorFunds.update(arr => arr.filter(f => f.id !== id));
+  }
+
+  getFundBalancesByMonth(year: number, month: number): FundBalance[] {
+    return this.fundBalances().filter(b => b.year === year && b.month === month);
+  }
+
+  getFundBalance(fundId: string, year: number, month: number): FundBalance | undefined {
+    return this.fundBalances().find(b => b.fundId === fundId && b.year === year && b.month === month);
+  }
+
+  getTotalFundBalanceForMonth(year: number, month: number): number {
+    return this.getFundBalancesByMonth(year, month).reduce((sum, b) => sum + b.balance, 0);
+  }
+
+  addFundBalance(balance: FundBalance): void {
+    this.fundBalances.update(arr => [...arr, balance]);
+  }
+
+  updateFundBalance(id: string, data: Partial<FundBalance>): void {
+    this.fundBalances.update(arr => arr.map(b => b.id === id ? { ...b, ...data } : b));
+  }
+
+  deleteFundBalance(id: string): void {
+    this.fundBalances.update(arr => arr.filter(b => b.id !== id));
   }
 }

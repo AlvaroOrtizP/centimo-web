@@ -1,0 +1,4 @@
+[
+  { "id": "fb-001", "fundId": "mif-001", "year": 2026, "month": 6, "balance": 4500 },
+  { "id": "fb-002", "fundId": "mif-002", "year": 2026, "month": 6, "balance": 3200 }
+]

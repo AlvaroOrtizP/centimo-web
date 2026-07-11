@@ -2,6 +2,7 @@
   { "id": "bbva-checking", "platformId": "bbva", "name": "Cuenta Nómina", "type": "checking", "currency": "EUR", "order": 1 },
   { "id": "myinvestor-checking", "platformId": "myinvestor", "name": "Cuenta Corriente", "type": "checking", "currency": "EUR", "order": 1 },
   { "id": "myinvestor-investment", "platformId": "myinvestor", "name": "Cartera Fondos", "type": "investment", "currency": "EUR", "order": 2 },
+  { "id": "myinvestor-metal", "platformId": "myinvestor", "name": "Cartera Metal", "type": "investment", "currency": "EUR", "order": 3 },
   { "id": "b100-checking", "platformId": "b100", "name": "Cuenta Corriente", "type": "checking", "currency": "EUR", "order": 1 },
   { "id": "b100-savings", "platformId": "b100", "name": "Cuenta Save", "type": "savings", "currency": "EUR", "order": 2 },
   { "id": "b100-investment", "platformId": "b100", "name": "Cuenta Health", "type": "investment", "currency": "EUR", "order": 3 },

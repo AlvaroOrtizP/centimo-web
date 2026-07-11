@@ -12,8 +12,9 @@ import { UrbanitaeFormComponent } from './components/urbanitae-form/urbanitae-fo
 import { RevolutFormComponent } from './components/revolut-form/revolut-form.component';
 import { B100FormComponent } from './components/b100-form/b100-form.component';
 import { BanksFormComponent } from './components/banks-form/banks-form.component';
+import { MyInvestorFormComponent } from './components/myinvestor-form/myinvestor-form.component';
 
-type Tab = 'expenses' | 'trades' | 'banks' | 'revolut' | 'b100' | 'mintos' | 'equito' | 'urbanitae';
+type Tab = 'expenses' | 'trades' | 'banks' | 'revolut' | 'b100' | 'myinvestor' | 'mintos' | 'equito' | 'urbanitae';
 
 interface TabConfig {
   key: Tab;
@@ -27,7 +28,7 @@ interface TabConfig {
   imports: [
     MonthPickerComponent,
     ExpenseFormComponent, TradeFormComponent,
-    CrowdlendingFormComponent, MintosFormComponent, EquitoFormComponent, UrbanitaeFormComponent, RevolutFormComponent, B100FormComponent, BanksFormComponent,
+    CrowdlendingFormComponent, MintosFormComponent, EquitoFormComponent, UrbanitaeFormComponent, RevolutFormComponent, B100FormComponent, BanksFormComponent, MyInvestorFormComponent,
   ],
   template: `
     <div class="space-y-6">
@@ -78,6 +79,8 @@ interface TabConfig {
                       <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
                     } @else if (tab.key === 'b100') {
                       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                    } @else if (tab.key === 'myinvestor') {
+                      <path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2"/><circle cx="17" cy="17" r="1"/>
                     } @else if (tab.key === 'mintos') {
                       <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
                     } @else if (tab.key === 'equito') {
@@ -110,6 +113,9 @@ interface TabConfig {
             @case ('b100') {
               <app-b100-form [accounts]="allAccounts()" />
             }
+            @case ('myinvestor') {
+              <app-myinvestor-form [accounts]="allAccounts()" />
+            }
             @case ('mintos') {
               <app-mintos-form [accounts]="allAccounts()" />
             }
@@ -135,6 +141,7 @@ export class EntryFormComponent {
     { key: 'banks', label: 'Bancos', color: '#004481' },
     { key: 'revolut', label: 'Revolut', color: '#EB008B' },
     { key: 'b100', label: 'B100', color: '#6C3FD1' },
+    { key: 'myinvestor', label: 'MyInvestor', color: '#00A3E0' },
     { key: 'mintos', label: 'Mintos', color: '#00BFA5' },
     { key: 'equito', label: 'Equito', color: '#FF6B35' },
     { key: 'urbanitae', label: 'Urbanitae', color: '#E63946' },
