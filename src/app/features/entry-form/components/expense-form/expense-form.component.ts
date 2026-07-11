@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal, effect } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AccountType } from '../../../../models/account-type';
@@ -16,16 +16,6 @@ import { Expense } from '../../../../models/expense';
       <h3 class="mb-4 text-sm font-semibold text-gray-900">Añadir Gasto</h3>
 
       <div class="flex flex-wrap gap-2">
-        <select
-          class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-          [(ngModel)]="accountId"
-        >
-          <option value="">Cuenta</option>
-          @for (acc of accounts(); track acc.id) {
-            <option [value]="acc.id">{{ acc.name }}</option>
-          }
-        </select>
-
         <select class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" [(ngModel)]="category">
           <option value="">Categoría</option>
           <option [value]="ExpenseCategory.Comida">Comida</option>
@@ -41,6 +31,12 @@ import { Expense } from '../../../../models/expense';
         </select>
 
         <input
+          type="date"
+          class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          [(ngModel)]="date"
+        />
+
+        <input
           type="number" placeholder="Cantidad (€)"
           class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
           [(ngModel)]="amount"
@@ -54,7 +50,7 @@ import { Expense } from '../../../../models/expense';
 
         <button
           class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-          [disabled]="!accountId() || !category() || !amount()"
+          [disabled]="!accountId() || !category() || !amount() || !date()"
           (click)="save()"
         >Añadir Gasto</button>
       </div>
@@ -70,7 +66,8 @@ import { Expense } from '../../../../models/expense';
             @for (exp of expenses(); track exp.id) {
               <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
                 <span class="font-medium text-red-600 w-24">{{ exp.amount.toLocaleString('es-ES') }} €</span>
-                <span class="text-gray-700 w-28">{{ exp.category }}</span>
+                <span class="text-gray-700 w-20">{{ exp.date }}</span>
+                <span class="text-gray-500 w-28">{{ exp.category }}</span>
                 <span class="flex-1 text-gray-500 truncate">{{ exp.description }}</span>
                 <button
                   class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
@@ -96,7 +93,11 @@ export class ExpenseFormComponent {
   readonly year = input.required<number>();
   readonly month = input.required<number>();
 
-  protected readonly accountId = signal('');
+  protected readonly accountId = computed(() => {
+    const accs = this.accounts();
+    const checking = accs.find(a => a.type === AccountType.Checking);
+    return checking?.id ?? accs[0]?.id ?? '';
+  });
 
   protected readonly snapshotId = computed(() => {
     const accId = this.accountId();
@@ -113,16 +114,9 @@ export class ExpenseFormComponent {
   protected readonly ExpenseCategory = ExpenseCategory;
   protected readonly category = signal<ExpenseCategory | ''>('');
   protected readonly amount = signal(0);
+  protected readonly date = signal('');
   protected readonly description = signal('');
   protected readonly saved = signal(false);
-
-  constructor() {
-    effect(() => {
-      const accs = this.accounts();
-      const checking = accs.find(a => a.type === AccountType.Checking);
-      this.accountId.set(checking?.id ?? accs[0]?.id ?? '');
-    });
-  }
 
   protected save(): void {
     const accId = this.accountId();
@@ -150,11 +144,13 @@ export class ExpenseFormComponent {
       snapshotId,
       category: this.category() as ExpenseCategory,
       amount: this.amount(),
+      date: this.date(),
       description: this.description() || undefined,
     });
 
     this.category.set('');
     this.amount.set(0);
+    this.date.set('');
     this.description.set('');
     this.saved.set(true);
     setTimeout(() => this.saved.set(false), 2000);

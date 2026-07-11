@@ -135,6 +135,7 @@ describe('FinancialDataService', () => {
         snapshotId: 'bbva-checking-2026-01',
         category: 'comida' as any,
         amount: 50,
+        date: '2026-01-15',
       };
       service.addExpense(expense);
       const expenses = service.getExpensesBySnapshot('bbva-checking-2026-01');

@@ -5,5 +5,6 @@ export interface Expense {
   snapshotId: string;
   category: ExpenseCategory;
   amount: number;
+  date: string;
   description?: string;
 }
