@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   { path: '', loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent) },
+  { path: 'income', loadComponent: () => import('./features/income/income.component').then(m => m.IncomeComponent) },
   { path: 'month/:year/:month', loadComponent: () => import('./features/monthly-view/monthly-view.component').then(m => m.MonthlyViewComponent) },
   { path: 'platform/:id', loadComponent: () => import('./features/platform-detail/platform-detail.component').then(m => m.PlatformDetailComponent) },
   { path: 'trends', loadComponent: () => import('./features/trends/trends.component').then(m => m.TrendsComponent) },

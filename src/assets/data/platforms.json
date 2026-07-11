@@ -7,5 +7,7 @@
   { "id": "equito", "name": "Equito", "type": "crowdlending", "color": "#FF6B35", "icon": "home", "order": 6 },
   { "id": "urbanitae", "name": "Urbanitae", "type": "crowdlending", "color": "#E63946", "icon": "building-2", "order": 7 },
   { "id": "etoro", "name": "eToro", "type": "investment", "color": "#A0C4FF", "icon": "bar-chart", "order": 8 },
-  { "id": "bitvavo", "name": "Bitvavo", "type": "crypto", "color": "#F7931A", "icon": "bitcoin", "order": 9, "fixedNotes": "Hacer DCA semanal de 50€." }
+  { "id": "bitvavo", "name": "Bitvavo", "type": "crypto", "color": "#F7931A", "icon": "bitcoin", "order": 9, "fixedNotes": "Hacer DCA semanal de 50€." },
+  { "id": "caixabank", "name": "CaixaBank", "type": "bank", "color": "#E65100", "icon": "landmark", "order": 10 },
+  { "id": "gastos", "name": "Gastos", "type": "bank", "color": "#6B7280", "icon": "receipt", "order": 11 }
 ]

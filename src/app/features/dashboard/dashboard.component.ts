@@ -20,7 +20,7 @@ const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 
           [accounts]="service.accounts()"
           [snapshots]="currentSnapshots()"
         />
-        <app-net-worth-chart [labels]="chartLabels()" [data]="chartData()" />
+        <app-net-worth-chart [labels]="chartLabels()" [balanceData]="chartData()" [expensesData]="chartExpensesData()" />
       </div>
     </div>
   `,
@@ -47,7 +47,13 @@ export class DashboardComponent {
 
   protected readonly chartData = computed(() => {
     return this.last6Months().map(({ year, month }) =>
-      this.service.getMonthlySummary(year, month).netWorth
+      this.service.getMonthlySummary(year, month).balanceWithoutExpenses
+    );
+  });
+
+  protected readonly chartExpensesData = computed(() => {
+    return this.last6Months().map(({ year, month }) =>
+      this.service.getMonthlySummary(year, month).totalExpenses
     );
   });
 

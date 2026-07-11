@@ -17,7 +17,8 @@ Chart.register(...registerables);
 })
 export class NetWorthChartComponent implements OnDestroy {
   readonly labels = input<string[]>([]);
-  readonly data = input<number[]>([]);
+  readonly balanceData = input<number[]>([]);
+  readonly expensesData = input<number[]>([]);
 
   private readonly canvasRef = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
   private chart: Chart | null = null;
@@ -38,21 +39,35 @@ export class NetWorthChartComponent implements OnDestroy {
       type: 'line',
       data: {
         labels: this.labels(),
-        datasets: [{
-          label: 'Patrimonio Neto',
-          data: this.data(),
-          borderColor: '#3B82F6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 4,
-          pointBackgroundColor: '#3B82F6',
-        }],
+        datasets: [
+          {
+            label: 'Patrimonio',
+            data: this.balanceData(),
+            borderColor: '#3B82F6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 4,
+            pointBackgroundColor: '#3B82F6',
+          },
+          {
+            label: 'Gastos',
+            data: this.expensesData(),
+            borderColor: '#EF4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 4,
+            pointBackgroundColor: '#EF4444',
+          },
+        ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: {
+          legend: { display: true, position: 'top', labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 } },
+        },
         scales: {
           x: { grid: { display: false }, ticks: { color: '#6B7280' } },
           y: { grid: { color: '#F3F4F6' }, ticks: { color: '#6B7280', callback: (v: string | number) => Number(v).toLocaleString('es-ES') + '€' } },

@@ -45,6 +45,10 @@ export class FinancialDataService {
     return this.accounts().find(a => a.id === id);
   }
 
+  private getAccountPlatformId(accountId: string): string {
+    return this.accounts().find(a => a.id === accountId)?.platformId ?? '';
+  }
+
   getSnapshotsByAccount(accountId: string): MonthlySnapshot[] {
     return this.snapshots().filter(s => s.accountId === accountId);
   }
@@ -83,6 +87,9 @@ export class FinancialDataService {
     const totalBalance = snapshots.reduce((sum, s) => sum + s.balance, 0);
     const totalIncome = snapshots.reduce((sum, s) => sum + s.income, 0);
     const totalExpenses = snapshots.reduce((sum, s) => sum + s.expenses, 0);
+    const balanceWithoutExpenses = snapshots
+      .filter(s => this.getAccountPlatformId(s.accountId) !== 'gastos')
+      .reduce((sum, s) => sum + s.balance, 0);
 
     return {
       year: this.currentYear(),
@@ -90,6 +97,7 @@ export class FinancialDataService {
       totalBalance,
       totalIncome,
       totalExpenses,
+      balanceWithoutExpenses,
       netWorth: totalBalance,
       netSavings: totalIncome - totalExpenses,
     } satisfies MonthlySummary;
@@ -100,6 +108,9 @@ export class FinancialDataService {
     const totalBalance = snapshots.reduce((sum, s) => sum + s.balance, 0);
     const totalIncome = snapshots.reduce((sum, s) => sum + s.income, 0);
     const totalExpenses = snapshots.reduce((sum, s) => sum + s.expenses, 0);
+    const balanceWithoutExpenses = snapshots
+      .filter(s => this.getAccountPlatformId(s.accountId) !== 'gastos')
+      .reduce((sum, s) => sum + s.balance, 0);
 
     return {
       year,
@@ -107,6 +118,7 @@ export class FinancialDataService {
       totalBalance,
       totalIncome,
       totalExpenses,
+      balanceWithoutExpenses,
       netWorth: totalBalance,
       netSavings: totalIncome - totalExpenses,
     };

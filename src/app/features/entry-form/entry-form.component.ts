@@ -3,14 +3,17 @@ import { Component, inject, computed, signal } from '@angular/core';
 import { FinancialDataService } from '../../core/services/financial-data.service';
 import { PlatformType } from '../../models/platform-type';
 import { MonthPickerComponent } from '../../shared/components/month-picker/month-picker.component';
-import { IncomeFormComponent } from './components/income-form/income-form.component';
 import { ExpenseFormComponent } from './components/expense-form/expense-form.component';
 import { TradeFormComponent } from './components/trade-form/trade-form.component';
-import { MonthlyCloseFormComponent } from './components/monthly-close-form/monthly-close-form.component';
 import { CrowdlendingFormComponent } from './components/crowdlending-form/crowdlending-form.component';
 import { MintosFormComponent } from './components/mintos-form/mintos-form.component';
+import { EquitoFormComponent } from './components/equito-form/equito-form.component';
+import { UrbanitaeFormComponent } from './components/urbanitae-form/urbanitae-form.component';
+import { RevolutFormComponent } from './components/revolut-form/revolut-form.component';
+import { B100FormComponent } from './components/b100-form/b100-form.component';
+import { BanksFormComponent } from './components/banks-form/banks-form.component';
 
-type Tab = 'income' | 'expenses' | 'trades' | 'mintos' | 'equito' | 'urbanitae' | 'close';
+type Tab = 'expenses' | 'trades' | 'banks' | 'revolut' | 'b100' | 'mintos' | 'equito' | 'urbanitae';
 
 interface TabConfig {
   key: Tab;
@@ -23,8 +26,8 @@ interface TabConfig {
   standalone: true,
   imports: [
     MonthPickerComponent,
-    IncomeFormComponent, ExpenseFormComponent, TradeFormComponent,
-    MonthlyCloseFormComponent, CrowdlendingFormComponent, MintosFormComponent,
+    ExpenseFormComponent, TradeFormComponent,
+    CrowdlendingFormComponent, MintosFormComponent, EquitoFormComponent, UrbanitaeFormComponent, RevolutFormComponent, B100FormComponent, BanksFormComponent,
   ],
   template: `
     <div class="space-y-6">
@@ -65,20 +68,22 @@ interface TabConfig {
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
                     [style.color]="activeTab() === tab.key ? '#fff' : tab.color"
                   >
-                    @if (tab.key === 'income') {
-                      <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    } @else if (tab.key === 'expenses') {
+                    @if (tab.key === 'expenses') {
                       <path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                     } @else if (tab.key === 'trades') {
                       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                    } @else if (tab.key === 'banks') {
+                      <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
+                    } @else if (tab.key === 'revolut') {
+                      <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
+                    } @else if (tab.key === 'b100') {
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
                     } @else if (tab.key === 'mintos') {
                       <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
                     } @else if (tab.key === 'equito') {
                       <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-                    } @else if (tab.key === 'urbanitae') {
-                      <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
                     } @else {
-                      <path d="M21 12a9 9 0 1 1-9-9"/><polyline points="22 4 12 14.01 9 11.01"/>
+                      <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
                     }
                   </svg>
                 </span>
@@ -90,26 +95,29 @@ interface TabConfig {
         <div class="h-0.5" [style.background-color]="activeTabColor()"></div>
         <div class="p-5">
           @switch (activeTab()) {
-            @case ('income') {
-              <app-income-form [accounts]="allAccounts()" />
-            }
             @case ('expenses') {
               <app-expense-form [accounts]="allAccounts()" [year]="selectedYear()" [month]="selectedMonth()" />
             }
             @case ('trades') {
               <app-trade-form [accounts]="tradeAccounts()" />
             }
+            @case ('banks') {
+              <app-banks-form [accounts]="allAccounts()" />
+            }
+            @case ('revolut') {
+              <app-revolut-form [accounts]="allAccounts()" />
+            }
+            @case ('b100') {
+              <app-b100-form [accounts]="allAccounts()" />
+            }
             @case ('mintos') {
               <app-mintos-form [accounts]="allAccounts()" />
             }
             @case ('equito') {
-              <app-crowdlending-form platformId="equito" />
+              <app-equito-form [accounts]="allAccounts()" />
             }
             @case ('urbanitae') {
-              <app-crowdlending-form platformId="urbanitae" />
-            }
-            @case ('close') {
-              <app-monthly-close-form [accounts]="allAccounts()" [year]="selectedYear()" [month]="selectedMonth()" />
+              <app-urbanitae-form [accounts]="allAccounts()" />
             }
           }
         </div>
@@ -119,16 +127,17 @@ interface TabConfig {
 })
 export class EntryFormComponent {
   protected readonly service = inject(FinancialDataService);
-  protected readonly activeTab = signal<Tab>('income');
+  protected readonly activeTab = signal<Tab>('expenses');
 
   protected readonly tabs: TabConfig[] = [
-    { key: 'income', label: 'Nómina', color: '#059669' },
     { key: 'expenses', label: 'Gastos', color: '#dc2626' },
     { key: 'trades', label: 'Trades', color: '#7c3aed' },
+    { key: 'banks', label: 'Bancos', color: '#004481' },
+    { key: 'revolut', label: 'Revolut', color: '#EB008B' },
+    { key: 'b100', label: 'B100', color: '#6C3FD1' },
     { key: 'mintos', label: 'Mintos', color: '#00BFA5' },
     { key: 'equito', label: 'Equito', color: '#FF6B35' },
     { key: 'urbanitae', label: 'Urbanitae', color: '#E63946' },
-    { key: 'close', label: 'Cierre', color: '#0891b2' },
   ];
 
   protected readonly activeTabColor = computed(() => {

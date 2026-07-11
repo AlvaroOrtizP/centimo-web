@@ -1,7 +1,6 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { AccountType } from '../../../../models/account-type';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { Account } from '../../../../models/account';
 import { ExpenseCategory } from '../../../../models/expense-category';
@@ -95,8 +94,8 @@ export class ExpenseFormComponent {
 
   protected readonly accountId = computed(() => {
     const accs = this.accounts();
-    const checking = accs.find(a => a.type === AccountType.Checking);
-    return checking?.id ?? accs[0]?.id ?? '';
+    const gastos = accs.find(a => a.platformId === 'gastos');
+    return gastos?.id ?? accs[0]?.id ?? '';
   });
 
   protected readonly snapshotId = computed(() => {
