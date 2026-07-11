@@ -46,6 +46,10 @@ const ASSET_SUGGESTIONS: Record<string, AssetSuggestion[]> = {
     <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <h3 class="mb-4 text-sm font-semibold text-gray-900">Registrar operación</h3>
 
+      <div class="mb-4 rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-800">
+        Recuerda revisar con Hacienda las obligaciones fiscales de las operaciones de inversión.
+      </div>
+
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
           <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Cuenta</label>

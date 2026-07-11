@@ -14,22 +14,41 @@ import { IncomeSource } from '../../../../models/income-source';
     <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <h3 class="mb-4 text-sm font-semibold text-gray-900">Añadir Ingreso</h3>
 
+      <div class="mb-4 flex gap-2">
+        <select
+          class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+          [(ngModel)]="localMonth"
+        >
+          @for (m of months; track m.value) {
+            <option [value]="m.value">{{ m.label }}</option>
+          }
+        </select>
+        <select
+          class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+          [(ngModel)]="localYear"
+        >
+          @for (y of years; track y) {
+            <option [value]="y">{{ y }}</option>
+          }
+        </select>
+      </div>
+
       <div class="flex flex-wrap gap-2">
         <input
           type="text" placeholder="Fuente (nómina, interés...)"
-          class="w-36 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          class="w-36 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
           [(ngModel)]="source"
         />
 
         <input
           type="number" placeholder="Cantidad (€)"
-          class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
           [(ngModel)]="amount"
         />
 
         <input
           type="text" placeholder="Descripción"
-          class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
           [(ngModel)]="description"
         />
 
@@ -74,8 +93,19 @@ export class IncomeFormComponent {
   private readonly service = inject(FinancialDataService);
 
   readonly accounts = input.required<Account[]>();
-  readonly year = input.required<number>();
-  readonly month = input.required<number>();
+
+  protected readonly months = [
+    { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' },
+    { value: 3, label: 'Marzo' }, { value: 4, label: 'Abril' },
+    { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
+    { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' },
+    { value: 9, label: 'Septiembre' }, { value: 10, label: 'Octubre' },
+    { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
+  ];
+  protected readonly years = [2024, 2025, 2026, 2027];
+
+  protected readonly localMonth = signal(this.service.currentMonth());
+  protected readonly localYear = signal(this.service.currentYear());
 
   protected readonly accountId = computed(() => {
     const accs = this.accounts();
@@ -86,7 +116,7 @@ export class IncomeFormComponent {
   protected readonly snapshotId = computed(() => {
     const accId = this.accountId();
     if (!accId) { return ''; }
-    return `${accId}-${this.year()}-${String(this.month()).padStart(2, '0')}`;
+    return `${accId}-${this.localYear()}-${String(this.localMonth()).padStart(2, '0')}`;
   });
 
   protected readonly incomes = computed<IncomeSource[]>(() => {
@@ -102,8 +132,8 @@ export class IncomeFormComponent {
 
   protected save(): void {
     const accId = this.accountId();
-    const y = this.year();
-    const m = this.month();
+    const y = this.localYear();
+    const m = this.localMonth();
     const snapshotId = this.snapshotId();
 
     const existing = this.service.getSnapshot(accId, y, m);

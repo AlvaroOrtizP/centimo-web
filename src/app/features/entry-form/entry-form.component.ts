@@ -1,12 +1,14 @@
 import { Component, inject, computed, signal } from '@angular/core';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
+import { PlatformType } from '../../models/platform-type';
 import { MonthPickerComponent } from '../../shared/components/month-picker/month-picker.component';
 import { IncomeFormComponent } from './components/income-form/income-form.component';
 import { ExpenseFormComponent } from './components/expense-form/expense-form.component';
 import { TradeFormComponent } from './components/trade-form/trade-form.component';
 import { MonthlyCloseFormComponent } from './components/monthly-close-form/monthly-close-form.component';
 import { CrowdlendingFormComponent } from './components/crowdlending-form/crowdlending-form.component';
+import { MintosFormComponent } from './components/mintos-form/mintos-form.component';
 
 type Tab = 'income' | 'expenses' | 'trades' | 'mintos' | 'equito' | 'urbanitae' | 'close';
 
@@ -22,7 +24,7 @@ interface TabConfig {
   imports: [
     MonthPickerComponent,
     IncomeFormComponent, ExpenseFormComponent, TradeFormComponent,
-    MonthlyCloseFormComponent, CrowdlendingFormComponent,
+    MonthlyCloseFormComponent, CrowdlendingFormComponent, MintosFormComponent,
   ],
   template: `
     <div class="space-y-6">
@@ -89,16 +91,16 @@ interface TabConfig {
         <div class="p-5">
           @switch (activeTab()) {
             @case ('income') {
-              <app-income-form [accounts]="allAccounts()" [year]="selectedYear()" [month]="selectedMonth()" />
+              <app-income-form [accounts]="allAccounts()" />
             }
             @case ('expenses') {
               <app-expense-form [accounts]="allAccounts()" [year]="selectedYear()" [month]="selectedMonth()" />
             }
             @case ('trades') {
-              <app-trade-form [accounts]="allAccounts()" />
+              <app-trade-form [accounts]="tradeAccounts()" />
             }
             @case ('mintos') {
-              <app-crowdlending-form platformId="mintos" />
+              <app-mintos-form [accounts]="allAccounts()" />
             }
             @case ('equito') {
               <app-crowdlending-form platformId="equito" />
@@ -138,4 +140,14 @@ export class EntryFormComponent {
   protected readonly selectedMonth = computed(() => this.service.currentMonth());
 
   protected readonly allAccounts = computed(() => this.service.accounts());
+
+  protected readonly tradeAccounts = computed(() => {
+    const tradeTypes = new Set([PlatformType.Investment, PlatformType.Crypto]);
+    const tradePlatformIds = new Set(
+      this.service.platforms()
+        .filter(p => tradeTypes.has(p.type))
+        .map(p => p.id)
+    );
+    return this.service.accounts().filter(a => tradePlatformIds.has(a.platformId));
+  });
 }
