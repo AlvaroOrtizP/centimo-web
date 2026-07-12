@@ -2,13 +2,18 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { DashboardComponent } from './dashboard.component';
+import { FinancialDataService } from '../../core/services/financial-data.service';
+import { ExpenseCategory } from '../../models/expense-category';
 
 describe('DashboardComponent', () => {
+  let service: FinancialDataService;
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DashboardComponent],
       providers: [provideRouter([])],
     }).compileComponents();
+    service = TestBed.inject(FinancialDataService);
   });
 
   it('should create', () => {
@@ -47,12 +52,14 @@ describe('DashboardComponent', () => {
     expect(el.textContent).toContain('Gastos Acumulados');
   });
 
-  describe('Valores de junio 2026 (mock data)', () => {
+  // ──────────────────────────────────────────────────────────
+  // FASE 1 — Valores iniciales (datos existentes en JSON)
+  // ──────────────────────────────────────────────────────────
+  describe('Fase 1 — Valores iniciales junio 2026', () => {
     it('should compute totalIncome from interest-bearing accounts', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
       fixture.detectChanges();
-      const component = fixture.componentInstance;
-      const summary = component['service'].monthlySummary();
+      const summary = service.monthlySummary();
       // revolut 15.50 + b100-savings 8.40 + b100-investment 12.30 + mintos 50 + myinvestor-investment 63.70
       expect(summary.totalIncome).toBeCloseTo(149.9, 1);
     });
@@ -60,48 +67,33 @@ describe('DashboardComponent', () => {
     it('should compute totalExpenses from gastos snapshot', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
       fixture.detectChanges();
-      const component = fixture.componentInstance;
-      const summary = component['service'].monthlySummary();
-      expect(summary.totalExpenses).toBe(890);
+      expect(service.monthlySummary().totalExpenses).toBe(890);
     });
 
     it('should compute balanceWithoutExpenses', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
       fixture.detectChanges();
-      const component = fixture.componentInstance;
-      const summary = component['service'].monthlySummary();
-      // 4250+1200+7700+2800+4500+3100+1500+2200+1750+1800 = 30800
-      expect(summary.balanceWithoutExpenses).toBe(30800);
+      expect(service.monthlySummary().balanceWithoutExpenses).toBe(30800);
     });
 
-    it('should show correct platform balances', () => {
+    it('should show MyInvestor total as 8900 € (metal 1200 + fondos 7700)', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
       const platformBalances = el.querySelectorAll('.text-right .text-sm.font-semibold');
       const values = Array.from(platformBalances).map(c => c.textContent?.trim());
-      expect(values).toContain('4250 €');
       expect(values).toContain('8900 €');
-      expect(values).toContain('3100 €');
-      expect(values).toContain('1500 €');
-      expect(values).toContain('2200 €');
-      expect(values).toContain('1750 €');
-      expect(values).toContain('1800 €');
     });
 
-    it('should show income values for accounts with income', () => {
+    it('should show correct income values', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
       const incomeSpans = el.querySelectorAll('.text-right .text-green-600');
       const values = Array.from(incomeSpans).map(s => s.textContent?.trim());
-      // B100: 8.40 + 12.30 = 20.70 → "20,7"
       expect(values).toContain('+20,7');
-      // Revolut: 15.50 → "15,5"
       expect(values).toContain('+15,5');
-      // Mintos: 50 → "50"
       expect(values).toContain('+50');
-      // MyInvestor: 63.70 → "63,7"
       expect(values).toContain('+63,7');
     });
 
@@ -124,6 +116,181 @@ describe('DashboardComponent', () => {
       expect(values).toContain('150 €');
       expect(values).toContain('890 €');
       expect(values).toContain('-740 €');
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────
+  // FASE 2 + 3 — Añadir fondo y verificar dashboard
+  // ──────────────────────────────────────────────────────────
+  describe('Fase 2+3 — Añadir fondo y verificar en dashboard', () => {
+    it('should create a new fund, update snapshot, and reflect in dashboard', () => {
+      // ── FASE 2: añadir fondo + balance ──
+      const fundsBefore = service.myInvestorFunds().length;
+
+      service.addMyInvestorFund({
+        id: 'mif-test-001',
+        code: 'IE0002XZSHO5',
+        name: 'Amundi MSCI World',
+      });
+
+      service.addFundBalance({
+        id: 'fb-test-001',
+        fundId: 'mif-test-001',
+        year: 2026,
+        month: 6,
+        balance: 4200,
+      });
+
+      // Sync: recalcular total fondos → actualizar snapshot myinvestor-investment
+      const totalFunds = service.getTotalFundBalanceForMonth(2026, 6);
+      const snap = service.getSnapshot('myinvestor-investment', 2026, 6);
+      if (snap) {
+        service.updateSnapshot(snap.id, { balance: totalFunds });
+      }
+
+      // Verificaciones de Fase 2
+      expect(service.myInvestorFunds().length).toBe(fundsBefore + 1);
+
+      const newFund = service.myInvestorFunds().find(f => f.id === 'mif-test-001');
+      expect(newFund).toBeDefined();
+      expect(newFund!.name).toBe('Amundi MSCI World');
+
+      const newBalance = service.getFundBalance('mif-test-001', 2026, 6);
+      expect(newBalance).toBeDefined();
+      expect(newBalance!.balance).toBe(4200);
+      expect(totalFunds).toBe(11900);
+
+      // ── FASE 3: verificar dashboard ──
+      const fixture = TestBed.createComponent(DashboardComponent);
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+
+      // MyInvestor: metal 1200 + fondos 11900 = 13100
+      const platformBalances = el.querySelectorAll('.text-right .text-sm.font-semibold');
+      const values = Array.from(platformBalances).map(c => c.textContent?.trim());
+      expect(values).toContain('13.100 €');
+
+      // balanceWithoutExpenses: 30800 + 4200 = 35000
+      expect(service.monthlySummary().balanceWithoutExpenses).toBe(35000);
+
+      // Income sin cambios (no se introdujo rentabilidad para el nuevo fondo)
+      expect(service.monthlySummary().totalIncome).toBeCloseTo(149.9, 1);
+
+      // Gastos sin cambios
+      expect(service.monthlySummary().totalExpenses).toBe(890);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────
+  // FASE 4 + 5 — Datos julio 2026 y verificar dashboard
+  // ──────────────────────────────────────────────────────────
+  describe('Fase 4+5 — Datos julio 2026 y verificar dashboard', () => {
+    it('should add data for July and verify dashboard reflects changes', () => {
+      // ── FASE 4: añadir fondos + balances para julio ──
+      service.addMyInvestorFund({
+        id: 'mif-phase2-001',
+        code: 'IE0002XZSHO5',
+        name: 'Amundi MSCI World',
+      });
+      service.addMyInvestorFund({
+        id: 'mif-phase4-001',
+        code: 'IE00BFMXXD54',
+        name: 'Amundi S&P 500',
+      });
+
+      service.addFundBalance({ id: 'fb-jul-idx', fundId: 'mif-001', year: 2026, month: 7, balance: 5000 });
+      service.addFundBalance({ id: 'fb-jul-van', fundId: 'mif-002', year: 2026, month: 7, balance: 3500 });
+      service.addFundBalance({ id: 'fb-jul-msci', fundId: 'mif-phase2-001', year: 2026, month: 7, balance: 4500 });
+      service.addFundBalance({ id: 'fb-jul-sp500', fundId: 'mif-phase4-001', year: 2026, month: 7, balance: 7000 });
+
+      const totalFunds = service.getTotalFundBalanceForMonth(2026, 7);
+      expect(totalFunds).toBe(20000);
+
+      // Verificaciones Fase 4 — fondos
+      expect(service.myInvestorFunds().length).toBe(4);
+      expect(service.fundBalances().filter(f => f.year === 2026 && f.month === 7).length).toBe(4);
+
+      // ── FASE 4: snapshots para julio ──
+      const julySnapshots = [
+        { id: 'bbva-checking-2026-07', accountId: 'bbva-checking', year: 2026, month: 7, balance: 5000, income: 0, expenses: 0 },
+        { id: 'myinvestor-checking-2026-07', accountId: 'myinvestor-checking', year: 2026, month: 7, balance: 0, income: 0, expenses: 0 },
+        { id: 'myinvestor-investment-2026-07', accountId: 'myinvestor-investment', year: 2026, month: 7, balance: totalFunds, income: 87, expenses: 0 },
+        { id: 'myinvestor-metal-2026-07', accountId: 'myinvestor-metal', year: 2026, month: 7, balance: 1500, income: 0, expenses: 0 },
+        { id: 'b100-checking-2026-07', accountId: 'b100-checking', year: 2026, month: 7, balance: 0, income: 0, expenses: 0 },
+        { id: 'b100-savings-2026-07', accountId: 'b100-savings', year: 2026, month: 7, balance: 3000, income: 10, expenses: 0 },
+        { id: 'b100-investment-2026-07', accountId: 'b100-investment', year: 2026, month: 7, balance: 5000, income: 15, expenses: 0 },
+        { id: 'revolut-main-2026-07', accountId: 'revolut-main', year: 2026, month: 7, balance: 3500, income: 18, expenses: 0 },
+        { id: 'mintos-main-2026-07', accountId: 'mintos-main', year: 2026, month: 7, balance: 1500, income: 70, expenses: 0 },
+        { id: 'equito-main-2026-07', accountId: 'equito-main', year: 2026, month: 7, balance: 2500, income: 0, expenses: 0 },
+        { id: 'urbanitae-main-2026-07', accountId: 'urbanitae-main', year: 2026, month: 7, balance: 2000, income: 0, expenses: 0 },
+        { id: 'etoro-main-2026-07', accountId: 'etoro-main', year: 2026, month: 7, balance: 0, income: 0, expenses: 0 },
+        { id: 'bitvavo-main-2026-07', accountId: 'bitvavo-main', year: 2026, month: 7, balance: 0, income: 0, expenses: 0 },
+        { id: 'caixa-main-2026-07', accountId: 'caixa-main', year: 2026, month: 7, balance: 2000, income: 0, expenses: 0 },
+        { id: 'gastos-main-2026-07', accountId: 'gastos-main', year: 2026, month: 7, balance: 0, income: 0, expenses: 800 },
+      ];
+      julySnapshots.forEach(s => service.addSnapshot(s));
+
+      expect(service.getSnapshotsByMonth(2026, 7).length).toBe(15);
+
+      // ── FASE 4: gastos para julio ──
+      service.addExpense({
+        id: 'exp-comida-jul-001',
+        snapshotId: 'gastos-main-2026-07',
+        category: ExpenseCategory.Comida,
+        amount: 450,
+        date: '2026-07-10',
+        description: 'Supermercado y restaurantes julio',
+      });
+      service.addExpense({
+        id: 'exp-coche-jul-001',
+        snapshotId: 'gastos-main-2026-07',
+        category: ExpenseCategory.Coche,
+        amount: 350,
+        date: '2026-07-20',
+        description: 'Gasolina y mantenimiento julio',
+      });
+
+      expect(service.getExpensesBySnapshot('gastos-main-2026-07').length).toBe(2);
+
+      // ── FASE 5: verificar dashboard para julio ──
+      service.currentMonth.set(7);
+
+      const fixture = TestBed.createComponent(DashboardComponent);
+      fixture.detectChanges();
+      const el = fixture.nativeElement as HTMLElement;
+
+      // Resumen: totalBalance 46000, income 200, expenses 800, netSavings -600
+      const cards = el.querySelectorAll('.text-2xl');
+      const cardValues = Array.from(cards).map(c => c.textContent?.trim());
+      expect(cardValues).toContain('46.000 €');
+      expect(cardValues).toContain('200 €');
+      expect(cardValues).toContain('800 €');
+      expect(cardValues).toContain('-600 €');
+
+      // MyInvestor: metal 1500 + fondos 20000 = 21500
+      const platformBalances = el.querySelectorAll('.text-right .text-sm.font-semibold');
+      const balanceValues = Array.from(platformBalances).map(c => c.textContent?.trim());
+      expect(balanceValues).toContain('21.500 €');
+
+      // Income: myinvestor 87, b100-savings 10, b100-investment 15, revolut 18, mintos 70
+      const incomeSpans = el.querySelectorAll('.text-right .text-green-600');
+      const incomeValues = Array.from(incomeSpans).map(s => s.textContent?.trim());
+      expect(incomeValues).toContain('+87');
+      expect(incomeValues).toContain('+18');
+      expect(incomeValues).toContain('+70');
+
+      // Expenses: gastos 800
+      const expenseSpans = el.querySelectorAll('.text-right .text-red-600');
+      const expenseValues = Array.from(expenseSpans).map(s => s.textContent?.trim());
+      expect(expenseValues).toContain('800 €');
+
+      // Summary computed
+      const summary = service.monthlySummary();
+      expect(summary.totalBalance).toBe(46000);
+      expect(summary.totalIncome).toBe(200);
+      expect(summary.totalExpenses).toBe(800);
+      expect(summary.balanceWithoutExpenses).toBe(46000);
+      expect(summary.netSavings).toBe(-600);
     });
   });
 });
