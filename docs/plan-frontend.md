@@ -260,6 +260,80 @@ Todos los gráficos usan **ngx-charts** con tema Tailwind-compatible.
 
 ---
 
+### Fase 10 — Distribución de Nómina
+
+**Objetivo**: permitir configurar dónde se destina cada parte del sueldo mensual.
+
+**Componentes a crear:**
+- `src/app/features/income/components/salary-distribution/salary-distribution.component.ts`
+
+**Modelo de datos:**
+```typescript
+interface SalaryAllocation {
+  id: string;
+  year: number;
+  month: number;
+  platformId: string;  // destino (plataforma)
+  type: 'fixed' | 'percentage';
+  value: number;       // cantidad fija en € o porcentaje
+  note?: string;       // nota opcional
+}
+```
+
+**Mock data:**
+- `src/assets/data/salary-allocations.json` con 3 distribuciones de ejemplo
+
+**Servicio (`FinancialDataService`):**
+- Signal: `salaryAllocations`
+- Métodos: `getSalaryAllocationsByMonth()`, `addSalaryAllocation()`, `deleteSalaryAllocation()`
+
+**Funcionalidad del componente:**
+1. **Selector mes/año** — reutiliza lógica del income-form
+2. **Barra de progreso** — muestra % asignado vs restante del sueldo
+3. **Campo sueldo neto** — introduce el sueldo del mes para calcular porcentajes
+4. **Formulario**: select plataformas, toggle €/%, input valor, input nota
+5. **Lista de distribuciones** — badge de tipo (€ o %), nombre plataforma, valor, nota, botón eliminar
+
+**Integración en `IncomeComponent`:**
+- Ambos componentes (IncomeForm + SalaryDistribution) se muestran juntos en layout de 2 columnas (`lg:grid-cols-2`)
+- Selector de mes/año global que controla ambos componentes
+- Inputs `month` y `year` pasados a los hijos
+- Sin pestañas — todo visible en una sola pantalla
+
+**Archivos modificados:**
+- `src/app/features/income/income.component.ts` — añade tabs y SalaryDistributionComponent
+- `src/app/core/services/financial-data.service.ts` — añade signal y métodos CRUD
+
+---
+
+### Fase 11 — Configuración de Distribución
+
+**Objetivo**: vista mensual de 12 meses para gestionar todas las distribuciones de sueldo.
+
+**Componentes a crear:**
+- `src/app/features/income/components/salary-config/salary-config.component.ts`
+
+**Funcionalidades:**
+1. **Vista de 12 meses** — muestra distribuciones desde el mes actual (o las que existan)
+2. **Navegación** — botones anterior/siguiente para navegar por meses
+3. **Añadir distribución** — formulario modal con selector de plataforma, tipo, valor y nota
+4. **Aplicar a múltiples meses** — opción de aplicar la misma configuración a 1, 3, 6 o 12 meses
+5. **Editar distribución** — modal con los datos existentes para modificar
+6. **Eliminar distribución** — botón de eliminar en cada fila
+
+**Servicio (`FinancialDataService`):**
+- Método añadido: `updateSalaryAllocation()`
+
+**Integración en `IncomeComponent`:**
+- Dos pestañas: "Distribución Mensual" y "Configuración"
+- Tab activa controlada por signal `activeTab`
+
+**Archivos modificados:**
+- `src/app/features/income/income.component.ts` — añade pestaña Configuración
+- `src/app/core/services/financial-data.service.ts` — añade método updateSalaryAllocation
+
+---
+
 ## Orden de implementación recomendado
 
 ```
@@ -311,6 +385,11 @@ AppComponent
         │   ├── TradeSummaryComponent
         │   └── TradeTableComponent
         │
+        ├── IncomeComponent (Nómina)
+        │   ├── IncomeFormComponent (tab: Distribución Mensual)
+        │   ├── SalaryDistributionComponent (tab: Distribución Mensual)
+        │   └── SalaryConfigComponent (tab: Configuración)
+        │
         └── EntryFormComponent
             ├── BankFormComponent
             ├── InvestmentFormComponent
@@ -319,4 +398,4 @@ AppComponent
             └── TradeFormComponent
 ```
 
-30 componentes en total. Cada `*Component` tiene su `.ts`, `.html`, `.css` y `.spec.ts` (salvo que se pida `--skip-tests`).
+32 componentes en total. Cada `*Component` tiene su `.ts`, `.html`, `.css` y `.spec.ts` (salvo que se pida `--skip-tests`).

@@ -11,6 +11,7 @@ import { FundBalance } from '../../models/fund-balance';
 import { Expense } from '../../models/expense';
 import { IncomeSource } from '../../models/income-source';
 import { MonthlySummary } from '../../models/monthly-summary';
+import { SalaryAllocation } from '../../models/salary-allocation';
 
 import PLATFORMS from '../../../assets/data/platforms.json';
 import ACCOUNTS from '../../../assets/data/accounts.json';
@@ -22,6 +23,7 @@ import EXPENSES from '../../../assets/data/expenses.json';
 import CROWDLENDING from '../../../assets/data/crowdlending.json';
 import MYINVESTOR_FUNDS from '../../../assets/data/myinvestor-funds.json';
 import FUND_BALANCES from '../../../assets/data/fund-balances.json';
+import SALARY_ALLOCATIONS from '../../../assets/data/salary-allocations.json';
 
 @Injectable({ providedIn: 'root' })
 export class FinancialDataService {
@@ -35,6 +37,7 @@ export class FinancialDataService {
   readonly fundBalances = signal<FundBalance[]>(FUND_BALANCES as FundBalance[]);
   readonly expenses = signal<Expense[]>(EXPENSES as Expense[]);
   readonly incomes = signal<IncomeSource[]>(INCOMES as IncomeSource[]);
+  readonly salaryAllocations = signal<SalaryAllocation[]>(SALARY_ALLOCATIONS as SalaryAllocation[]);
 
   readonly currentYear = signal(2026);
   readonly currentMonth = signal(6);
@@ -203,6 +206,22 @@ export class FinancialDataService {
         this.updateSnapshot(snapshotId, { income: Math.max(0, snap.income - inc.amount) });
       }
     }
+  }
+
+  getSalaryAllocationsByMonth(year: number, month: number): SalaryAllocation[] {
+    return this.salaryAllocations().filter(a => a.year === year && a.month === month);
+  }
+
+  addSalaryAllocation(allocation: SalaryAllocation): void {
+    this.salaryAllocations.update(arr => [...arr, allocation]);
+  }
+
+  updateSalaryAllocation(id: string, data: Partial<SalaryAllocation>): void {
+    this.salaryAllocations.update(arr => arr.map(a => a.id === id ? { ...a, ...data } : a));
+  }
+
+  deleteSalaryAllocation(id: string): void {
+    this.salaryAllocations.update(arr => arr.filter(a => a.id !== id));
   }
 
   addTrade(trade: InvestmentTransaction): void {

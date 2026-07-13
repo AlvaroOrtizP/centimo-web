@@ -158,6 +158,28 @@ interface IncomeSource {
 }
 ```
 
+### SalaryAllocation
+
+Configuración de distribución del sueldo por mes. Indica dónde se destina cada parte del ingreso.
+
+```typescript
+interface SalaryAllocation {
+  id: string;
+  year: number;
+  month: number;       // 1-12
+  platformId: string;  // destino (plataforma)
+  type: 'fixed' | 'percentage';  // fijo en € o porcentaje del sueldo
+  value: number;       // cantidad o porcentaje
+  note?: string;       // nota opcional (ej: "Fondos indexados VWCE")
+}
+```
+
+Ejemplo de uso:
+- "30% del sueldo a MyInvestor" → `{ type: 'percentage', value: 30, platformId: 'myinvestor' }`
+- "100€ fijos a B100" → `{ type: 'fixed', value: 100, platformId: 'b100' }`
+
+La interfaz se usa en el componente `SalaryDistributionComponent` dentro de la pestaña "Distribución" de la sección Nómina.
+
 ### MonthlySummary
 
 Resumen global del mes (calculado a partir de snapshots).
