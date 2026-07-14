@@ -1,10 +1,9 @@
 import { Component, inject, input, computed } from '@angular/core';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
+import { MONTHS } from '../../core/constants/date.constants';
 import { BalanceHistoryChartComponent } from './components/balance-history-chart/balance-history-chart.component';
 import { MonthlyTableComponent } from './components/monthly-table/monthly-table.component';
-
-const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 @Component({
   selector: 'app-platform-detail',

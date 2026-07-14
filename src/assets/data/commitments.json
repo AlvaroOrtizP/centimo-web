@@ -1,0 +1,7 @@
+[
+  { "id": "alert-1", "description": "Declaración IRPF", "month": 6, "type": "annual", "category": "Impuestos", "amount": 3000, "isEstimated": true },
+  { "id": "alert-2", "description": "Netflix", "type": "monthly", "category": "Suscripciones", "amount": 15.49, "isEstimated": false },
+  { "id": "alert-3", "description": "Seguro coche", "month": 3, "year": 2026, "type": "once", "category": "Seguros", "amount": 450, "isEstimated": false },
+  { "id": "alert-4", "description": "Impuesto circulación", "month": 1, "type": "annual", "category": "Impuestos", "amount": 80, "isEstimated": false },
+  { "id": "alert-5", "description": "Spotify", "type": "monthly", "category": "Suscripciones", "amount": 10.99, "isEstimated": false }
+]

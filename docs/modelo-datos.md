@@ -180,6 +180,36 @@ Ejemplo de uso:
 
 La interfaz se usa en el componente `SalaryDistributionComponent` dentro de la pestaña "Distribución" de la sección Nómina.
 
+### Commitment
+
+Compromisos de pago — gastos recurrentes o puntuales que se repiten mes a mes.
+
+```typescript
+type CommitmentType = 'monthly' | 'annual' | 'once';
+
+interface Commitment {
+  id: string;
+  description: string;       // "Netflix", "Declaración IRPF"
+  month: number;             // 1-12 para annual/once; 0 para monthly (no aplica)
+  year?: number;             // solo si type === 'once'
+  type: CommitmentType;      // 'monthly' | 'annual' | 'once'
+  category?: string;         // "Impuestos", "Suscripciones", "Seguros", "Trámites", "Otros"
+  amount?: number;           // importe fijo en €
+  isEstimated?: boolean;     // true = importe estimado, false = real
+}
+```
+
+**Tipos:**
+- `monthly` — se repite todos los meses (Netflix, Spotify). No tienen mes asignado.
+- `annual` — una vez al año en un mes concreto (IRPF en junio).
+- `once` — una vez en un mes y año específicos (seguro coche marzo 2026).
+
+**UI:** Pestaña "Compromisos" dentro de la sección Nómina, con dos secciones separadas:
+- **Recurrentes** — compromisos tipo `monthly`, aparecen siempre.
+- **Puntuales** — compromisos `annual` y `once`, agrupados por mes con total por grupo.
+
+Los compromisos recurrentes también se devuelven por `getCommitmentsByMonth()` para cualquier mes.
+
 ### MonthlySummary
 
 Resumen global del mes (calculado a partir de snapshots).

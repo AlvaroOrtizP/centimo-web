@@ -2,14 +2,16 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
+import { MONTH_OPTIONS, YEARS } from '../../core/constants/date.constants';
 import { IncomeFormComponent } from '../entry-form/components/income-form/income-form.component';
 import { SalaryDistributionComponent } from './components/salary-distribution/salary-distribution.component';
 import { SalaryConfigComponent } from './components/salary-config/salary-config.component';
+import { CommitmentsComponent } from './components/commitments/commitments.component';
 
 @Component({
   selector: 'app-income',
   standalone: true,
-  imports: [FormsModule, IncomeFormComponent, SalaryDistributionComponent, SalaryConfigComponent],
+  imports: [FormsModule, IncomeFormComponent, SalaryDistributionComponent, SalaryConfigComponent, CommitmentsComponent],
   template: `
     <div class="space-y-6">
       <div>
@@ -40,6 +42,16 @@ import { SalaryConfigComponent } from './components/salary-config/salary-config.
             [class.hover:text-gray-700]="activeTab() !== 'config'"
             (click)="activeTab.set('config')"
           >Configuración</button>
+          <button
+            class="border-b-2 px-1 py-2 text-sm font-medium transition-colors"
+            [class.border-green-600]="activeTab() === 'commitments'"
+            [class.text-green-600]="activeTab() === 'commitments'"
+            [class.border-transparent]="activeTab() !== 'commitments'"
+            [class.text-gray-500]="activeTab() !== 'commitments'"
+            [class.hover:border-gray-300]="activeTab() !== 'commitments'"
+            [class.hover:text-gray-700]="activeTab() !== 'commitments'"
+            (click)="activeTab.set('commitments')"
+          >Compromisos</button>
         </nav>
       </div>
 
@@ -69,8 +81,10 @@ import { SalaryConfigComponent } from './components/salary-config/salary-config.
           <app-income-form [accounts]="accounts()" [month]="selectedMonth()" [year]="selectedYear()" />
           <app-salary-distribution [month]="selectedMonth()" [year]="selectedYear()" />
         </div>
-      } @else {
+      } @else if (activeTab() === 'config') {
         <app-salary-config />
+      } @else {
+        <app-commitments />
       }
     </div>
   `,
@@ -80,18 +94,11 @@ export class IncomeComponent {
 
   protected readonly accounts = computed(() => this.service.accounts());
 
-  protected readonly months = [
-    { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' },
-    { value: 3, label: 'Marzo' }, { value: 4, label: 'Abril' },
-    { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
-    { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Septiembre' }, { value: 10, label: 'Octubre' },
-    { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
-  ];
-  protected readonly years = [2024, 2025, 2026, 2027];
+  protected readonly months = MONTH_OPTIONS;
+  protected readonly years = YEARS;
 
   protected readonly selectedMonth = signal(this.service.currentMonth());
   protected readonly selectedYear = signal(this.service.currentYear());
 
-  protected readonly activeTab = signal<'income' | 'config'>('income');
+  protected readonly activeTab = signal<'income' | 'config' | 'commitments'>('income');
 }

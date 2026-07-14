@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
+import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
 
 @Component({
@@ -172,17 +173,10 @@ export class B100FormComponent {
 
   private readonly SAVINGS_ID = 'b100-savings';
   private readonly INVESTMENT_ID = 'b100-investment';
-  private readonly MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-  protected readonly months = [
-    { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' },
-    { value: 3, label: 'Marzo' }, { value: 4, label: 'Abril' },
-    { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
-    { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Septiembre' }, { value: 10, label: 'Octubre' },
-    { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
-  ];
-  protected readonly years = [2024, 2025, 2026, 2027];
+  protected readonly months = MONTH_OPTIONS;
+  protected readonly years = YEARS;
+  protected readonly getMonthLabel = getMonthLabel;
 
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = signal(this.service.currentYear());
@@ -251,36 +245,12 @@ export class B100FormComponent {
     });
   }
 
-  protected getMonthLabel(year: number, month: number): string {
-    return `${this.MONTH_NAMES[month - 1]} ${year}`;
-  }
-
   protected saveSavings(): void {
     const bal = this.savingsBalance();
     if (bal === null) { return; }
 
-    const y = this.localYear();
-    const m = this.localMonth();
-    const snapId = `${this.SAVINGS_ID}-${y}-${String(m).padStart(2, '0')}`;
     const inter = this.savingsInterest() ?? 0;
-
-    const existing = this.service.getSnapshot(this.SAVINGS_ID, y, m);
-    if (existing) {
-      this.service.updateSnapshot(existing.id, {
-        balance: bal,
-        income: existing.income + inter,
-      });
-    } else {
-      this.service.addSnapshot({
-        id: snapId,
-        accountId: this.SAVINGS_ID,
-        year: y,
-        month: m,
-        balance: bal,
-        income: inter,
-        expenses: 0,
-      });
-    }
+    this.service.upsertSnapshot(this.SAVINGS_ID, this.localYear(), this.localMonth(), bal, inter);
 
     this.savingsInterest.set(null);
     this.savedSavings.set(true);
@@ -291,28 +261,8 @@ export class B100FormComponent {
     const bal = this.investmentBalance();
     if (bal === null) { return; }
 
-    const y = this.localYear();
-    const m = this.localMonth();
-    const snapId = `${this.INVESTMENT_ID}-${y}-${String(m).padStart(2, '0')}`;
     const inter = this.investmentInterest() ?? 0;
-
-    const existing = this.service.getSnapshot(this.INVESTMENT_ID, y, m);
-    if (existing) {
-      this.service.updateSnapshot(existing.id, {
-        balance: bal,
-        income: existing.income + inter,
-      });
-    } else {
-      this.service.addSnapshot({
-        id: snapId,
-        accountId: this.INVESTMENT_ID,
-        year: y,
-        month: m,
-        balance: bal,
-        income: inter,
-        expenses: 0,
-      });
-    }
+    this.service.upsertSnapshot(this.INVESTMENT_ID, this.localYear(), this.localMonth(), bal, inter);
 
     this.investmentInterest.set(null);
     this.savedInvestment.set(true);

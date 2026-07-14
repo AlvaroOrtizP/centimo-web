@@ -158,19 +158,8 @@ export class BankFormComponent {
     const totalExpenses = this.expenses().reduce((s, e) => s + e.amount, 0);
 
     const existing = this.service.getSnapshot(acc.id, y, m);
-    if (existing) {
-      this.service.updateSnapshot(existing.id, { balance: this.balance(), income: totalIncome, expenses: totalExpenses });
-    } else {
-      this.service.addSnapshot({
-        id: snapshotId,
-        accountId: acc.id,
-        year: y,
-        month: m,
-        balance: this.balance(),
-        income: totalIncome,
-        expenses: totalExpenses,
-      });
-    }
+    const incomeDelta = existing ? totalIncome - existing.income : totalIncome;
+    this.service.upsertSnapshot(acc.id, y, m, this.balance(), incomeDelta, totalExpenses);
 
     for (const inc of this.incomes()) {
       this.service.addIncome({

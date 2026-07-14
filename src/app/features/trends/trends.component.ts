@@ -1,12 +1,11 @@
 import { Component, inject, computed } from '@angular/core';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
+import { MONTHS } from '../../core/constants/date.constants';
 import { NetWorthTrendComponent } from './components/net-worth-trend/net-worth-trend.component';
 import { IncomeVsExpensesComponent } from './components/income-vs-expenses/income-vs-expenses.component';
 import { PlatformDistributionComponent } from './components/platform-distribution/platform-distribution.component';
 import { SavingsRateTrendComponent } from './components/savings-rate-trend/savings-rate-trend.component';
-
-const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 @Component({
   selector: 'app-trends',

@@ -2,12 +2,11 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
+import { MONTHS } from '../../core/constants/date.constants';
 import { SummaryCardsComponent } from './components/summary-cards/summary-cards.component';
 import { PlatformSummaryTableComponent } from './components/platform-summary-table/platform-summary-table.component';
 import { NetWorthChartComponent, ChartDataset } from './components/net-worth-chart/net-worth-chart.component';
 import { ExpensesChartComponent } from './components/expenses-chart/expenses-chart.component';
-
-const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 type ChartMode = 'total' | 'per-platform';
 type PlatformGroup = 'all' | 'liquidez' | 'fija' | 'variable';

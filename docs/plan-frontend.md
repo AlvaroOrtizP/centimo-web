@@ -334,6 +334,46 @@ interface SalaryAllocation {
 
 ---
 
+### Fase 12 — Alertas de Mes
+
+**Objetivo**: sistema de alertas para eventos recurrentes (pagos, suscripciones, trámites).
+
+**Modelo de datos:**
+```typescript
+type AlertType = 'monthly' | 'annual' | 'once';
+
+interface MonthAlert {
+  id: string;
+  description: string;    // "Pago Hacienda", "Netflix"
+  month: number;          // 1-12
+  year?: number;          // solo si type === 'once'
+  type: AlertType;
+  category?: string;      // "Impuestos", "Suscripciones", "Seguros", "Trámites", "Otros"
+}
+```
+
+**Archivos creados:**
+- `src/app/models/month-alert.ts` — Interfaz MonthAlert
+- `src/assets/data/month-alerts.json` — Datos mock
+- `src/app/features/income/components/month-alerts/month-alerts.component.ts`
+
+**Servicio (`FinancialDataService`):**
+- Signal: `monthAlerts`
+- Métodos: `getMonthAlertsByMonth()`, `getAllMonthAlerts()`, `addMonthAlert()`, `updateMonthAlert()`, `deleteMonthAlert()`
+
+**Funcionalidad:**
+1. **Listado agrupado por mes** — alertas organizadas enero-diciembre
+2. **Badges de tipo** — M (mensual), A (anual), 1 (una vez)
+3. **Categoría** — badge con nombre de categoría
+4. **Formulario modal** — descripción, mes, tipo, año (si es "una vez"), categoría
+5. **CRUD completo** — crear, editar, eliminar alertas
+
+**Integración en `SalaryConfigComponent`:**
+- Sección "Alertas del Mes" debajo de la lista de distribuciones
+- Componente `MonthAlertsComponent` importado
+
+---
+
 ## Orden de implementación recomendado
 
 ```
@@ -388,7 +428,8 @@ AppComponent
         ├── IncomeComponent (Nómina)
         │   ├── IncomeFormComponent (tab: Distribución Mensual)
         │   ├── SalaryDistributionComponent (tab: Distribución Mensual)
-        │   └── SalaryConfigComponent (tab: Configuración)
+        │   ├── SalaryConfigComponent (tab: Configuración)
+        │   └── MonthAlertsComponent (dentro de Configuración)
         │
         └── EntryFormComponent
             ├── BankFormComponent
@@ -398,4 +439,4 @@ AppComponent
             └── TradeFormComponent
 ```
 
-32 componentes en total. Cada `*Component` tiene su `.ts`, `.html`, `.css` y `.spec.ts` (salvo que se pida `--skip-tests`).
+33 componentes en total. Cada `*Component` tiene su `.ts`, `.html`, `.css` y `.spec.ts` (salvo que se pida `--skip-tests`).

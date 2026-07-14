@@ -12,6 +12,7 @@ import { Expense } from '../../models/expense';
 import { IncomeSource } from '../../models/income-source';
 import { MonthlySummary } from '../../models/monthly-summary';
 import { SalaryAllocation } from '../../models/salary-allocation';
+import { Commitment } from '../../models/commitment';
 
 import PLATFORMS from '../../../assets/data/platforms.json';
 import ACCOUNTS from '../../../assets/data/accounts.json';
@@ -24,6 +25,7 @@ import CROWDLENDING from '../../../assets/data/crowdlending.json';
 import MYINVESTOR_FUNDS from '../../../assets/data/myinvestor-funds.json';
 import FUND_BALANCES from '../../../assets/data/fund-balances.json';
 import SALARY_ALLOCATIONS from '../../../assets/data/salary-allocations.json';
+import COMMITMENTS from '../../../assets/data/commitments.json';
 
 @Injectable({ providedIn: 'root' })
 export class FinancialDataService {
@@ -38,6 +40,7 @@ export class FinancialDataService {
   readonly expenses = signal<Expense[]>(EXPENSES as Expense[]);
   readonly incomes = signal<IncomeSource[]>(INCOMES as IncomeSource[]);
   readonly salaryAllocations = signal<SalaryAllocation[]>(SALARY_ALLOCATIONS as SalaryAllocation[]);
+  readonly commitments = signal<Commitment[]>(COMMITMENTS as Commitment[]);
 
   readonly currentYear = signal(2026);
   readonly currentMonth = signal(6);
@@ -162,6 +165,26 @@ export class FinancialDataService {
     this.snapshots.update(arr => arr.map(s => s.id === id ? { ...s, ...data } : s));
   }
 
+  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number): void {
+    const existing = this.getSnapshot(accountId, year, month);
+    if (existing) {
+      const data: Partial<MonthlySnapshot> = { balance };
+      if (incomeDelta !== 0) { data.income = existing.income + incomeDelta; }
+      if (expenses !== undefined) { data.expenses = expenses; }
+      this.updateSnapshot(existing.id, data);
+    } else {
+      this.addSnapshot({
+        id: `${accountId}-${year}-${String(month).padStart(2, '0')}`,
+        accountId,
+        year,
+        month,
+        balance,
+        income: Math.max(0, incomeDelta),
+        expenses: expenses ?? 0,
+      });
+    }
+  }
+
   toggleChecklistItem(snapshotId: string, itemId: string): void {
     this.snapshots.update(arr => arr.map(s => {
       if (s.id !== snapshotId || !s.checklistItems) { return s; }
@@ -222,6 +245,30 @@ export class FinancialDataService {
 
   deleteSalaryAllocation(id: string): void {
     this.salaryAllocations.update(arr => arr.filter(a => a.id !== id));
+  }
+
+  getCommitmentsByMonth(month: number): Commitment[] {
+    return this.commitments().filter(c => {
+      if (c.type === 'monthly') { return true; }
+      if (c.type === 'annual') { return c.month === month; }
+      return c.month === month && (!c.year || c.year === this.currentYear());
+    });
+  }
+
+  getAllCommitments(): Commitment[] {
+    return this.commitments();
+  }
+
+  addCommitment(commitment: Commitment): void {
+    this.commitments.update(arr => [...arr, commitment]);
+  }
+
+  updateCommitment(id: string, data: Partial<Commitment>): void {
+    this.commitments.update(arr => arr.map(a => a.id === id ? { ...a, ...data } : a));
+  }
+
+  deleteCommitment(id: string): void {
+    this.commitments.update(arr => arr.filter(a => a.id !== id));
   }
 
   addTrade(trade: InvestmentTransaction): void {

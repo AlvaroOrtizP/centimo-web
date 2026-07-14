@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
+import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
 import { MyInvestorFund } from '../../../../models/myinvestor-fund';
 
@@ -290,17 +291,10 @@ export class MyInvestorFormComponent {
 
   private readonly METAL_ID = 'myinvestor-metal';
   private readonly INVESTMENT_ID = 'myinvestor-investment';
-  private readonly MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-  protected readonly months = [
-    { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' },
-    { value: 3, label: 'Marzo' }, { value: 4, label: 'Abril' },
-    { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
-    { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Septiembre' }, { value: 10, label: 'Octubre' },
-    { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
-  ];
-  protected readonly years = [2024, 2025, 2026, 2027];
+  protected readonly months = MONTH_OPTIONS;
+  protected readonly years = YEARS;
+  protected readonly getMonthLabel = getMonthLabel;
 
   // --- Cartera Metal ---
   protected readonly localMonth = signal(this.service.currentMonth());
@@ -375,10 +369,6 @@ export class MyInvestorFormComponent {
         });
       }
     });
-  }
-
-  protected getMonthLabel(year: number, month: number): string {
-    return `${this.MONTH_NAMES[month - 1]} ${year}`;
   }
 
   protected getFundName(fundId: string): string {

@@ -2,7 +2,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
+import { MONTHS } from '../../../../core/constants/date.constants';
 import { SalaryAllocation } from '../../../../models/salary-allocation';
+
 
 interface MonthConfig {
   year: number;
@@ -181,11 +183,6 @@ export class SalaryConfigComponent {
 
   protected readonly platforms = computed(() => this.service.platforms());
 
-  private readonly monthNames = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-  ];
-
   protected readonly startMonth = signal(this.service.currentMonth());
   protected readonly startYear = signal(this.service.currentYear());
 
@@ -206,7 +203,7 @@ export class SalaryConfigComponent {
       result.push({
         year,
         month,
-        label: `${this.monthNames[month - 1]} ${year}`,
+        label: `${MONTHS[month - 1]} ${year}`,
         allocations: this.service.getSalaryAllocationsByMonth(year, month),
       });
       month++;

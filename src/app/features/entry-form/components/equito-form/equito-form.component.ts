@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
+import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { CrowdlendingInvestment } from '../../../../models/crowdlending-investment';
 import { ProjectStatus } from '../../../../models/project-status';
 import { Account } from '../../../../models/account';
@@ -176,17 +177,10 @@ export class EquitoFormComponent {
   readonly accounts = input.required<Account[]>();
 
   private readonly PLATFORM_ID = 'equito';
-  private readonly MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-  protected readonly months = [
-    { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' },
-    { value: 3, label: 'Marzo' }, { value: 4, label: 'Abril' },
-    { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
-    { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Septiembre' }, { value: 10, label: 'Octubre' },
-    { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
-  ];
-  protected readonly years = [2024, 2025, 2026, 2027];
+  protected readonly months = MONTH_OPTIONS;
+  protected readonly years = YEARS;
+  protected readonly getMonthLabel = getMonthLabel;
 
   // --- Inversiones ---
   protected readonly projectName = signal('');
@@ -249,10 +243,6 @@ export class EquitoFormComponent {
     });
   }
 
-  protected getMonthLabel(year: number, month: number): string {
-    return `${this.MONTH_NAMES[month - 1]} ${year}`;
-  }
-
   // --- Inversiones ---
   protected saveInvestment(): void {
     const amount = this.investedAmount();
@@ -292,24 +282,7 @@ export class EquitoFormComponent {
     const accId = this.accountId();
     if (!accId) { return; }
 
-    const y = this.localYear();
-    const m = this.localMonth();
-    const snapId = this.snapshotId();
-
-    const existing = this.service.getSnapshot(accId, y, m);
-    if (existing) {
-      this.service.updateSnapshot(existing.id, { balance: bal });
-    } else {
-      this.service.addSnapshot({
-        id: snapId,
-        accountId: accId,
-        year: y,
-        month: m,
-        balance: bal,
-        income: 0,
-        expenses: 0,
-      });
-    }
+    this.service.upsertSnapshot(accId, this.localYear(), this.localMonth(), bal, 0);
 
     this.savedBalance.set(true);
     setTimeout(() => this.savedBalance.set(false), 2000);

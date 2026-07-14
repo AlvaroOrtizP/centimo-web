@@ -1,12 +1,11 @@
 import { Component, inject, input, computed, effect } from '@angular/core';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
+import { MONTHS } from '../../core/constants/date.constants';
 import { AccountBreakdownComponent } from './components/account-breakdown/account-breakdown.component';
 import { ExpenseCategoryChartComponent } from './components/expense-category-chart/expense-category-chart.component';
 import { IncomeBreakdownComponent } from './components/income-breakdown/income-breakdown.component';
 import { MonthPickerComponent } from '../../shared/components/month-picker/month-picker.component';
-
-const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 @Component({
   selector: 'app-monthly-view',

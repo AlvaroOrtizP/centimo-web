@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
+import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
 
 @Component({
@@ -98,17 +99,10 @@ export class MintosFormComponent {
   readonly accounts = input.required<Account[]>();
 
   private readonly MINTOS_ACCOUNT_ID = 'mintos-main';
-  private readonly MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-  protected readonly months = [
-    { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' },
-    { value: 3, label: 'Marzo' }, { value: 4, label: 'Abril' },
-    { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
-    { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' },
-    { value: 9, label: 'Septiembre' }, { value: 10, label: 'Octubre' },
-    { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' },
-  ];
-  protected readonly years = [2024, 2025, 2026, 2027];
+  protected readonly months = MONTH_OPTIONS;
+  protected readonly years = YEARS;
+  protected readonly getMonthLabel = getMonthLabel;
 
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = signal(this.service.currentYear());
@@ -143,36 +137,12 @@ export class MintosFormComponent {
     });
   }
 
-  protected getMonthLabel(year: number, month: number): string {
-    return `${this.MONTH_NAMES[month - 1]} ${year}`;
-  }
-
   protected save(): void {
     const bal = this.balance();
     if (bal === null) { return; }
 
-    const y = this.localYear();
-    const m = this.localMonth();
-    const snapId = this.snapshotId();
     const contrib = this.contribution() ?? 0;
-
-    const existing = this.service.getSnapshot(this.MINTOS_ACCOUNT_ID, y, m);
-    if (existing) {
-      this.service.updateSnapshot(existing.id, {
-        balance: bal,
-        income: existing.income + contrib,
-      });
-    } else {
-      this.service.addSnapshot({
-        id: snapId,
-        accountId: this.MINTOS_ACCOUNT_ID,
-        year: y,
-        month: m,
-        balance: bal,
-        income: contrib,
-        expenses: 0,
-      });
-    }
+    this.service.upsertSnapshot(this.MINTOS_ACCOUNT_ID, this.localYear(), this.localMonth(), bal, contrib);
 
     this.contribution.set(null);
     this.saved.set(true);
