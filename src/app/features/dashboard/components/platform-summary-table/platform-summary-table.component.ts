@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 
 import { Platform } from '../../../../models/platform';
 import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
+import { EXPENSES_PLATFORM_ID } from '../../../../core/constants/platform.constants';
 import { Account } from '../../../../models/account';
 
 type PlatformFilter = 'all' | 'liquidez' | 'fija' | 'variable';
@@ -32,6 +33,7 @@ interface PlatformRow {
           <h2 class="text-base font-semibold text-gray-900">Plataformas</h2>
           <div class="flex items-center gap-3">
             <select
+              aria-label="Filtrar plataformas"
               class="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 focus:border-gray-300 focus:outline-none"
               [(ngModel)]="filter"
             >
@@ -48,10 +50,10 @@ interface PlatformRow {
         @for (row of filteredRows(); track row.platform.id) {
           <div
             class="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-gray-50/80"
-            [class.cursor-pointer]="row.platform.id !== 'gastos'"
+            [class.cursor-pointer]="row.platform.id !== EXPENSES_PLATFORM_ID"
             [class.ring-2]="selectedPlatformId() === row.platform.id"
             [class.ring-gray-300]="selectedPlatformId() === row.platform.id"
-            (click)="row.platform.id !== 'gastos' && platformClick.emit(row.platform.id)"
+            (click)="row.platform.id !== EXPENSES_PLATFORM_ID && platformClick.emit(row.platform.id)"
           >
             <span class="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-110" [style.background-color]="row.platform.color + '15'">
               <span class="h-2.5 w-2.5 rounded-full" [style.background-color]="row.platform.color"></span>
@@ -76,6 +78,8 @@ interface PlatformRow {
   `,
 })
 export class PlatformSummaryTableComponent {
+  protected readonly EXPENSES_PLATFORM_ID = EXPENSES_PLATFORM_ID;
+
   readonly platforms = input.required<Platform[]>();
   readonly accounts = input.required<Account[]>();
   readonly snapshots = input.required<MonthlySnapshot[]>();

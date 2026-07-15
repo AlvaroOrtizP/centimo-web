@@ -8,4 +8,5 @@ export const routes: Routes = [
   { path: 'trends', loadComponent: () => import('./features/trends/trends.component').then(m => m.TrendsComponent) },
   { path: 'trades', loadComponent: () => import('./features/trade-log/trade-log.component').then(m => m.TradeLogComponent) },
   { path: 'entry/:platformId', loadComponent: () => import('./features/entry-form/entry-form.component').then(m => m.EntryFormComponent) },
+  { path: '**', redirectTo: '' },
 ];

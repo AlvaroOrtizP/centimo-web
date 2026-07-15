@@ -30,7 +30,7 @@ import { FinancialDataService } from '../../../../core/services/financial-data.s
               </div>
               <a [routerLink]="['/platform', platform.id]" class="group flex items-center gap-1 text-sm font-semibold text-gray-900 transition-colors hover:text-blue-600">
                 {{ platform.name }}
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300 transition-colors group-hover:text-blue-400">
+                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300 transition-colors group-hover:text-blue-400">
                   <path d="M7 7h10v10"/><path d="M7 17 17 7"/>
                 </svg>
               </a>
@@ -40,7 +40,7 @@ import { FinancialDataService } from '../../../../core/services/financial-data.s
                   (click)="openNotes(platform.id); $event.stopPropagation()"
                   title="Ver notas"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
                   </svg>
                   Notas
@@ -52,7 +52,7 @@ import { FinancialDataService } from '../../../../core/services/financial-data.s
             </div>
             @if (platformFixedNote(platform.id); as note) {
               <div class="mt-2 flex items-start gap-1.5 pl-10">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0 text-amber-500">
+                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0 text-amber-500">
                   <path d="M12 17a5 5 0 0 0 5-5 5 5 0 0 0-5-5 5 5 0 0 0-5 5 5 5 0 0 0 5 5Z"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
                 </svg>
                 <p class="text-xs text-gray-500 leading-relaxed">{{ note }}</p>
@@ -65,7 +65,7 @@ import { FinancialDataService } from '../../../../core/services/financial-data.s
                     class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-all duration-150 hover:bg-gray-100"
                     (click)="toggle(account.id)"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
                       class="flex-shrink-0 text-gray-400 transition-transform duration-150"
                       [class.rotate-90]="expandedId() === account.id">
                       <polyline points="9 18 15 12 9 6"/>
@@ -135,10 +135,11 @@ import { FinancialDataService } from '../../../../core/services/financial-data.s
               Notas — {{ platformName(platformId) }}
             </h3>
             <button
+              aria-label="Cerrar"
               class="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
               (click)="closeNotes()"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
             </button>
@@ -168,6 +169,7 @@ import { FinancialDataService } from '../../../../core/services/financial-data.s
                   @for (entry of checklist; track entry.item.id) {
                     <label class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-gray-50">
                       <button
+                        aria-label="Marcar"
                         class="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border-2 transition-colors"
                         [class.border-green-500]="entry.item.checked"
                         [class.bg-green-500]="entry.item.checked"
@@ -175,7 +177,7 @@ import { FinancialDataService } from '../../../../core/services/financial-data.s
                         (click)="service.toggleChecklistItem(entry.snapshotId, entry.item.id)"
                       >
                         @if (entry.item.checked) {
-                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="20 6 9 17 4 12"/>
                           </svg>
                         }

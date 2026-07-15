@@ -1,7 +1,5 @@
 import { Component, input, viewChild, ElementRef, afterNextRender, effect, OnDestroy } from '@angular/core';
-import { Chart, registerables } from 'chart.js';
-
-Chart.register(...registerables);
+import { Chart } from 'chart.js';
 
 @Component({
   selector: 'app-expenses-chart',
@@ -17,7 +15,7 @@ Chart.register(...registerables);
         }
       </div>
       <div class="relative h-72">
-        <canvas #canvas></canvas>
+        <canvas aria-label="Gráfico de gastos acumulados" role="img" #canvas></canvas>
       </div>
     </div>
   `,
@@ -69,6 +67,7 @@ export class ExpensesChartComponent implements OnDestroy {
   }
 
   private createChart(): void {
+    this.chart?.destroy();
     const canvas = this.canvasRef()?.nativeElement;
     if (!canvas) { return; }
 

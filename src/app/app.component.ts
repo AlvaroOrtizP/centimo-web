@@ -12,8 +12,4 @@ import { SidebarComponent } from './shared/components/sidebar/sidebar.component'
 })
 export class AppComponent {
   title = 'centimo';
-
-  protected onNav(): void {
-    // sidebar navigation handled by router
-  }
 }

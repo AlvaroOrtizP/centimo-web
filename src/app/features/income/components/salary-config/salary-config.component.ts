@@ -66,20 +66,22 @@ interface MonthConfig {
                     </span>
                     <span class="flex-1 truncate text-gray-500">{{ alloc.note }}</span>
                     <button
+                      aria-label="Editar salario"
                       class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-500"
                       (click)="openEditModal(alloc)"
                       title="Editar"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                       </svg>
                     </button>
                     <button
+                      aria-label="Eliminar salario"
                       class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                       (click)="deleteAllocation(alloc)"
                       title="Eliminar"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                       </svg>
                     </button>
@@ -106,7 +108,7 @@ interface MonthConfig {
             <div>
               <label class="mb-1 block text-xs font-medium text-gray-600">Destino</label>
               <select
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
                 [(ngModel)]="modalPlatformId"
               >
                 <option value="">Seleccionar plataforma</option>
@@ -120,7 +122,7 @@ interface MonthConfig {
               <div class="flex-1">
                 <label class="mb-1 block text-xs font-medium text-gray-600">Tipo</label>
                 <select
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
+                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
                   [(ngModel)]="modalType"
                 >
                   <option value="fixed">€ (Cantidad fija)</option>
@@ -131,7 +133,7 @@ interface MonthConfig {
                 <label class="mb-1 block text-xs font-medium text-gray-600">Valor</label>
                 <input
                   type="number"
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
+                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
                   [(ngModel)]="modalValue"
                 />
               </div>
@@ -141,7 +143,7 @@ interface MonthConfig {
               <label class="mb-1 block text-xs font-medium text-gray-600">Nota (opcional)</label>
               <input
                 type="text"
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
                 [(ngModel)]="modalNote"
               />
             </div>
@@ -150,7 +152,7 @@ interface MonthConfig {
               <div>
                 <label class="mb-1 block text-xs font-medium text-gray-600">Aplicar a meses</label>
                 <select
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
+                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
                   [(ngModel)]="modalMonthsRange"
                 >
                   <option [value]="1">Solo este mes</option>

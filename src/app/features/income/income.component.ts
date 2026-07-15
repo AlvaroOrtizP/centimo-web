@@ -7,11 +7,12 @@ import { IncomeFormComponent } from '../entry-form/components/income-form/income
 import { SalaryDistributionComponent } from './components/salary-distribution/salary-distribution.component';
 import { SalaryConfigComponent } from './components/salary-config/salary-config.component';
 import { CommitmentsComponent } from './components/commitments/commitments.component';
+import { AlertsComponent } from './components/alerts/alerts.component';
 
 @Component({
   selector: 'app-income',
   standalone: true,
-  imports: [FormsModule, IncomeFormComponent, SalaryDistributionComponent, SalaryConfigComponent, CommitmentsComponent],
+  imports: [FormsModule, IncomeFormComponent, SalaryDistributionComponent, SalaryConfigComponent, CommitmentsComponent, AlertsComponent],
   template: `
     <div class="space-y-6">
       <div>
@@ -21,7 +22,7 @@ import { CommitmentsComponent } from './components/commitments/commitments.compo
 
       <!-- Tabs -->
       <div class="border-b border-gray-200">
-        <nav class="-mb-px flex gap-6">
+        <nav aria-label="Navegación de ingresos" class="-mb-px flex gap-6">
           <button
             class="border-b-2 px-1 py-2 text-sm font-medium transition-colors"
             [class.border-green-600]="activeTab() === 'income'"
@@ -52,13 +53,29 @@ import { CommitmentsComponent } from './components/commitments/commitments.compo
             [class.hover:text-gray-700]="activeTab() !== 'commitments'"
             (click)="activeTab.set('commitments')"
           >Compromisos</button>
+          <button
+            class="border-b-2 px-1 py-2 text-sm font-medium transition-colors"
+            [class.border-green-600]="activeTab() === 'alerts'"
+            [class.text-green-600]="activeTab() === 'alerts'"
+            [class.border-transparent]="activeTab() !== 'alerts'"
+            [class.text-gray-500]="activeTab() !== 'alerts'"
+            [class.hover:border-gray-300]="activeTab() !== 'alerts'"
+            [class.hover:text-gray-700]="activeTab() !== 'alerts'"
+            (click)="activeTab.set('alerts')"
+          >Alertas</button>
         </nav>
       </div>
 
       @if (activeTab() === 'income') {
+        @if (hasAlert()) {
+          <div class="rounded-lg border border-yellow-300 bg-yellow-50 p-4">
+            <p class="text-sm font-medium text-yellow-800">Tienes una alerta para este mes: {{ alertDescription() }}</p>
+          </div>
+        }
         <!-- Selector de mes/año global -->
         <div class="flex items-center gap-3">
           <select
+            aria-label="Seleccionar mes"
             class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
             [(ngModel)]="selectedMonth"
           >
@@ -67,6 +84,7 @@ import { CommitmentsComponent } from './components/commitments/commitments.compo
             }
           </select>
           <select
+            aria-label="Seleccionar año"
             class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
             [(ngModel)]="selectedYear"
           >
@@ -83,8 +101,10 @@ import { CommitmentsComponent } from './components/commitments/commitments.compo
         </div>
       } @else if (activeTab() === 'config') {
         <app-salary-config />
-      } @else {
+      } @else if (activeTab() === 'commitments') {
         <app-commitments />
+      } @else {
+        <app-alerts />
       }
     </div>
   `,
@@ -100,5 +120,14 @@ export class IncomeComponent {
   protected readonly selectedMonth = signal(this.service.currentMonth());
   protected readonly selectedYear = signal(this.service.currentYear());
 
-  protected readonly activeTab = signal<'income' | 'config' | 'commitments'>('income');
+  protected readonly activeTab = signal<'income' | 'config' | 'commitments' | 'alerts'>('income');
+
+  protected readonly hasAlert = computed(() =>
+    this.service.getAlertsByMonth(this.service.currentYear(), this.service.currentMonth()).length > 0
+  );
+
+  protected readonly alertDescription = computed(() => {
+    const alerts = this.service.getAlertsByMonth(this.service.currentYear(), this.service.currentMonth());
+    return alerts.length > 0 ? alerts[0].description : '';
+  });
 }

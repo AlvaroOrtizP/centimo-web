@@ -3,6 +3,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { Platform } from '../../models/platform';
 import { Account } from '../../models/account';
 import { MonthlySnapshot } from '../../models/monthly-snapshot';
+import { EXPENSES_PLATFORM_ID } from '../constants/platform.constants';
 import { InvestmentHolding } from '../../models/investment-holding';
 import { InvestmentTransaction } from '../../models/investment-transaction';
 import { CrowdlendingInvestment } from '../../models/crowdlending-investment';
@@ -13,6 +14,7 @@ import { IncomeSource } from '../../models/income-source';
 import { MonthlySummary } from '../../models/monthly-summary';
 import { SalaryAllocation } from '../../models/salary-allocation';
 import { Commitment } from '../../models/commitment';
+import { Alert } from '../../models/alert';
 
 import PLATFORMS from '../../../assets/data/platforms.json';
 import ACCOUNTS from '../../../assets/data/accounts.json';
@@ -26,6 +28,7 @@ import MYINVESTOR_FUNDS from '../../../assets/data/myinvestor-funds.json';
 import FUND_BALANCES from '../../../assets/data/fund-balances.json';
 import SALARY_ALLOCATIONS from '../../../assets/data/salary-allocations.json';
 import COMMITMENTS from '../../../assets/data/commitments.json';
+import ALERTS from '../../../assets/data/alerts.json';
 
 @Injectable({ providedIn: 'root' })
 export class FinancialDataService {
@@ -41,6 +44,7 @@ export class FinancialDataService {
   readonly incomes = signal<IncomeSource[]>(INCOMES as IncomeSource[]);
   readonly salaryAllocations = signal<SalaryAllocation[]>(SALARY_ALLOCATIONS as SalaryAllocation[]);
   readonly commitments = signal<Commitment[]>(COMMITMENTS as Commitment[]);
+  readonly alerts = signal<Alert[]>(ALERTS as Alert[]);
 
   readonly currentYear = signal(2026);
   readonly currentMonth = signal(6);
@@ -93,27 +97,9 @@ export class FinancialDataService {
     return this.incomes().filter(i => i.snapshotId === snapshotId);
   }
 
-  readonly monthlySummary = computed(() => {
-    const snapshots = this.getSnapshotsByMonth(this.currentYear(), this.currentMonth());
-
-    const totalBalance = snapshots.reduce((sum, s) => sum + s.balance, 0);
-    const totalIncome = snapshots.reduce((sum, s) => sum + s.income, 0);
-    const totalExpenses = snapshots.reduce((sum, s) => sum + s.expenses, 0);
-    const balanceWithoutExpenses = snapshots
-      .filter(s => this.getAccountPlatformId(s.accountId) !== 'gastos')
-      .reduce((sum, s) => sum + s.balance, 0);
-
-    return {
-      year: this.currentYear(),
-      month: this.currentMonth(),
-      totalBalance,
-      totalIncome,
-      totalExpenses,
-      balanceWithoutExpenses,
-      netWorth: totalBalance,
-      netSavings: totalIncome - totalExpenses,
-    } satisfies MonthlySummary;
-  });
+  readonly monthlySummary = computed(() =>
+    this.getMonthlySummary(this.currentYear(), this.currentMonth())
+  );
 
   getMonthlySummary(year: number, month: number): MonthlySummary {
     const snapshots = this.getSnapshotsByMonth(year, month);
@@ -121,7 +107,7 @@ export class FinancialDataService {
     const totalIncome = snapshots.reduce((sum, s) => sum + s.income, 0);
     const totalExpenses = snapshots.reduce((sum, s) => sum + s.expenses, 0);
     const balanceWithoutExpenses = snapshots
-      .filter(s => this.getAccountPlatformId(s.accountId) !== 'gastos')
+      .filter(s => this.getAccountPlatformId(s.accountId) !== EXPENSES_PLATFORM_ID)
       .reduce((sum, s) => sum + s.balance, 0);
 
     return {
@@ -329,5 +315,25 @@ export class FinancialDataService {
 
   deleteFundBalance(id: string): void {
     this.fundBalances.update(arr => arr.filter(b => b.id !== id));
+  }
+
+  getAlertsByMonth(year: number, month: number): Alert[] {
+    return this.alerts().filter(a => a.year === year && a.month === month);
+  }
+
+  getAllAlerts(): Alert[] {
+    return this.alerts();
+  }
+
+  addAlert(alert: Alert): void {
+    this.alerts.update(arr => [...arr, alert]);
+  }
+
+  updateAlert(id: string, data: Partial<Alert>): void {
+    this.alerts.update(arr => arr.map(a => a.id === id ? { ...a, ...data } : a));
+  }
+
+  deleteAlert(id: string): void {
+    this.alerts.update(arr => arr.filter(a => a.id !== id));
   }
 }

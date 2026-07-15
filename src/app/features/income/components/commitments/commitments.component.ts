@@ -37,7 +37,7 @@ interface MonthGroup {
               <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
                 <span class="inline-block rounded bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-purple-700">M</span>
                 <span class="flex-1 font-medium text-gray-900">{{ c.description }}</span>
-                @if (c.amount != null) {
+                @if (c.amount !== null) {
                   <span class="font-medium text-gray-700">{{ c.amount.toLocaleString('es-ES') }} €</span>
                 }
                 @if (c.isEstimated) {
@@ -47,20 +47,22 @@ interface MonthGroup {
                   <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{{ c.category }}</span>
                 }
                 <button
+                  aria-label="Editar compromiso"
                   class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-500"
                   (click)="openEditModal(c)"
                   title="Editar"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
                 </button>
                 <button
+                  aria-label="Eliminar compromiso"
                   class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                   (click)="deleteCommitment(c)"
                   title="Eliminar"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                   </svg>
                 </button>
@@ -102,7 +104,7 @@ interface MonthGroup {
                         <span class="inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-700">1</span>
                       }
                       <span class="flex-1 font-medium text-gray-900">{{ c.description }}</span>
-                      @if (c.amount != null) {
+                      @if (c.amount !== null) {
                         <span class="font-medium text-gray-700">{{ c.amount.toLocaleString('es-ES') }} €</span>
                       }
                       @if (c.isEstimated) {
@@ -112,20 +114,22 @@ interface MonthGroup {
                         <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">{{ c.category }}</span>
                       }
                       <button
+                        aria-label="Editar compromiso"
                         class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-500"
                         (click)="openEditModal(c)"
                         title="Editar"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
                       </button>
                       <button
+                        aria-label="Eliminar compromiso"
                         class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                         (click)="deleteCommitment(c)"
                         title="Eliminar"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                           <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                         </svg>
                       </button>
@@ -155,7 +159,7 @@ interface MonthGroup {
               <input
                 type="text"
                 placeholder="Ej: Netflix, Pago Hacienda..."
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
                 [(ngModel)]="modalDescription"
               />
             </div>
@@ -163,7 +167,7 @@ interface MonthGroup {
             <div>
               <label class="mb-1 block text-xs font-medium text-gray-600">Tipo</label>
               <select
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
                 [(ngModel)]="modalType"
               >
                 <option value="monthly">Mensual (todos los meses)</option>
@@ -177,7 +181,7 @@ interface MonthGroup {
                 <div class="flex-1">
                   <label class="mb-1 block text-xs font-medium text-gray-600">Mes</label>
                   <select
-                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
+                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
                     [(ngModel)]="modalMonth"
                   >
                     @for (m of months; track m.value) {
@@ -189,7 +193,7 @@ interface MonthGroup {
                   <div class="flex-1">
                     <label class="mb-1 block text-xs font-medium text-gray-600">Año</label>
                     <select
-                      class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
+                      class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
                       [(ngModel)]="modalYear"
                     >
                       @for (y of years; track y) {
@@ -208,7 +212,7 @@ interface MonthGroup {
                   type="number"
                   step="0.01"
                   placeholder="0.00"
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
+                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
                   [(ngModel)]="modalAmount"
                 />
               </div>
@@ -227,7 +231,7 @@ interface MonthGroup {
             <div>
               <label class="mb-1 block text-xs font-medium text-gray-600">Categoría</label>
               <select
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
                 [(ngModel)]="modalCategory"
               >
                 <option value="">Sin categoría</option>

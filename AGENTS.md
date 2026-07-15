@@ -45,6 +45,7 @@ ng generate enum models/status
 | Path | Component |
 |---|---|
 | `/` | `DashboardComponent` |
+| `/income` | `IncomeComponent` |
 | `/month/:year/:month` | `MonthlyViewComponent` |
 | `/platform/:id` | `PlatformDetailComponent` |
 | `/trends` | `TrendsComponent` |
@@ -54,7 +55,7 @@ ng generate enum models/status
 ### Data Layer
 
 - **`FinancialDataService`** (`core/services/`) is the single source of truth — all signals, no HTTP.
-- Initial data loaded from JSON files in `src/assets/data/` (platforms, accounts, snapshots, holdings, trades, incomes, expenses, crowdlending, salary-allocations).
+- Initial data loaded from JSON files in `src/assets/data/` (platforms, accounts, snapshots, holdings, trades, incomes, expenses, crowdlending, salary-allocations, commitments, alerts).
 - Mutations via `add*`, `update*`, `delete*` methods that `.update()` signals in-memory.
 - `monthlySummary` is a `computed()` signal derived from `currentYear`/`currentMonth` signals.
 

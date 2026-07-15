@@ -99,8 +99,9 @@ import { Account } from '../../../../models/account';
                   class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                   (click)="deleteInvestment(inv)"
                   title="Eliminar inversión"
+                  aria-label="Eliminar inversión"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                   </svg>
                 </button>
@@ -116,6 +117,7 @@ import { Account } from '../../../../models/account';
 
         <div class="mb-4 flex gap-2">
           <select
+            aria-label="Mes"
             class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
             [(ngModel)]="localMonth"
           >
@@ -124,6 +126,7 @@ import { Account } from '../../../../models/account';
             }
           </select>
           <select
+            aria-label="Año"
             class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
             [(ngModel)]="localYear"
           >

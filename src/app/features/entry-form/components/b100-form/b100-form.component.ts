@@ -17,6 +17,7 @@ import { Account } from '../../../../models/account';
 
         <div class="mb-4 flex gap-2">
           <select
+            aria-label="Mes"
             class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             [(ngModel)]="localMonth"
           >
@@ -25,6 +26,7 @@ import { Account } from '../../../../models/account';
             }
           </select>
           <select
+            aria-label="Año"
             class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             [(ngModel)]="localYear"
           >

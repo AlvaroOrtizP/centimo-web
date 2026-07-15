@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
 import { MONTHS } from '../../core/constants/date.constants';
+import { EXPENSES_PLATFORM_ID } from '../../core/constants/platform.constants';
 import { SummaryCardsComponent } from './components/summary-cards/summary-cards.component';
 import { PlatformSummaryTableComponent } from './components/platform-summary-table/platform-summary-table.component';
 import { NetWorthChartComponent, ChartDataset } from './components/net-worth-chart/net-worth-chart.component';
@@ -42,6 +43,7 @@ const PLATFORM_GROUPS: Record<string, string[]> = {
           >
             <div actions class="flex items-center gap-2">
               <select
+                aria-label="Modo de gráfico"
                 class="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 focus:border-gray-300 focus:outline-none"
                 [(ngModel)]="chartMode"
               >
@@ -50,6 +52,7 @@ const PLATFORM_GROUPS: Record<string, string[]> = {
               </select>
               @if (chartMode() === 'per-platform') {
                 <select
+                  aria-label="Filtrar por grupo"
                   class="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 focus:border-gray-300 focus:outline-none"
                   [(ngModel)]="chartGroupFilter"
                 >
@@ -119,7 +122,7 @@ export class DashboardComponent {
     }
 
     const platformIds = group === 'all'
-      ? this.service.platforms().filter(p => p.id !== 'gastos').map(p => p.id)
+      ? this.service.platforms().filter(p => p.id !== EXPENSES_PLATFORM_ID).map(p => p.id)
       : PLATFORM_GROUPS[group] ?? [];
 
     return platformIds.map(id => {

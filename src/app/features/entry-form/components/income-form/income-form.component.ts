@@ -16,20 +16,20 @@ import { IncomeSource } from '../../../../models/income-source';
 
       <div class="flex flex-wrap gap-2">
         <input
-          type="text" placeholder="Fuente (nómina, interés...)"
-          class="w-36 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
+          type="text" placeholder="Fuente (nómina, interés...)" aria-label="Fuente"
+          class="w-36 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
           [(ngModel)]="source"
         />
 
         <input
-          type="number" placeholder="Cantidad (€)"
-          class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
+          type="number" placeholder="Cantidad (€)" aria-label="Cantidad"
+          class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
           [(ngModel)]="amount"
         />
 
         <input
-          type="text" placeholder="Descripción"
-          class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none"
+          type="text" placeholder="Descripción" aria-label="Descripción"
+          class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
           [(ngModel)]="description"
         />
 
@@ -57,8 +57,9 @@ import { IncomeSource } from '../../../../models/income-source';
                   class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                   (click)="deleteIncome(inc)"
                   title="Eliminar ingreso"
+                  aria-label="Eliminar ingreso"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                   </svg>
                 </button>

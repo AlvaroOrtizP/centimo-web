@@ -1,7 +1,5 @@
 import { Component, input, output, viewChild, ElementRef, afterNextRender, effect, OnDestroy } from '@angular/core';
-import { Chart, registerables } from 'chart.js';
-
-Chart.register(...registerables);
+import { Chart } from 'chart.js';
 
 export interface ChartDataset {
   label: string;
@@ -29,7 +27,7 @@ export interface ChartDataset {
         </div>
       </div>
       <div class="relative h-72">
-        <canvas #canvas></canvas>
+        <canvas aria-label="Gráfico de evolución del patrimonio" role="img" #canvas></canvas>
       </div>
     </div>
   `,
@@ -84,6 +82,7 @@ export class NetWorthChartComponent implements OnDestroy {
   }
 
   private createChart(): void {
+    this.chart?.destroy();
     const canvas = this.canvasRef()?.nativeElement;
     if (!canvas) { return; }
 

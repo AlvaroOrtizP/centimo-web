@@ -1,5 +1,4 @@
 import { TestBed } from '@angular/core/testing';
-import { FormsModule } from '@angular/forms';
 
 import { MonthPickerComponent } from './month-picker.component';
 

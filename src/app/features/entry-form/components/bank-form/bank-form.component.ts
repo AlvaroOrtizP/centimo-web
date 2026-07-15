@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { Account } from '../../../../models/account';
 import { ExpenseCategory } from '../../../../models/expense-category';
-import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
+
 
 @Component({
   selector: 'app-bank-form',
@@ -19,7 +19,7 @@ import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
           <label class="block text-xs font-medium text-gray-500">Balance (€)</label>
           <input
             type="number"
-            class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
             [(ngModel)]="balance"
           />
         </div>
@@ -28,18 +28,18 @@ import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
           <p class="mb-2 text-xs font-medium text-gray-500">Ingresos</p>
           <div class="flex gap-2">
             <input
-              type="number" placeholder="Cantidad"
-              class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              type="number" placeholder="Cantidad" aria-label="Cantidad"
+              class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
               [(ngModel)]="newIncomeAmount"
             />
             <input
-              type="text" placeholder="Fuente (ej: nómina)"
-              class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              type="text" placeholder="Fuente (ej: nómina)" aria-label="Fuente"
+              class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
               [(ngModel)]="newIncomeSource"
             />
             <input
-              type="text" placeholder="Descripción"
-              class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              type="text" placeholder="Descripción" aria-label="Descripción"
+              class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
               [(ngModel)]="newIncomeDesc"
             />
             <button
@@ -60,11 +60,12 @@ import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
           <p class="mb-2 text-xs font-medium text-gray-500">Gastos</p>
           <div class="flex gap-2">
             <input
-              type="number" placeholder="Cantidad"
+              type="number" placeholder="Cantidad" aria-label="Cantidad"
               class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               [(ngModel)]="newExpenseAmount"
             />
             <select
+              aria-label="Categoría de gasto"
               class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               [(ngModel)]="newExpenseCategory"
             >
@@ -80,7 +81,7 @@ import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
               <option [value]="ExpenseCategory.Otros">Otros</option>
             </select>
             <input
-              type="text" placeholder="Descripción"
+              type="text" placeholder="Descripción" aria-label="Descripción"
               class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               [(ngModel)]="newExpenseDesc"
             />

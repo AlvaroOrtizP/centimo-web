@@ -2,6 +2,7 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
+import { EXPENSES_PLATFORM_ID } from '../../../../core/constants/platform.constants';
 import { Account } from '../../../../models/account';
 import { ExpenseCategory } from '../../../../models/expense-category';
 import { Expense } from '../../../../models/expense';
@@ -15,7 +16,7 @@ import { Expense } from '../../../../models/expense';
       <h3 class="mb-4 text-sm font-semibold text-gray-900">Añadir Gasto</h3>
 
       <div class="flex flex-wrap gap-2">
-        <select class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" [(ngModel)]="category">
+        <select aria-label="Categoría" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1" [(ngModel)]="category">
           <option value="">Categoría</option>
           <option [value]="ExpenseCategory.Comida">Comida</option>
           <option [value]="ExpenseCategory.Ocio">Ocio</option>
@@ -30,20 +31,20 @@ import { Expense } from '../../../../models/expense';
         </select>
 
         <input
-          type="date"
-          class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          type="date" aria-label="Fecha"
+          class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
           [(ngModel)]="date"
         />
 
         <input
-          type="number" placeholder="Cantidad (€)"
-          class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          type="number" placeholder="Cantidad (€)" aria-label="Cantidad"
+          class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
           [(ngModel)]="amount"
         />
 
         <input
-          type="text" placeholder="Descripción"
-          class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          type="text" placeholder="Descripción" aria-label="Descripción"
+          class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
           [(ngModel)]="description"
         />
 
@@ -72,8 +73,9 @@ import { Expense } from '../../../../models/expense';
                   class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                   (click)="deleteExpense(exp)"
                   title="Eliminar gasto"
+                  aria-label="Eliminar gasto"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                   </svg>
                 </button>
@@ -94,7 +96,7 @@ export class ExpenseFormComponent {
 
   protected readonly accountId = computed(() => {
     const accs = this.accounts();
-    const gastos = accs.find(a => a.platformId === 'gastos');
+    const gastos = accs.find(a => a.platformId === EXPENSES_PLATFORM_ID);
     return gastos?.id ?? accs[0]?.id ?? '';
   });
 
