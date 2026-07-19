@@ -17,18 +17,6 @@ import { SalaryAllocation } from '../../models/salary-allocation';
 import { Commitment } from '../../models/commitment';
 import { Alert } from '../../models/alert';
 
-import SNAPSHOTS from '../../../assets/data/snapshots.json';
-import HOLDINGS from '../../../assets/data/holdings.json';
-import TRADES from '../../../assets/data/trades.json';
-import INCOMES from '../../../assets/data/incomes.json';
-import EXPENSES from '../../../assets/data/expenses.json';
-import CROWDLENDING from '../../../assets/data/crowdlending.json';
-import MYINVESTOR_FUNDS from '../../../assets/data/myinvestor-funds.json';
-import FUND_BALANCES from '../../../assets/data/fund-balances.json';
-import SALARY_ALLOCATIONS from '../../../assets/data/salary-allocations.json';
-import COMMITMENTS from '../../../assets/data/commitments.json';
-import ALERTS from '../../../assets/data/alerts.json';
-
 const API_URL = 'http://localhost:8080';
 
 @Injectable({ providedIn: 'root' })
@@ -37,17 +25,17 @@ export class FinancialDataService implements OnInit {
 
   readonly platforms = signal<Platform[]>([]);
   readonly accounts = signal<Account[]>([]);
-  readonly snapshots = signal<MonthlySnapshot[]>(SNAPSHOTS as MonthlySnapshot[]);
-  readonly holdings = signal<InvestmentHolding[]>(HOLDINGS as InvestmentHolding[]);
-  readonly trades = signal<InvestmentTransaction[]>(TRADES as InvestmentTransaction[]);
-  readonly crowdlending = signal<CrowdlendingInvestment[]>(CROWDLENDING as CrowdlendingInvestment[]);
-  readonly myInvestorFunds = signal<MyInvestorFund[]>(MYINVESTOR_FUNDS as MyInvestorFund[]);
-  readonly fundBalances = signal<FundBalance[]>(FUND_BALANCES as FundBalance[]);
-  readonly expenses = signal<Expense[]>(EXPENSES as Expense[]);
-  readonly incomes = signal<IncomeSource[]>(INCOMES as IncomeSource[]);
-  readonly salaryAllocations = signal<SalaryAllocation[]>(SALARY_ALLOCATIONS as SalaryAllocation[]);
-  readonly commitments = signal<Commitment[]>(COMMITMENTS as Commitment[]);
-  readonly alerts = signal<Alert[]>(ALERTS as Alert[]);
+  readonly snapshots = signal<MonthlySnapshot[]>([]);
+  readonly holdings = signal<InvestmentHolding[]>([]);
+  readonly trades = signal<InvestmentTransaction[]>([]);
+  readonly crowdlending = signal<CrowdlendingInvestment[]>([]);
+  readonly myInvestorFunds = signal<MyInvestorFund[]>([]);
+  readonly fundBalances = signal<FundBalance[]>([]);
+  readonly expenses = signal<Expense[]>([]);
+  readonly incomes = signal<IncomeSource[]>([]);
+  readonly salaryAllocations = signal<SalaryAllocation[]>([]);
+  readonly commitments = signal<Commitment[]>([]);
+  readonly alerts = signal<Alert[]>([]);
 
   readonly currentYear = signal(new Date().getFullYear());
   readonly currentMonth = signal(new Date().getMonth() + 1);

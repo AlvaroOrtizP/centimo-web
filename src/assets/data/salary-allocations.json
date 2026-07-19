@@ -1,9 +1,0 @@
-[
-  { "id": "sa-1", "year": 2026, "month": 6, "platformId": "myinvestor", "type": "percentage", "value": 30, "note": "Fondos indexados VWCE" },
-  { "id": "sa-2", "year": 2026, "month": 6, "platformId": "b100", "type": "fixed", "value": 100, "note": "Fondo de emergencia" },
-  { "id": "sa-3", "year": 2026, "month": 6, "platformId": "revolut", "type": "percentage", "value": 10, "note": "Gastos del mes" },
-  { "id": "sa-4", "year": 2026, "month": 7, "platformId": "myinvestor", "type": "percentage", "value": 30, "note": "Fondos indexados VWCE" },
-  { "id": "sa-5", "year": 2026, "month": 7, "platformId": "b100", "type": "fixed", "value": 150, "note": "Ahorro vacaciones" },
-  { "id": "sa-6", "year": 2026, "month": 5, "platformId": "myinvestor", "type": "percentage", "value": 25, "note": "Fondos indexados" },
-  { "id": "sa-7", "year": 2026, "month": 5, "platformId": "revolut", "type": "percentage", "value": 10, "note": "Gastos del mes" }
-]

@@ -58,8 +58,8 @@ import { MonthPickerComponent } from '../../shared/components/month-picker/month
   `,
 })
 export class MonthlyViewComponent {
-  readonly year = input<string>('2026');
-  readonly month = input<string>('6');
+  readonly year = input<string>(String(new Date().getFullYear()));
+  readonly month = input<string>(String(new Date().getMonth() + 1));
 
   protected readonly service = inject(FinancialDataService);
 
