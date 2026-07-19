@@ -3,16 +3,10 @@ import { FormsModule } from '@angular/forms';
 
 import { Platform } from '../../../../models/platform';
 import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
-import { EXPENSES_PLATFORM_ID } from '../../../../core/constants/platform.constants';
+import { EXPENSES_PLATFORM_ID, PLATFORM_GROUPS } from '../../../../core/constants/platform.constants';
 import { Account } from '../../../../models/account';
 
 type PlatformFilter = 'all' | 'liquidez' | 'fija' | 'variable';
-
-const PLATFORM_GROUPS: Record<string, string[]> = {
-  liquidez: ['bbva', 'b100', 'revolut', 'caixabank'],
-  fija: ['mintos', 'equito', 'urbanitae'],
-  variable: ['myinvestor', 'etoro', 'bitvavo'],
-};
 
 interface PlatformRow {
   platform: Platform;

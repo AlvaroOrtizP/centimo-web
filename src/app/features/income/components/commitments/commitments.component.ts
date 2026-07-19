@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
-import { MONTHS, MONTH_OPTIONS } from '../../../../core/constants/date.constants';
+import { MONTHS, MONTH_OPTIONS, YEARS } from '../../../../core/constants/date.constants';
 import { Commitment, CommitmentType } from '../../../../models/commitment';
 
 interface MonthGroup {
@@ -264,7 +264,7 @@ export class CommitmentsComponent {
   private readonly service = inject(FinancialDataService);
 
   protected readonly months = MONTH_OPTIONS;
-  protected readonly years = [2024, 2025, 2026, 2027, 2028];
+  protected readonly years = YEARS;
 
   protected readonly recurring = computed(() =>
     this.service.getAllCommitments().filter(c => c.type === 'monthly')

@@ -10,7 +10,13 @@ export const MONTHS_SHORT: string[] = [
 
 export const MONTH_OPTIONS = MONTHS.map((label, i) => ({ value: i + 1, label }));
 
-export const YEARS = [2024, 2025, 2026, 2027];
+export const YEARS = [
+  new Date().getFullYear() - 2,
+  new Date().getFullYear() - 1,
+  new Date().getFullYear(),
+  new Date().getFullYear() + 1,
+  new Date().getFullYear() + 2,
+];
 
 export function getMonthLabel(year: number, month: number): string {
   return `${MONTHS_SHORT[month - 1]} ${year}`;

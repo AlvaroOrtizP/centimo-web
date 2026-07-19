@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
 import { MONTHS } from '../../core/constants/date.constants';
-import { EXPENSES_PLATFORM_ID } from '../../core/constants/platform.constants';
+import { EXPENSES_PLATFORM_ID, PLATFORM_GROUPS } from '../../core/constants/platform.constants';
 import { SummaryCardsComponent } from './components/summary-cards/summary-cards.component';
 import { PlatformSummaryTableComponent } from './components/platform-summary-table/platform-summary-table.component';
 import { NetWorthChartComponent, ChartDataset } from './components/net-worth-chart/net-worth-chart.component';
@@ -11,12 +11,6 @@ import { ExpensesChartComponent } from './components/expenses-chart/expenses-cha
 
 type ChartMode = 'total' | 'per-platform';
 type PlatformGroup = 'all' | 'liquidez' | 'fija' | 'variable';
-
-const PLATFORM_GROUPS: Record<string, string[]> = {
-  liquidez: ['bbva', 'b100', 'revolut', 'caixabank'],
-  fija: ['mintos', 'equito', 'urbanitae'],
-  variable: ['myinvestor', 'etoro', 'bitvavo'],
-};
 
 @Component({
   selector: 'app-dashboard',

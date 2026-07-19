@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../core/services/financial-data.service';
-import { MONTHS } from '../../../core/constants/date.constants';
+import { MONTHS, YEARS } from '../../../core/constants/date.constants';
 
 @Component({
   selector: 'app-month-picker',
@@ -40,5 +40,5 @@ import { MONTHS } from '../../../core/constants/date.constants';
 export class MonthPickerComponent {
   protected readonly service = inject(FinancialDataService);
   protected readonly months = MONTHS;
-  protected readonly years = [2026, 2027];
+  protected readonly years = YEARS;
 }

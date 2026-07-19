@@ -4,6 +4,31 @@ Documentación completa del backend: tablas, endpoints, modelos de datos y su us
 
 ---
 
+## Estado de migración
+
+| Fase | Tablas | Backend | Frontend | Estado |
+|---|---|---|---|---|
+| **Fase 1** | `plataformas`, `cuentas` | CRUD completo + semilla | `FinancialDataService` carga desde API | ✅ Migrado |
+| **Fase 2** | `instantaneas_mensuales` | — | — | ⬜ Pendiente |
+| **Fase 3** | `gastos`, `fuentes_ingreso`, `elementos_lista_tareas` | — | — | ⬜ Pendiente |
+| **Fase 4** | `posiciones_inversion`, `operaciones_inversion` | — | — | ⬜ Pendiente |
+| **Fase 5** | `inversiones_crowdlending`, `fondos_myinvestor`, `balances_fondo` | — | — | ⬜ Pendiente |
+| **Fase 6** | `asignaciones_salario`, `compromisos`, `alertas` | — | — | ⬜ Pendiente |
+
+### Pantallas migradas
+
+| Pantalla | Ruta | Fase completada |
+|---|---|---|
+| Dashboard | `/` | Fase 1 (platforms + accounts desde API) |
+| Vista Mensual | `/month/:year/:month` | Fase 1 (platforms + accounts desde API) |
+| Detalle Plataforma | `/platform/:id` | Fase 1 (platforms + accounts desde API) |
+| Tendencias | `/trends` | Fase 1 (platforms + accounts desde API) |
+| Trades | `/trades` | Fase 1 (platforms + accounts desde API) |
+| Entrada Datos | `/entry/:platformId` | Fase 1 (platforms + accounts desde API) |
+| Nómina | `/income` | Fase 1 (platforms + accounts desde API) |
+
+---
+
 ## 1. Visión general
 
 Centimo es una app de finanzas personales. El backend gestiona plataformas financieras, cuentas, snapshots mensuales, inversiones, gastos, ingresos y configuración de nómina.
@@ -513,7 +538,46 @@ CREATE INDEX idx_alertas_fecha ON alertas(anio, mes);
 
 ---
 
-## 4. Endpoints
+## 4. Datos iniciales (semilla)
+
+Solo `plataformas` y `cuentas` necesitan datos fijos. El resto de tablas se poblán desde la UI.
+
+### Plataformas
+
+```sql
+INSERT INTO plataformas (id, nombre, tipo, color, icono, orden) VALUES
+  ('bbva',       'BBVA',       'banco',       '#004481', 'building',     1),
+  ('caixabank',  'CaixaBank',  'banco',       '#FF5722', 'building',     2),
+  ('b100',       'B100',       'banco',       '#6C3FD1', 'smartphone',   3),
+  ('revolut',    'Revolut',    'banco',       '#EB008B', 'smartphone',   4),
+  ('myinvestor', 'MyInvestor', 'inversion',   '#00A3E0', 'trending-up',  5),
+  ('mintos',     'Mintos',     'p2p',         '#00BFA5', 'dollar-sign',  6),
+  ('equito',     'Equito',     'crowdlending','#FF6B35', 'home',         7),
+  ('urbanitae',  'Urbanitae',  'crowdlending','#E63946', 'building',     8),
+  ('bitvavo',    'Bitvavo',    'cripto',      '#1E3A5F', 'bitcoin',      9);
+```
+
+### Cuentas
+
+```sql
+INSERT INTO cuentas (id, plataforma_id, nombre, tipo, orden) VALUES
+  ('bbva-nomina',        'bbva',       'Nómina',         'corriente', 1),
+  ('caixa-main',         'caixabank',  'Principal',       'corriente', 1),
+  ('b100-corriente',     'b100',       'Corriente',       'corriente', 1),
+  ('b100-ahorro',        'b100',       'Save',            'ahorro',    2),
+  ('b100-inversion',     'b100',       'Health',          'inversion', 3),
+  ('revolut-main',       'revolut',    'Principal',       'corriente', 1),
+  ('myinvestor-metal',   'myinvestor', 'Cuenta Metal',    'corriente', 1),
+  ('myinvestor-fondos',  'myinvestor', 'Fondos',          'inversion', 2),
+  ('mintos-main',        'mintos',     'Principal',       'inversion', 1),
+  ('equito-main',        'equito',     'Principal',       'inversion', 1),
+  ('urbanitae-main',     'urbanitae',  'Principal',       'inversion', 1),
+  ('bitvavo-main',       'bitvavo',    'Portfolio',       'inversion', 1);
+```
+
+---
+
+## 5. Endpoints
 
 ### 4.1 Plataformas
 
@@ -638,7 +702,7 @@ CREATE INDEX idx_alertas_fecha ON alertas(anio, mes);
 
 ---
 
-## 5. Uso por pantalla
+## 6. Uso por pantalla
 
 ### Dashboard (`/`)
 
@@ -738,7 +802,7 @@ CREATE INDEX idx_alertas_fecha ON alertas(anio, mes);
 
 ---
 
-## 6. Mapeo Plataforma → Datos concretos
+## 7. Mapeo Plataforma → Datos concretos
 
 | Plataforma | Tipo | Qué registrar cada mes |
 |---|---|---|
@@ -753,6 +817,250 @@ CREATE INDEX idx_alertas_fecha ON alertas(anio, mes);
 
 ---
 
-## 7. Datos mock (sin API)
+## 8. Datos mock (sin API)
 
 Mientras no haya backend, los datos iniciales se cargan desde archivos JSON en `src/assets/data/`. Los formularios de entrada mutan las signals en memoria. Cuando llegue la API, se sustituirán los imports JSON por `HttpClient.get()`.
+
+---
+
+## 9. Guía de migración a API
+
+Orden recomendado para migrar de datos hardcodeados a llamadas reales. Cada fase es funcional por sí misma — al finalizar, la app funciona con datos reales para esa parte.
+
+### Criterios de orden
+
+1. **Dependencias primero** — lo que otras tablas referencian se migra antes
+2. **Lectura antes que escritura** — GETs primero, CRUD después
+3. **Pantallas simples antes que complejas** — Dashboard (solo lectura) antes que EntryForm (CRUD completo)
+4. **Agrupación lógica** — entidades relacionadas se migran juntas
+
+---
+
+### Fase 1 — Datos base (plataformas + cuentas)
+
+**Por qué primero:** Todo lo demás referencia `plataformas.id` y `cuentas.id`. Sin estas tablas, nada funciona.
+
+**Endpoints a crear:**
+
+| Método | Ruta | Tipo |
+|---|---|---|
+| `GET` | `/plataformas` | Lectura |
+| `GET` | `/plataformas/{id}` | Lectura |
+| `GET` | `/cuentas` | Lectura (filtro `?plataformaId=`) |
+
+**Cambios en frontend:**
+- `FinancialDataService`: sustituir `import platforms from '...'` por `HttpClient.get('/plataformas')`
+- Lo mismo con `accounts`
+- Crear `ApiService` o interceptor base si no existe
+
+**Pantallas afectadas (solo lectura):** Todas — Dashboard, MonthlyView, PlatformDetail, Trends, TradeLog, EntryForm, Income
+
+**Verificación:** Dashboard muestra las plataformas reales con sus colores y saldos (aún vacíos).
+
+---
+
+### Fase 2 — Instantáneas (core)
+
+**Por qué:** Entidad central. `gastos`, `fuentes_ingreso`, `posiciones` y `elementos_lista_tareas` dependen de ella.
+
+**Endpoints a crear:**
+
+| Método | Ruta | Tipo |
+|---|---|---|
+| `GET` | `/instantaneas?anio&mes&cuentaId` | Lectura |
+| `GET` | `/instantaneas/{id}` | Lectura |
+| `POST` | `/instantaneas` | Escritura |
+| `POST` | `/instantaneas/upsert` | Escritura |
+| `PUT` | `/instantaneas/{id}` | Escritura |
+| `DELETE` | `/instantaneas/{id}` | Escritura |
+
+**Cambios en frontend:**
+- Sustituir `import snapshots from '...'` por llamada HTTP
+- Añadir `HttpClient` a los métodos `addSnapshot`, `updateSnapshot`, `upsertSnapshot`, `deleteSnapshot`
+- `getSnapshotsByMonth`, `getSnapshotsByAccount` → HTTP GET con parámetros
+
+**Pantallas afectadas:**
+- **Dashboard** — muestra saldos reales
+- **MonthlyView** — desglose por cuenta con datos reales
+- **PlatformDetail** — historial de saldos real
+
+**Verificación:** Dashboard y MonthlyView muestran datos reales. EntryForm puede guardar snapshots.
+
+---
+
+### Fase 3 — Gastos e ingresos
+
+**Por qué:** Hijos directos de `instantaneas`. Se actualizan incrementalmente (`instantaneas.gastos += delta`).
+
+**Endpoints a crear:**
+
+| Método | Ruta | Tipo |
+|---|---|---|
+| `GET` | `/gastos?instantaneaId` | Lectura |
+| `POST` | `/gastos` | Escritura |
+| `DELETE` | `/gastos/{id}?instantaneaId` | Escritura |
+| `GET` | `/ingresos?instantaneaId` | Lectura |
+| `POST` | `/ingresos` | Escritura |
+| `DELETE` | `/ingresos/{id}?instantaneaId` | Escritura |
+| `GET` | `/elementos-tareas?instantaneaId` | Lectura |
+| `POST` | `/instantaneas/{id}/tareas` | Escritura |
+| `POST` | `/instantaneas/{instantaneaId}/tareas/{elementoId}/alternar` | Escritura |
+
+**Cambios en frontend:**
+- `addExpense`, `deleteExpense` → HTTP
+- `addIncome`, `deleteIncome` → HTTP
+- La actualización incremental de `instantaneas.gastos`/`instantaneas.ingresos` se hace en backend (trigger o lógica de servicio)
+
+**Pantallas afectadas:**
+- **MonthlyView** — gráfico de categorías y lista de ingresos con datos reales
+- **EntryForm (Gastos)** — formulario de gastos funcional
+- **Income (Distribución)** — formulario de ingresos funcional
+
+**Verificación:** Se pueden crear y borrar gastos/ingresos. Los totales se actualizan en instantánea.
+
+---
+
+### Fase 4 — Posiciones e operaciones de inversión
+
+**Por qué:** Datos de inversiones. `posiciones` depende de `instantaneas`, `operaciones` depende de `cuentas`.
+
+**Endpoints a crear:**
+
+| Método | Ruta | Tipo |
+|---|---|---|
+| `GET` | `/posiciones?instantaneaId` | Lectura |
+| `POST` | `/posiciones` | Escritura |
+| `DELETE` | `/posiciones/{id}` | Escritura |
+| `GET` | `/operaciones?cuentaId` | Lectura |
+| `POST` | `/operaciones` | Escritura |
+| `DELETE` | `/operaciones/{id}` | Escritura |
+
+**Cambios en frontend:**
+- `holdings` signal → HTTP GET
+- `trades` signal → HTTP GET
+- `addHolding`, `deleteHolding`, `addTrade`, `deleteTrade` → HTTP
+
+**Pantallas afectadas:**
+- **PlatformDetail** — holdings y trades de la plataforma
+- **TradeLog** — tabla de operaciones con filtros y P&L
+- **EntryForm (Trades)** — formulario de trades funcional
+
+**Verificación:** Se pueden registrar compras/ventas. TradeLog muestra operaciones reales con P&L.
+
+---
+
+### Fase 5 — Productos especializados (crowdlending + fondos MyInvestor)
+
+**Por qué:** Datos específicos de ciertas plataformas. No bloquean a otras pantallas.
+
+**Endpoints a crear:**
+
+| Método | Ruta | Tipo |
+|---|---|---|
+| `GET` | `/crowdlending?plataformaId` | Lectura |
+| `POST` | `/crowdlending` | Escritura |
+| `DELETE` | `/crowdlending/{id}` | Escritura |
+| `GET` | `/fondos-myinvestor` | Lectura |
+| `POST` | `/fondos-myinvestor` | Escritura |
+| `PUT` | `/fondos-myinvestor/{id}` | Escritura |
+| `DELETE` | `/fondos-myinvestor/{id}` | Escritura |
+| `GET` | `/balances-fondo?anio&mes` | Lectura |
+| `POST` | `/balances-fondo` | Escritura |
+| `PUT` | `/balances-fondo/{id}` | Escritura |
+| `DELETE` | `/balances-fondo/{id}` | Escritura |
+
+**Cambios en frontend:**
+- `crowdlending` signal → HTTP
+- `myInvestorFunds`, `fundBalances` signals → HTTP
+- CRUD methods → HTTP
+
+**Pantallas afectadas:**
+- **EntryForm (Mintos, Equito, Urbanitae, MyInvestor)** — formularios de crowdlending y fondos funcionales
+
+**Verificación:** Se pueden registrar inversiones crowdlending y fondos MyInvestor con saldos mensuales.
+
+---
+
+### Fase 6 — Configuración (nómina)
+
+**Por qué:** Entidades independientes. Solo afectan a la pantalla de Nómina.
+
+**Endpoints a crear:**
+
+| Método | Ruta | Tipo |
+|---|---|---|
+| `GET` | `/asignaciones-salario?anio&mes` | Lectura |
+| `POST` | `/asignaciones-salario` | Escritura |
+| `PUT` | `/asignaciones-salario/{id}` | Escritura |
+| `DELETE` | `/asignaciones-salario/{id}` | Escritura |
+| `GET` | `/compromisos` | Lectura |
+| `POST` | `/compromisos` | Escritura |
+| `PUT` | `/compromisos/{id}` | Escritura |
+| `DELETE` | `/compromisos/{id}` | Escritura |
+| `GET` | `/alertas?anio&mes` | Lectura |
+| `POST` | `/alertas` | Escritura |
+| `PUT` | `/alertas/{id}` | Escritura |
+| `DELETE` | `/alertas/{id}` | Escritura |
+
+**Cambios en frontend:**
+- `salaryAllocations`, `commitments`, `alerts` signals → HTTP
+- CRUD methods → HTTP
+
+**Pantallas afectadas:**
+- **Income** — distribución de sueldo, configuración, compromisos y alertas funcionales
+
+**Verificación:** Se pueden crear distribuciones de sueldo, compromisos y alertas. Persisten entre sesiones.
+
+---
+
+### Fase 7 — CRUD de plataformas y cuentas
+
+**Por qué:** Ya se leen en Fase 1. Ahora se añade escritura para gestión administrativa.
+
+**Endpoints a crear:**
+
+| Método | Ruta | Tipo |
+|---|---|---|
+| `POST` | `/plataformas` | Escritura |
+| `PUT` | `/plataformas/{id}` | Escritura |
+| `DELETE` | `/plataformas/{id}` | Escritura |
+| `POST` | `/cuentas` | Escritura |
+| `PUT` | `/cuentas/{id}` | Escritura |
+| `DELETE` | `/cuentas/{id}` | Escritura |
+
+**Cambios en frontend:**
+- Opcional: pantalla de admin para gestionar plataformas/cuentas
+- O mantener como datos semilla y no exponer UI
+
+**Verificación:** Se pueden crear/editar/eliminar plataformas y cuentas desde la API.
+
+---
+
+### Resumen visual
+
+```
+Fase 1 ──── Fase 2 ──── Fase 3 ──── Fase 4 ──── Fase 5 ──── Fase 6 ──── Fase 7
+base        core         gastos/      inversiones   crowdlending   nómina       admin
+ datos                   ingresos                                 config       plataformas
+                                                                             
+ lectura     lectura      lectura      lectura        lectura       lectura      escritura
+ + escritura + escritura  + escritura  + escritura    + escritura   + escritura
+                                                                             
+ Dashboard   Dashboard    MonthlyView  PlatformDetail EntryForm     Income       Admin
+ + todas     + MonthlyView + EntryForm  + TradeLog    (Mintos,      (Nómina)     panel
+             + EntryForm   + Income     + EntryForm    Equito,
+                                              (Trades)  Urbanitae,
+                                                        MyInvestor)
+```
+
+### Orden de pantallas migradas
+
+| Orden | Pantalla | Fase que la completa |
+|---|---|---|
+| 1 | Dashboard | Fase 2 |
+| 2 | MonthlyView | Fase 3 |
+| 3 | PlatformDetail | Fase 4 |
+| 4 | Trends | Fase 2 (solo necesita instantáneas) |
+| 5 | TradeLog | Fase 4 |
+| 6 | EntryForm | Fase 5 (todas las tabs) |
+| 7 | Income | Fase 6 |

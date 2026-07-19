@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
-import { MONTH_OPTIONS } from '../../../../core/constants/date.constants';
+import { MONTHS, MONTH_OPTIONS, YEARS } from '../../../../core/constants/date.constants';
 import { Alert } from '../../../../models/alert';
 
 @Component({
@@ -129,16 +129,11 @@ export class AlertsComponent {
   private readonly service = inject(FinancialDataService);
 
   protected readonly months = MONTH_OPTIONS;
-  protected readonly years = [2024, 2025, 2026, 2027, 2028];
+  protected readonly years = YEARS;
 
   protected readonly groupedAlerts = computed(() => {
     const all = this.service.getAllAlerts();
     const groups: { label: string; alerts: Alert[] }[] = [];
-
-    const monthNames = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-    ];
 
     const sorted = [...all].sort((a, b) => a.year - b.year || a.month - b.month);
 
@@ -151,7 +146,7 @@ export class AlertsComponent {
 
     for (const [key, alerts] of map) {
       const [year, month] = key.split('-').map(Number);
-      groups.push({ label: `${monthNames[month - 1]} ${year}`, alerts });
+      groups.push({ label: `${MONTHS[month - 1]} ${year}`, alerts });
     }
 
     return groups;

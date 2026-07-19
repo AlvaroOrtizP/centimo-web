@@ -1,4 +1,5 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, inject, signal, computed, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 
 import { Platform } from '../../models/platform';
 import { Account } from '../../models/account';
@@ -16,8 +17,6 @@ import { SalaryAllocation } from '../../models/salary-allocation';
 import { Commitment } from '../../models/commitment';
 import { Alert } from '../../models/alert';
 
-import PLATFORMS from '../../../assets/data/platforms.json';
-import ACCOUNTS from '../../../assets/data/accounts.json';
 import SNAPSHOTS from '../../../assets/data/snapshots.json';
 import HOLDINGS from '../../../assets/data/holdings.json';
 import TRADES from '../../../assets/data/trades.json';
@@ -30,10 +29,14 @@ import SALARY_ALLOCATIONS from '../../../assets/data/salary-allocations.json';
 import COMMITMENTS from '../../../assets/data/commitments.json';
 import ALERTS from '../../../assets/data/alerts.json';
 
+const API_URL = 'http://localhost:8080';
+
 @Injectable({ providedIn: 'root' })
-export class FinancialDataService {
-  readonly platforms = signal<Platform[]>(PLATFORMS as Platform[]);
-  readonly accounts = signal<Account[]>(ACCOUNTS as Account[]);
+export class FinancialDataService implements OnInit {
+  private readonly http = inject(HttpClient);
+
+  readonly platforms = signal<Platform[]>([]);
+  readonly accounts = signal<Account[]>([]);
   readonly snapshots = signal<MonthlySnapshot[]>(SNAPSHOTS as MonthlySnapshot[]);
   readonly holdings = signal<InvestmentHolding[]>(HOLDINGS as InvestmentHolding[]);
   readonly trades = signal<InvestmentTransaction[]>(TRADES as InvestmentTransaction[]);
@@ -46,8 +49,16 @@ export class FinancialDataService {
   readonly commitments = signal<Commitment[]>(COMMITMENTS as Commitment[]);
   readonly alerts = signal<Alert[]>(ALERTS as Alert[]);
 
-  readonly currentYear = signal(2026);
-  readonly currentMonth = signal(6);
+  readonly currentYear = signal(new Date().getFullYear());
+  readonly currentMonth = signal(new Date().getMonth() + 1);
+
+  ngOnInit(): void {
+    this.http.get<Platform[]>(`${API_URL}/plataformas`)
+      .subscribe(data => this.platforms.set(data));
+
+    this.http.get<Account[]>(`${API_URL}/cuentas`)
+      .subscribe(data => this.accounts.set(data));
+  }
 
   getAccountsByPlatform(platformId: string): Account[] {
     return this.accounts().filter(a => a.platformId === platformId);
