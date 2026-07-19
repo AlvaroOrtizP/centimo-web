@@ -4,6 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { MONTHS } from '../../../../core/constants/date.constants';
 import { SalaryAllocation } from '../../../../models/salary-allocation';
+import { Commitment } from '../../../../models/commitment';
+
+interface MonthCommitments {
+  label: string;
+  commitments: Commitment[];
+  total: number;
+}
 
 
 interface MonthConfig {
@@ -20,7 +27,7 @@ interface MonthConfig {
   template: `
     <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <div class="mb-4 flex items-center justify-between">
-        <h3 class="text-sm font-semibold text-gray-900">Configuración de Distribución</h3>
+        <h3 class="text-sm font-semibold text-gray-900">Planificación de Distribución</h3>
         <div class="flex items-center gap-2">
           <button
             class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
@@ -103,6 +110,22 @@ interface MonthConfig {
           <h3 class="mb-4 text-lg font-semibold text-gray-900">
             {{ editingAllocation() ? 'Editar Distribución' : 'Nueva Distribución' }}
           </h3>
+
+          @if (hasUpcomingCommitments()) {
+            <div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-amber-700">Compromisos próximos</p>
+              @for (mc of upcomingCommitments(); track mc.label) {
+                @if (mc.commitments.length > 0) {
+                  <div class="mb-1.5 last:mb-0">
+                    <p class="text-xs font-medium text-amber-800">{{ mc.label }} — {{ mc.total.toLocaleString('es-ES') }} €</p>
+                    @for (c of mc.commitments; track c.id) {
+                      <p class="ml-2 text-xs text-amber-600">· {{ c.description }}{{ c.amount != null ? ' (' + c.amount.toLocaleString('es-ES') + ' €)' : '' }}</p>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          }
 
           <div class="space-y-4">
             <div>
@@ -262,6 +285,34 @@ export class SalaryConfigComponent {
   protected readonly modalValue = signal(0);
   protected readonly modalNote = signal('');
   protected readonly modalMonthsRange = signal(1);
+
+  protected readonly upcomingCommitments = computed<MonthCommitments[]>(() => {
+    const year = this.modalTargetYear();
+    const month = this.modalTargetMonth();
+    const result: MonthCommitments[] = [];
+
+    for (let i = 0; i < 3; i++) {
+      let m = month + i;
+      let y = year;
+      if (m > 12) { m -= 12; y++; }
+
+      const all = this.service.getAllCommitments();
+      const filtered = all.filter(c => {
+        if (c.type === 'monthly') return true;
+        if (c.type === 'annual') return c.month === m;
+        return c.month === m && (!c.year || c.year === y);
+      });
+
+      const total = filtered.reduce((sum, c) => sum + (c.amount ?? 0), 0);
+      result.push({ label: `${MONTHS[m - 1]} ${y}`, commitments: filtered, total });
+    }
+
+    return result;
+  });
+
+  protected readonly hasUpcomingCommitments = computed(() =>
+    this.upcomingCommitments().some(mc => mc.commitments.length > 0)
+  );
 
   protected openAddModal(year: number, month: number): void {
     this.editingAllocation.set(null);

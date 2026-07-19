@@ -15,7 +15,6 @@ import { IncomeSource } from '../../models/income-source';
 import { MonthlySummary } from '../../models/monthly-summary';
 import { SalaryAllocation } from '../../models/salary-allocation';
 import { Commitment } from '../../models/commitment';
-import { Alert } from '../../models/alert';
 
 const API_URL = 'http://localhost:8080';
 
@@ -35,7 +34,6 @@ export class FinancialDataService implements OnInit {
   readonly incomes = signal<IncomeSource[]>([]);
   readonly salaryAllocations = signal<SalaryAllocation[]>([]);
   readonly commitments = signal<Commitment[]>([]);
-  readonly alerts = signal<Alert[]>([]);
 
   readonly currentYear = signal(new Date().getFullYear());
   readonly currentMonth = signal(new Date().getMonth() + 1);
@@ -316,23 +314,4 @@ export class FinancialDataService implements OnInit {
     this.fundBalances.update(arr => arr.filter(b => b.id !== id));
   }
 
-  getAlertsByMonth(year: number, month: number): Alert[] {
-    return this.alerts().filter(a => a.year === year && a.month === month);
-  }
-
-  getAllAlerts(): Alert[] {
-    return this.alerts();
-  }
-
-  addAlert(alert: Alert): void {
-    this.alerts.update(arr => [...arr, alert]);
-  }
-
-  updateAlert(id: string, data: Partial<Alert>): void {
-    this.alerts.update(arr => arr.map(a => a.id === id ? { ...a, ...data } : a));
-  }
-
-  deleteAlert(id: string): void {
-    this.alerts.update(arr => arr.filter(a => a.id !== id));
-  }
 }

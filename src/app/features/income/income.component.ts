@@ -7,18 +7,15 @@ import { IncomeFormComponent } from '../entry-form/components/income-form/income
 import { SalaryDistributionComponent } from './components/salary-distribution/salary-distribution.component';
 import { SalaryConfigComponent } from './components/salary-config/salary-config.component';
 import { CommitmentsComponent } from './components/commitments/commitments.component';
-import { AlertsComponent } from './components/alerts/alerts.component';
+import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 
 @Component({
   selector: 'app-income',
   standalone: true,
-  imports: [FormsModule, IncomeFormComponent, SalaryDistributionComponent, SalaryConfigComponent, CommitmentsComponent, AlertsComponent],
+  imports: [FormsModule, IncomeFormComponent, SalaryDistributionComponent, SalaryConfigComponent, CommitmentsComponent, CollapsibleDescriptionComponent],
   template: `
     <div class="space-y-6">
-      <div>
-        <h1 class="text-xl font-bold text-gray-900">Nómina</h1>
-        <p class="text-sm text-gray-500">Registra tus ingresos y distribuye tu sueldo</p>
-      </div>
+      <app-collapsible-description description="Gestiona la distribución de tu nómina entre plataformas, configura compromisos fijos y compromisos puntuales." storageKey="desc-income" />
 
       <!-- Tabs -->
       <div class="border-b border-gray-200">
@@ -42,7 +39,7 @@ import { AlertsComponent } from './components/alerts/alerts.component';
             [class.hover:border-gray-300]="activeTab() !== 'config'"
             [class.hover:text-gray-700]="activeTab() !== 'config'"
             (click)="activeTab.set('config')"
-          >Configuración</button>
+          >Planificación</button>
           <button
             class="border-b-2 px-1 py-2 text-sm font-medium transition-colors"
             [class.border-green-600]="activeTab() === 'commitments'"
@@ -53,25 +50,11 @@ import { AlertsComponent } from './components/alerts/alerts.component';
             [class.hover:text-gray-700]="activeTab() !== 'commitments'"
             (click)="activeTab.set('commitments')"
           >Compromisos</button>
-          <button
-            class="border-b-2 px-1 py-2 text-sm font-medium transition-colors"
-            [class.border-green-600]="activeTab() === 'alerts'"
-            [class.text-green-600]="activeTab() === 'alerts'"
-            [class.border-transparent]="activeTab() !== 'alerts'"
-            [class.text-gray-500]="activeTab() !== 'alerts'"
-            [class.hover:border-gray-300]="activeTab() !== 'alerts'"
-            [class.hover:text-gray-700]="activeTab() !== 'alerts'"
-            (click)="activeTab.set('alerts')"
-          >Alertas</button>
         </nav>
       </div>
 
       @if (activeTab() === 'income') {
-        @if (hasAlert()) {
-          <div class="rounded-lg border border-yellow-300 bg-yellow-50 p-4">
-            <p class="text-sm font-medium text-yellow-800">Tienes una alerta para este mes: {{ alertDescription() }}</p>
-          </div>
-        }
+        <app-collapsible-description description="Registra los ingresos recibidos este mes por cada cuenta y distribuye tu sueldo entre plataformas. Los datos se guardan por mes y año." storageKey="desc-income-tab" />
         <!-- Selector de mes/año global -->
         <div class="flex items-center gap-3">
           <select
@@ -100,11 +83,11 @@ import { AlertsComponent } from './components/alerts/alerts.component';
           <app-salary-distribution [month]="selectedMonth()" [year]="selectedYear()" />
         </div>
       } @else if (activeTab() === 'config') {
+        <app-collapsible-description description="Planifica la distribución de tu nómina entre plataformas a futuro. Estos datos se usan para pre-rellenar la distribución mensual." storageKey="desc-income-config" />
         <app-salary-config />
       } @else if (activeTab() === 'commitments') {
+        <app-collapsible-description description="Gestiona gastos recurrentes (alquiler, suscripciones, seguros) y compromisos puntuales (impuestos, reparaciones). Se muestran en la vista mensual como parte de la planificación." storageKey="desc-income-commitments" />
         <app-commitments />
-      } @else {
-        <app-alerts />
       }
     </div>
   `,
@@ -120,14 +103,5 @@ export class IncomeComponent {
   protected readonly selectedMonth = signal(this.service.currentMonth());
   protected readonly selectedYear = signal(this.service.currentYear());
 
-  protected readonly activeTab = signal<'income' | 'config' | 'commitments' | 'alerts'>('income');
-
-  protected readonly hasAlert = computed(() =>
-    this.service.getAlertsByMonth(this.service.currentYear(), this.service.currentMonth()).length > 0
-  );
-
-  protected readonly alertDescription = computed(() => {
-    const alerts = this.service.getAlertsByMonth(this.service.currentYear(), this.service.currentMonth());
-    return alerts.length > 0 ? alerts[0].description : '';
-  });
+  protected readonly activeTab = signal<'income' | 'config' | 'commitments'>('income');
 }

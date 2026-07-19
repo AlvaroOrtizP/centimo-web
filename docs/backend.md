@@ -13,7 +13,7 @@ Documentación completa del backend: tablas, endpoints, modelos de datos y su us
 | **Fase 3** | `gastos`, `fuentes_ingreso`, `elementos_lista_tareas` | — | — | ⬜ Pendiente |
 | **Fase 4** | `posiciones_inversion`, `operaciones_inversion` | — | — | ⬜ Pendiente |
 | **Fase 5** | `inversiones_crowdlending`, `fondos_myinvestor`, `balances_fondo` | — | — | ⬜ Pendiente |
-| **Fase 6** | `asignaciones_salario`, `compromisos`, `alertas` | — | — | ⬜ Pendiente |
+| **Fase 6** | `asignaciones_salario`, `compromisos` | — | — | ⬜ Pendiente |
 
 ### Pantallas migradas
 
@@ -49,7 +49,6 @@ Centimo es una app de finanzas personales. El backend gestiona plataformas finan
 | `balances_fondo` | Saldo mensual de cada fondo |
 | `asignaciones_salario` | Distribución del sueldo por mes y plataforma |
 | `compromisos` | Gastos recurrentes o puntuales |
-| `alertas` | Avisos para meses concretos |
 | `elementos_lista_tareas` | Tareas pendientes del mes |
 
 ### Relaciones
@@ -72,7 +71,6 @@ plataformas ──1:N── inversiones_crowdlending
 fondos_myinvestor ──1:N── balances_fondo
 
 compromisos (independiente)
-alertas (independiente)
 ```
 
 ---
@@ -443,7 +441,7 @@ CREATE INDEX idx_asig_sal_plataforma ON asignaciones_salario(plataforma_id);
 
 ### 2.13 `compromisos`
 
-Compromisos de pago — gastos recurrentes o puntuales.
+Compromisos de pago — gastos recurrentes o puntuales. Se muestran al planificar la distribución de nómina para que el usuario conozca sus obligaciones del mes seleccionado y los dos siguientes.
 
 ```sql
 CREATE TABLE compromisos (
@@ -479,28 +477,6 @@ unico   → solo si c.mes = mes AND (c.anio = null OR c.anio = anioActual)
 ```
 
 ---
-
-### 2.14 `alertas`
-
-Alertas que se muestran como aviso amarillo en la pestaña de Distribución Mensual.
-
-```sql
-CREATE TABLE alertas (
-  id                  VARCHAR(50)  PRIMARY KEY,
-  descripcion         VARCHAR(200) NOT NULL,
-  mes                 INTEGER      NOT NULL CHECK (mes BETWEEN 1 AND 12),
-  anio                INTEGER      NOT NULL,
-  fecha_creacion      TIMESTAMP    DEFAULT NOW(),
-  fecha_actualizacion TIMESTAMP    DEFAULT NOW()
-);
-
-CREATE INDEX idx_alertas_fecha ON alertas(anio, mes);
-```
-
-**Lógica de negocio:**
-- Cada alerta se asocia a un mes+año concretos
-- `buscarAlertasPorAnioYMes(anio, mes)` devuelve las alertas que coinciden exactamente con el mes indicado
-- En la UI, si existe al menos una alerta para el mes actual, se muestra un banner amarillo
 
 ---
 
@@ -690,16 +666,6 @@ INSERT INTO cuentas (id, plataforma_id, nombre, tipo, orden) VALUES
 | `PUT` | `/compromisos/{id}` | Actualizar compromiso |
 | `DELETE` | `/compromisos/{id}` | Eliminar compromiso |
 
-### 4.13 Alertas
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/alertas?anio&mes` | Listar alertas (filtros opcionales) |
-| `GET` | `/alertas/{id}` | Obtener alerta |
-| `POST` | `/alertas` | Crear alerta |
-| `PUT` | `/alertas/{id}` | Actualizar alerta |
-| `DELETE` | `/alertas/{id}` | Eliminar alerta |
-
 ---
 
 ## 6. Uso por pantalla
@@ -794,11 +760,12 @@ INSERT INTO cuentas (id, plataforma_id, nombre, tipo, orden) VALUES
 | `GET /plataformas` | Selector de destino en distribución |
 | `GET/POST/DELETE /asignaciones-salario` | CRUD de distribuciones de sueldo |
 | `GET/POST/PUT/DELETE /compromisos` | CRUD de compromisos |
-| `GET/POST/PUT/DELETE /alertas` | CRUD de alertas |
 | `GET /instantaneas?cuentaId` | Buscar snapshot para registrar ingresos |
 | `GET/POST/DELETE /ingresos` | CRUD de ingresos del mes |
 
-**Entidades consumidas:** Platform, SalaryAllocation, Commitment, Alert, MonthlySnapshot, IncomeSource
+**Entidades consumidas:** Platform, SalaryAllocation, Commitment, MonthlySnapshot, IncomeSource
+
+**Nota:** El endpoint `GET /compromisos` también alimenta los avisos que se muestran al planificar la distribución de nómina (mes + 2 siguientes).
 
 ---
 
@@ -981,7 +948,7 @@ Orden recomendado para migrar de datos hardcodeados a llamadas reales. Cada fase
 
 ---
 
-### Fase 6 — Configuración (nómina)
+### Fase 6 — Planificación (nómina)
 
 **Por qué:** Entidades independientes. Solo afectan a la pantalla de Nómina.
 
@@ -997,19 +964,15 @@ Orden recomendado para migrar de datos hardcodeados a llamadas reales. Cada fase
 | `POST` | `/compromisos` | Escritura |
 | `PUT` | `/compromisos/{id}` | Escritura |
 | `DELETE` | `/compromisos/{id}` | Escritura |
-| `GET` | `/alertas?anio&mes` | Lectura |
-| `POST` | `/alertas` | Escritura |
-| `PUT` | `/alertas/{id}` | Escritura |
-| `DELETE` | `/alertas/{id}` | Escritura |
 
 **Cambios en frontend:**
-- `salaryAllocations`, `commitments`, `alerts` signals → HTTP
+- `salaryAllocations`, `commitments` signals → HTTP
 - CRUD methods → HTTP
 
 **Pantallas afectadas:**
-- **Income** — distribución de sueldo, configuración, compromisos y alertas funcionales
+- **Income** — distribución de sueldo, configuración y compromisos funcionales
 
-**Verificación:** Se pueden crear distribuciones de sueldo, compromisos y alertas. Persisten entre sesiones.
+**Verificación:** Se pueden crear distribuciones de sueldo y compromisos. Persisten entre sesiones.
 
 ---
 

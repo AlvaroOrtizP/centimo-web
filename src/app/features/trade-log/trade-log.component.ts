@@ -4,17 +4,15 @@ import { FormsModule } from '@angular/forms';
 import { FinancialDataService } from '../../core/services/financial-data.service';
 import { TradeSummaryComponent, TradeTotals } from './components/trade-summary/trade-summary.component';
 import { TradeTableComponent } from './components/trade-table/trade-table.component';
+import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 
 @Component({
   selector: 'app-trade-log',
   standalone: true,
-  imports: [FormsModule, TradeSummaryComponent, TradeTableComponent],
+  imports: [FormsModule, TradeSummaryComponent, TradeTableComponent, CollapsibleDescriptionComponent],
   template: `
     <div class="space-y-6">
-      <div>
-        <h1 class="text-xl font-bold text-gray-900">Registro de Trades</h1>
-        <p class="text-sm text-gray-500">Seguimiento de operaciones de inversión</p>
-      </div>
+      <app-collapsible-description description="Registro histórico de todas las operaciones de inversión con filtros por activo, estado y plataforma." storageKey="desc-trades" />
 
       <app-trade-summary [totals]="totals()" />
 

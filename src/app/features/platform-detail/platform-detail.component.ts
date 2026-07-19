@@ -4,14 +4,17 @@ import { FinancialDataService } from '../../core/services/financial-data.service
 import { MONTHS } from '../../core/constants/date.constants';
 import { BalanceHistoryChartComponent } from './components/balance-history-chart/balance-history-chart.component';
 import { MonthlyTableComponent } from './components/monthly-table/monthly-table.component';
+import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 
 @Component({
   selector: 'app-platform-detail',
   standalone: true,
-  imports: [BalanceHistoryChartComponent, MonthlyTableComponent],
+  imports: [BalanceHistoryChartComponent, MonthlyTableComponent, CollapsibleDescriptionComponent],
   template: `
     @if (platform(); as p) {
       <div class="space-y-6">
+        <app-collapsible-description description="Detalle de cuenta con historial de saldos, posiciones abiertas y operaciones recientes." storageKey="desc-platform" />
+
         <div class="flex items-center gap-4 rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl" [style.background-color]="p.color + '15'">
             <span class="h-4 w-4 rounded-full" [style.background-color]="p.color"></span>

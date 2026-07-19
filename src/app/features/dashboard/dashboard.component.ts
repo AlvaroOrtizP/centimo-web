@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { FinancialDataService } from '../../core/services/financial-data.service';
 import { MONTHS } from '../../core/constants/date.constants';
 import { EXPENSES_PLATFORM_ID, PLATFORM_GROUPS } from '../../core/constants/platform.constants';
+import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 import { SummaryCardsComponent } from './components/summary-cards/summary-cards.component';
 import { PlatformSummaryTableComponent } from './components/platform-summary-table/platform-summary-table.component';
 import { NetWorthChartComponent, ChartDataset } from './components/net-worth-chart/net-worth-chart.component';
@@ -15,9 +16,10 @@ type PlatformGroup = 'all' | 'liquidez' | 'fija' | 'variable';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [FormsModule, SummaryCardsComponent, PlatformSummaryTableComponent, NetWorthChartComponent, ExpensesChartComponent],
+  imports: [FormsModule, CollapsibleDescriptionComponent, SummaryCardsComponent, PlatformSummaryTableComponent, NetWorthChartComponent, ExpensesChartComponent],
   template: `
     <div class="space-y-6">
+      <app-collapsible-description description="Resumen general de tu patrimonio, distribución por plataformas y evolución en los últimos meses." storageKey="desc-dashboard" />
       <app-summary-cards [summary]="currentSummary()" [previousSummary]="previousSummary()" />
       <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <app-platform-summary-table

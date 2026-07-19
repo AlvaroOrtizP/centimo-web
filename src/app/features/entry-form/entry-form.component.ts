@@ -13,6 +13,7 @@ import { RevolutFormComponent } from './components/revolut-form/revolut-form.com
 import { B100FormComponent } from './components/b100-form/b100-form.component';
 import { BanksFormComponent } from './components/banks-form/banks-form.component';
 import { MyInvestorFormComponent } from './components/myinvestor-form/myinvestor-form.component';
+import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 
 type Tab = 'expenses' | 'trades' | 'banks' | 'revolut' | 'b100' | 'myinvestor' | 'mintos' | 'equito' | 'urbanitae';
 
@@ -26,16 +27,13 @@ interface TabConfig {
   selector: 'app-entry-form',
   standalone: true,
   imports: [
-    MonthPickerComponent,
+    MonthPickerComponent, CollapsibleDescriptionComponent,
     ExpenseFormComponent, TradeFormComponent,
     CrowdlendingFormComponent, MintosFormComponent, EquitoFormComponent, UrbanitaeFormComponent, RevolutFormComponent, B100FormComponent, BanksFormComponent, MyInvestorFormComponent,
   ],
   template: `
     <div class="space-y-6">
-      <div>
-        <h1 class="text-xl font-bold text-gray-900">Entrada de Datos</h1>
-        <p class="text-sm text-gray-500">Registra tus finanzas del mes</p>
-      </div>
+      <app-collapsible-description description="Formulario para registrar gastos mensuales, trades y saldos en cada plataforma." storageKey="desc-entry" />
 
       <div class="rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
         <div class="flex flex-wrap items-end gap-4">
@@ -99,30 +97,39 @@ interface TabConfig {
         <div class="p-5">
           @switch (activeTab()) {
             @case ('expenses') {
+              <app-collapsible-description description="Registra los gastos del mes por categoría: alimentación, transporte, suscripciones, etc. Se asignan a una cuenta y se reflejan en el resumen mensual." storageKey="desc-entry-expenses" />
               <app-expense-form [accounts]="allAccounts()" [year]="selectedYear()" [month]="selectedMonth()" />
             }
             @case ('trades') {
+              <app-collapsible-description description="Registra compras y ventas de activos (acciones, ETFs, criptomonedas). Define precio, cantidad, fecha y estado de la operación. El P&L se calcula automáticamente al cerrar." storageKey="desc-entry-trades" />
               <app-trade-form [accounts]="tradeAccounts()" />
             }
             @case ('banks') {
+              <app-collapsible-description description="Actualiza el saldo y los ingresos de las cuentas bancarias (BBVA, CaixaBank) para el mes seleccionado. Estos datos alimentan el resumen del Dashboard." storageKey="desc-entry-banks" />
               <app-banks-form [accounts]="allAccounts()" />
             }
             @case ('revolut') {
+              <app-collapsible-description description="Registra el saldo de tus cuentas Revolut (principal, ahorro, metal) y los ingresos generados este mes." storageKey="desc-entry-revolut" />
               <app-revolut-form [accounts]="allAccounts()" />
             }
             @case ('b100') {
+              <app-collapsible-description description="Actualiza saldos e intereses de tus cuentas B100 (corriente, ahorro, inversión). Los intereses se suman automáticamente al balance." storageKey="desc-entry-b100" />
               <app-b100-form [accounts]="allAccounts()" />
             }
             @case ('myinvestor') {
+              <app-collapsible-description description="Registra saldos de cuentas MyInvestor y actualiza el valor de tus fondos indexados. Los balances de fondos se muestran en el gráfico de evolución." storageKey="desc-entry-myinvestor" />
               <app-myinvestor-form [accounts]="allAccounts()" />
             }
             @case ('mintos') {
+              <app-collapsible-description description="Registra el saldo y los intereses devengados en Mintos este mes. Los datos se reflejan en el resumen de inversiones fijas." storageKey="desc-entry-mintos" />
               <app-mintos-form [accounts]="allAccounts()" />
             }
             @case ('equito') {
+              <app-collapsible-description description="Registra el saldo e intereses de tus préstamos en Equito. Los intereses se suman al balance de la plataforma." storageKey="desc-entry-equito" />
               <app-equito-form [accounts]="allAccounts()" />
             }
             @case ('urbanitae') {
+              <app-collapsible-description description="Registra el saldo e intereses de tus inversiones en Urbanitae (crowdlending inmobiliario). Los datos se reflejan en el resumen de inversiones fijas." storageKey="desc-entry-urbanitae" />
               <app-urbanitae-form [accounts]="allAccounts()" />
             }
           }
