@@ -112,7 +112,7 @@ import { MonthlyTableComponent } from './components/monthly-table/monthly-table.
                         @if (t.sellDate) {
                           <span>Venta: {{ t.sellDate }}</span>
                         }
-                        @if (t.pnl !== null) {
+                        @if (t.pnl != null) {
                           <span [class.text-emerald-600]="t.pnl >= 0" [class.text-red-600]="t.pnl < 0" class="font-semibold">
                             P&L: {{ t.pnl >= 0 ? '+' : '' }}{{ t.pnl.toLocaleString('es-ES') }} €
                           </span>

@@ -48,10 +48,10 @@ import { InvestmentTransaction } from '../../../../models/investment-transaction
                 <td class="whitespace-nowrap px-4 py-3.5 text-right text-gray-600">{{ trade.buyPricePerUnit.toLocaleString('es-ES') }} €</td>
                 <td class="whitespace-nowrap px-4 py-3.5 text-right font-semibold text-gray-900">{{ trade.buyTotalCost.toLocaleString('es-ES') }} €</td>
                 <td class="whitespace-nowrap px-4 py-3.5 text-right text-gray-600">{{ trade.sellDate || '—' }}</td>
-                <td class="whitespace-nowrap px-4 py-3.5 text-right text-gray-600">{{ trade.sellPricePerUnit !== null ? trade.sellPricePerUnit.toLocaleString('es-ES') + ' €' : '—' }}</td>
-                <td class="whitespace-nowrap px-4 py-3.5 text-right text-gray-600">{{ trade.sellTotalReceived !== null ? trade.sellTotalReceived.toLocaleString('es-ES') + ' €' : '—' }}</td>
-                <td class="whitespace-nowrap px-4 py-3.5 text-right font-semibold" [class.text-emerald-600]="trade.pnl !== null && trade.pnl >= 0" [class.text-red-600]="trade.pnl !== null && trade.pnl < 0">{{ trade.pnl !== null ? (trade.pnl >= 0 ? '+' : '') + trade.pnl.toLocaleString('es-ES') + ' €' : '—' }}</td>
-                <td class="whitespace-nowrap px-4 py-3.5 text-right font-semibold" [class.text-emerald-600]="trade.pnl !== null && trade.pnl >= 0" [class.text-red-600]="trade.pnl !== null && trade.pnl < 0">{{ roiDisplay(trade) }}</td>
+                <td class="whitespace-nowrap px-4 py-3.5 text-right text-gray-600">{{ trade.sellPricePerUnit != null ? trade.sellPricePerUnit.toLocaleString('es-ES') + ' €' : '—' }}</td>
+                <td class="whitespace-nowrap px-4 py-3.5 text-right text-gray-600">{{ trade.sellTotalReceived != null ? trade.sellTotalReceived.toLocaleString('es-ES') + ' €' : '—' }}</td>
+                <td class="whitespace-nowrap px-4 py-3.5 text-right font-semibold" [class.text-emerald-600]="trade.pnl != null && trade.pnl >= 0" [class.text-red-600]="trade.pnl != null && trade.pnl < 0">{{ trade.pnl != null ? (trade.pnl >= 0 ? '+' : '') + trade.pnl.toLocaleString('es-ES') + ' €' : '—' }}</td>
+                <td class="whitespace-nowrap px-4 py-3.5 text-right font-semibold" [class.text-emerald-600]="trade.pnl != null && trade.pnl >= 0" [class.text-red-600]="trade.pnl != null && trade.pnl < 0">{{ roiDisplay(trade) }}</td>
               </tr>
             }
           </tbody>

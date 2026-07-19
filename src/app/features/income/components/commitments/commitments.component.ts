@@ -37,7 +37,7 @@ interface MonthGroup {
               <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
                 <span class="inline-block rounded bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-purple-700">M</span>
                 <span class="flex-1 font-medium text-gray-900">{{ c.description }}</span>
-                @if (c.amount !== null) {
+                @if (c.amount != null) {
                   <span class="font-medium text-gray-700">{{ c.amount.toLocaleString('es-ES') }} €</span>
                 }
                 @if (c.isEstimated) {
@@ -104,7 +104,7 @@ interface MonthGroup {
                         <span class="inline-block rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-700">1</span>
                       }
                       <span class="flex-1 font-medium text-gray-900">{{ c.description }}</span>
-                      @if (c.amount !== null) {
+                      @if (c.amount != null) {
                         <span class="font-medium text-gray-700">{{ c.amount.toLocaleString('es-ES') }} €</span>
                       }
                       @if (c.isEstimated) {
