@@ -46,7 +46,15 @@ export class FinancialDataService implements OnInit {
       .subscribe(data => this.accounts.set(data));
 
     this.http.get<MonthlySnapshot[]>(`${API_URL}/instantaneas`)
-      .subscribe(data => this.snapshots.set(data));
+      .subscribe(data => {
+        this.snapshots.set(data);
+        for (const snapshot of data) {
+          this.http.get<Expense[]>(`${API_URL}/gastos`, { params: { instantaneaId: snapshot.id } })
+            .subscribe(expenses => this.expenses.update(arr => [...arr, ...expenses]));
+          this.http.get<IncomeSource[]>(`${API_URL}/ingresos`, { params: { instantaneaId: snapshot.id } })
+            .subscribe(incomes => this.incomes.update(arr => [...arr, ...incomes]));
+        }
+      });
   }
 
   getAccountsByPlatform(platformId: string): Account[] {
@@ -186,15 +194,18 @@ export class FinancialDataService implements OnInit {
   }
 
   toggleChecklistItem(snapshotId: string, itemId: string): void {
-    this.snapshots.update(arr => arr.map(s => {
-      if (s.id !== snapshotId || !s.checklistItems) { return s; }
-      return {
-        ...s,
-        checklistItems: s.checklistItems.map(item =>
-          item.id === itemId ? { ...item, checked: !item.checked } : item
-        ),
-      };
-    }));
+    this.http.post<any>(`${API_URL}/instantaneas/${snapshotId}/tareas/${itemId}/alternar`, {})
+      .subscribe(updated => {
+        this.snapshots.update(arr => arr.map(s => {
+          if (s.id !== snapshotId || !s.checklistItems) { return s; }
+          return {
+            ...s,
+            checklistItems: s.checklistItems.map(item =>
+              item.id === itemId ? { ...item, checked: updated.marcado } : item
+            ),
+          };
+        }));
+      });
   }
 
   addHolding(holding: InvestmentHolding): void {
@@ -202,33 +213,34 @@ export class FinancialDataService implements OnInit {
   }
 
   addExpense(expense: Expense): void {
-    this.expenses.update(arr => [...arr, expense]);
+    this.http.post<Expense>(`${API_URL}/gastos`, {
+      id: expense.id,
+      snapshotId: expense.snapshotId,
+      category: expense.category,
+      amount: expense.amount,
+      date: expense.date,
+      description: expense.description,
+    }).subscribe(created => this.expenses.update(arr => [...arr, created]));
   }
 
-  deleteExpense(id: string, snapshotId: string): void {
-    const exp = this.expenses().find(e => e.id === id);
-    this.expenses.update(arr => arr.filter(e => e.id !== id));
-    if (exp) {
-      const snap = this.snapshots().find(s => s.id === snapshotId);
-      if (snap) {
-        this.updateSnapshot(snapshotId, { expenses: Math.max(0, snap.expenses - exp.amount) });
-      }
-    }
+  deleteExpense(id: string): void {
+    this.http.delete(`${API_URL}/gastos/${id}`)
+      .subscribe(() => this.expenses.update(arr => arr.filter(e => e.id !== id)));
   }
 
   addIncome(income: IncomeSource): void {
-    this.incomes.update(arr => [...arr, income]);
+    this.http.post<IncomeSource>(`${API_URL}/ingresos`, {
+      id: income.id,
+      snapshotId: income.snapshotId,
+      source: income.source,
+      description: income.description,
+      amount: income.amount,
+    }).subscribe(created => this.incomes.update(arr => [...arr, created]));
   }
 
-  deleteIncome(id: string, snapshotId: string): void {
-    const inc = this.incomes().find(i => i.id === id);
-    this.incomes.update(arr => arr.filter(i => i.id !== id));
-    if (inc) {
-      const snap = this.snapshots().find(s => s.id === snapshotId);
-      if (snap) {
-        this.updateSnapshot(snapshotId, { income: Math.max(0, snap.income - inc.amount) });
-      }
-    }
+  deleteIncome(id: string): void {
+    this.http.delete(`${API_URL}/ingresos/${id}`)
+      .subscribe(() => this.incomes.update(arr => arr.filter(i => i.id !== id)));
   }
 
   getSalaryAllocationsByMonth(year: number, month: number): SalaryAllocation[] {

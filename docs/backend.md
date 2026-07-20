@@ -10,7 +10,7 @@ Documentación completa del backend: tablas, endpoints, modelos de datos y su us
 |---|---|---|---|---|
 | **Fase 1** | `plataformas`, `cuentas` | CRUD completo + semilla | `FinancialDataService` carga desde API | ✅ Migrado |
 | **Fase 2** | `instantaneas_mensuales` | CRUD completo + upsert | `FinancialDataService` carga desde API | ✅ Migrado |
-| **Fase 3** | `gastos`, `fuentes_ingreso`, `elementos_lista_tareas` | — | — | ⬜ Pendiente |
+| **Fase 3** | `gastos`, `fuentes_ingreso`, `elementos_lista_tareas` | CRUD completo + incrementales | `FinancialDataService` carga/muta desde API | ✅ Migrado |
 | **Fase 4** | `posiciones_inversion`, `operaciones_inversion` | — | — | ⬜ Pendiente |
 | **Fase 5** | `inversiones_crowdlending`, `fondos_myinvestor`, `balances_fondo` | — | — | ⬜ Pendiente |
 | **Fase 6** | `asignaciones_salario`, `compromisos` | — | — | ⬜ Pendiente |
@@ -20,11 +20,11 @@ Documentación completa del backend: tablas, endpoints, modelos de datos y su us
 | Pantalla | Ruta | Fase completada |
 |---|---|---|
 | Dashboard | `/` | Fase 2 (platforms, accounts, instantáneas desde API) |
-| Vista Mensual | `/month/:year/:month` | Fase 2 (platforms, accounts, instantáneas desde API) |
+| Vista Mensual | `/month/:year/:month` | Fase 3 (gastos e ingresos desde API) |
 | Detalle Plataforma | `/platform/:id` | Fase 2 (platforms, accounts, instantáneas desde API) |
 | Tendencias | `/trends` | Fase 2 (platforms, accounts, instantáneas desde API) |
 | Trades | `/trades` | Fase 1 (platforms + accounts desde API) |
-| Entrada Datos | `/entry/:platformId` | Fase 2 (platforms, accounts, instantáneas desde API) |
+| Entrada Datos | `/entry/:platformId` | Fase 3 (gastos, ingresos y tareas desde API) |
 | Nómina | `/income` | Fase 2 (platforms, accounts, instantáneas desde API) |
 
 ---
@@ -668,7 +668,9 @@ INSERT INTO cuentas (id, plataforma_id, nombre, tipo, orden) VALUES
 | `POST` | `/instantaneas/upsert` | Crear o actualizar (upsert) | ✅ |
 | `PUT` | `/instantaneas/{id}` | Actualizar instantánea | ⬜ |
 | `DELETE` | `/instantaneas/{id}` | Eliminar instantánea | ⬜ |
-| `POST` | `/instantaneas/{instantaneaId}/tareas/{elementoId}/alternar` | Alternar elemento de la lista de tareas | ⬜ |
+| `GET` | `/instantaneas/{instantaneaId}/tareas` | Listar tareas de la instantánea | ✅ |
+| `POST` | `/instantaneas/{instantaneaId}/tareas` | Crear tarea | ✅ |
+| `POST` | `/instantaneas/{instantaneaId}/tareas/{elementoId}/alternar` | Alternar estado de una tarea | ✅ |
 
 ### 4.4 Posiciones de inversión
 
@@ -690,17 +692,17 @@ INSERT INTO cuentas (id, plataforma_id, nombre, tipo, orden) VALUES
 
 | Método | Ruta | Descripción | Web |
 |---|---|---|---|
-| `GET` | `/gastos?instantaneaId` | Listar gastos de la instantánea | ⬜ |
-| `POST` | `/gastos` | Crear gasto | ⬜ |
-| `DELETE` | `/gastos/{id}?instantaneaId` | Eliminar gasto (decrementa gastos de la instantánea) | ⬜ |
+| `GET` | `/gastos?instantaneaId` | Listar gastos de la instantánea | ✅ |
+| `POST` | `/gastos` | Crear gasto | ✅ |
+| `DELETE` | `/gastos/{id}` | Eliminar gasto (decrementa gastos de la instantánea) | ✅ |
 
 ### 4.7 Ingresos
 
 | Método | Ruta | Descripción | Web |
 |---|---|---|---|
-| `GET` | `/ingresos?instantaneaId` | Listar ingresos de la instantánea | ⬜ |
-| `POST` | `/ingresos` | Crear ingreso | ⬜ |
-| `DELETE` | `/ingresos/{id}?instantaneaId` | Eliminar ingreso (decrementa ingresos de la instantánea) | ⬜ |
+| `GET` | `/ingresos?instantaneaId` | Listar ingresos de la instantánea | ✅ |
+| `POST` | `/ingresos` | Crear ingreso | ✅ |
+| `DELETE` | `/ingresos/{id}` | Eliminar ingreso (decrementa ingresos de la instantánea) | ✅ |
 
 ### 4.8 Crowdlending
 

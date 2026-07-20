@@ -138,6 +138,6 @@ export class IncomeFormComponent {
   }
 
   protected deleteIncome(inc: IncomeSource): void {
-    this.service.deleteIncome(inc.id, inc.snapshotId);
+    this.service.deleteIncome(inc.id);
   }
 }

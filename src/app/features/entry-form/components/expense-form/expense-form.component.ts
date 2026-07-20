@@ -158,6 +158,6 @@ export class ExpenseFormComponent {
   }
 
   protected deleteExpense(exp: Expense): void {
-    this.service.deleteExpense(exp.id, exp.snapshotId);
+    this.service.deleteExpense(exp.id);
   }
 }
