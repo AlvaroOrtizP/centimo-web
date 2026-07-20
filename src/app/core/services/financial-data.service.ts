@@ -44,6 +44,9 @@ export class FinancialDataService implements OnInit {
 
     this.http.get<Account[]>(`${API_URL}/cuentas`)
       .subscribe(data => this.accounts.set(data));
+
+    this.http.get<MonthlySnapshot[]>(`${API_URL}/instantaneas`)
+      .subscribe(data => this.snapshots.set(data));
   }
 
   getAccountsByPlatform(platformId: string): Account[] {
@@ -141,31 +144,45 @@ export class FinancialDataService implements OnInit {
   }
 
   addSnapshot(snapshot: MonthlySnapshot): void {
-    this.snapshots.update(arr => [...arr, snapshot]);
+    this.http.post<MonthlySnapshot>(`${API_URL}/instantaneas`, {
+      id: snapshot.id,
+      accountId: snapshot.accountId,
+      year: snapshot.year,
+      month: snapshot.month,
+      balance: snapshot.balance,
+      income: snapshot.income,
+      expenses: snapshot.expenses,
+      contribution: snapshot.contribution,
+      notes: snapshot.notes,
+    }).subscribe(created => this.snapshots.update(arr => [...arr, created]));
   }
 
   updateSnapshot(id: string, data: Partial<MonthlySnapshot>): void {
-    this.snapshots.update(arr => arr.map(s => s.id === id ? { ...s, ...data } : s));
+    this.http.put<MonthlySnapshot>(`${API_URL}/instantaneas/${id}`, {
+      balance: data.balance,
+      income: data.income,
+      expenses: data.expenses,
+      contribution: data.contribution,
+      notes: data.notes,
+    }).subscribe(updated => this.snapshots.update(arr => arr.map(s => s.id === id ? updated : s)));
   }
 
   upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number): void {
-    const existing = this.getSnapshot(accountId, year, month);
-    if (existing) {
-      const data: Partial<MonthlySnapshot> = { balance };
-      if (incomeDelta !== 0) { data.income = existing.income + incomeDelta; }
-      if (expenses !== undefined) { data.expenses = expenses; }
-      this.updateSnapshot(existing.id, data);
-    } else {
-      this.addSnapshot({
-        id: `${accountId}-${year}-${String(month).padStart(2, '0')}`,
-        accountId,
-        year,
-        month,
-        balance,
-        income: Math.max(0, incomeDelta),
-        expenses: expenses ?? 0,
-      });
-    }
+    this.http.post<MonthlySnapshot>(`${API_URL}/instantaneas/upsert`, {
+      accountId,
+      year,
+      month,
+      balance,
+      deltaIncome: incomeDelta,
+      expenses,
+    }).subscribe(result => {
+      const existing = this.getSnapshot(accountId, year, month);
+      if (existing) {
+        this.snapshots.update(arr => arr.map(s => s.id === result.id ? result : s));
+      } else {
+        this.snapshots.update(arr => [...arr, result]);
+      }
+    });
   }
 
   toggleChecklistItem(snapshotId: string, itemId: string): void {
@@ -271,7 +288,8 @@ export class FinancialDataService implements OnInit {
   }
 
   deleteSnapshot(id: string): void {
-    this.snapshots.update(arr => arr.filter(s => s.id !== id));
+    this.http.delete(`${API_URL}/instantaneas/${id}`)
+      .subscribe(() => this.snapshots.update(arr => arr.filter(s => s.id !== id)));
   }
 
   deleteHolding(id: string): void {

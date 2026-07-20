@@ -9,7 +9,7 @@ Documentación completa del backend: tablas, endpoints, modelos de datos y su us
 | Fase | Tablas | Backend | Frontend | Estado |
 |---|---|---|---|---|
 | **Fase 1** | `plataformas`, `cuentas` | CRUD completo + semilla | `FinancialDataService` carga desde API | ✅ Migrado |
-| **Fase 2** | `instantaneas_mensuales` | — | — | ⬜ Pendiente |
+| **Fase 2** | `instantaneas_mensuales` | CRUD completo + upsert | `FinancialDataService` carga desde API | ✅ Migrado |
 | **Fase 3** | `gastos`, `fuentes_ingreso`, `elementos_lista_tareas` | — | — | ⬜ Pendiente |
 | **Fase 4** | `posiciones_inversion`, `operaciones_inversion` | — | — | ⬜ Pendiente |
 | **Fase 5** | `inversiones_crowdlending`, `fondos_myinvestor`, `balances_fondo` | — | — | ⬜ Pendiente |
@@ -19,13 +19,13 @@ Documentación completa del backend: tablas, endpoints, modelos de datos y su us
 
 | Pantalla | Ruta | Fase completada |
 |---|---|---|
-| Dashboard | `/` | Fase 1 (platforms + accounts desde API) |
-| Vista Mensual | `/month/:year/:month` | Fase 1 (platforms + accounts desde API) |
-| Detalle Plataforma | `/platform/:id` | Fase 1 (platforms + accounts desde API) |
-| Tendencias | `/trends` | Fase 1 (platforms + accounts desde API) |
+| Dashboard | `/` | Fase 2 (platforms, accounts, instantáneas desde API) |
+| Vista Mensual | `/month/:year/:month` | Fase 2 (platforms, accounts, instantáneas desde API) |
+| Detalle Plataforma | `/platform/:id` | Fase 2 (platforms, accounts, instantáneas desde API) |
+| Tendencias | `/trends` | Fase 2 (platforms, accounts, instantáneas desde API) |
 | Trades | `/trades` | Fase 1 (platforms + accounts desde API) |
-| Entrada Datos | `/entry/:platformId` | Fase 1 (platforms + accounts desde API) |
-| Nómina | `/income` | Fase 1 (platforms + accounts desde API) |
+| Entrada Datos | `/entry/:platformId` | Fase 2 (platforms, accounts, instantáneas desde API) |
+| Nómina | `/income` | Fase 2 (platforms, accounts, instantáneas desde API) |
 
 ---
 
@@ -662,10 +662,10 @@ INSERT INTO cuentas (id, plataforma_id, nombre, tipo, orden) VALUES
 
 | Método | Ruta | Descripción | Web |
 |---|---|---|---|
-| `GET` | `/instantaneas?anio&mes&cuentaId` | Listar instantáneas (filtros opcionales) | ⬜ |
+| `GET` | `/instantaneas?anio&mes&cuentaId` | Listar instantáneas (filtros opcionales) | ✅ |
 | `GET` | `/instantaneas/{id}` | Obtener instantánea | ⬜ |
 | `POST` | `/instantaneas` | Crear instantánea | ⬜ |
-| `POST` | `/instantaneas/upsert` | Crear o actualizar (upsert) | ⬜ |
+| `POST` | `/instantaneas/upsert` | Crear o actualizar (upsert) | ✅ |
 | `PUT` | `/instantaneas/{id}` | Actualizar instantánea | ⬜ |
 | `DELETE` | `/instantaneas/{id}` | Eliminar instantánea | ⬜ |
 | `POST` | `/instantaneas/{instantaneaId}/tareas/{elementoId}/alternar` | Alternar elemento de la lista de tareas | ⬜ |
@@ -1105,10 +1105,10 @@ base        core         gastos/      inversiones   crowdlending   nómina      
 
 | Orden | Pantalla | Fase que la completa |
 |---|---|---|
-| 1 | Dashboard | Fase 2 |
+| 1 | Dashboard | Fase 2 ✅ |
 | 2 | MonthlyView | Fase 3 |
 | 3 | PlatformDetail | Fase 4 |
-| 4 | Trends | Fase 2 (solo necesita instantáneas) |
+| 4 | Trends | Fase 2 ✅ |
 | 5 | TradeLog | Fase 4 |
 | 6 | EntryForm | Fase 5 (todas las tabs) |
 | 7 | Income | Fase 6 |
