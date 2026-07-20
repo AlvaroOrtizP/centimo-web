@@ -33,6 +33,18 @@ Documentación completa del backend: tablas, endpoints, modelos de datos y su us
 
 Centimo es una app de finanzas personales. El backend gestiona plataformas financieras, cuentas, snapshots mensuales, inversiones, gastos, ingresos y configuración de nómina.
 
+### Convención de uso de endpoints
+
+Cada endpoint se marca con una columna **Web** que indica si es consumido por el frontend Angular:
+
+| Valor | Significado |
+|---|---|
+| `✅` | Endpoint usado activamente por el frontend |
+| `⬜` | Endpoint definido pero aún no implementado en el frontend |
+| `🔧` | Endpoint solo para uso interno/admin (no expuesto al web) |
+
+> **Regla:** Al añadir un endpoint, siempre indicar su uso en la columna Web. Esto ayuda a priorizar la implementación del backend.
+
 ### Entidades principales
 
 | Entidad | Descripción |
@@ -71,6 +83,7 @@ plataformas ──1:N── inversiones_crowdlending
 fondos_myinvestor ──1:N── balances_fondo
 
 compromisos (independiente)
+  └─ Alertas consultadas por: asignaciones_salario (mes + 3 siguientes)
 ```
 
 ---
@@ -441,7 +454,7 @@ CREATE INDEX idx_asig_sal_plataforma ON asignaciones_salario(plataforma_id);
 
 ### 2.13 `compromisos`
 
-Compromisos de pago — gastos recurrentes o puntuales. Se muestran al planificar la distribución de nómina para que el usuario conozca sus obligaciones del mes seleccionado y los dos siguientes.
+Compromisos de pago — gastos recurrentes o puntuales. Se muestran al planificar la distribución de nómina para que el usuario conozca sus obligaciones del mes seleccionado y los siguientes.
 
 ```sql
 CREATE TABLE compromisos (
@@ -469,12 +482,74 @@ CREATE INDEX idx_compromisos_mes ON compromisos(mes);
 | `anual` | `1-12` | `null` | Aparece solo en el mes indicado, cada año. |
 | `unico` | `1-12` | obligatorio | Aparece solo en el mes+año indicados. |
 
-**Filtrado por mes (`buscarCompromisosPorMes(mes)`):**
+**Filtrado por mes (`buscarCompromisosPorMes(mes, anio)`):**
 ```
 mensual → SIEMPRE se incluye
 anual   → solo si c.mes = mes
-unico   → solo si c.mes = mes AND (c.anio = null OR c.anio = anioActual)
+unico   → solo si c.mes = mes AND (c.anio = anio)
 ```
+
+#### Notas de compromisos — Lógica de alertas para planificación
+
+Al crear o modificar una planificación de nómina (`asignaciones_salario`), el sistema debe informar al usuario de los compromisos que afectan al mes actual y los **3 meses siguientes**.
+
+**Endpoint auxiliar para alertas:**
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/compromisos/alertas?anio&mes` | Compromisos del mes y 3 siguientes (mes+1, mes+2, mes+3) |
+
+**Response esperada:**
+
+```json
+{
+  "mesActual": { "anio": 2026, "mes": 7, "compromisos": [...], "total": 150.00 },
+  "mesSiguiente": { "anio": 2026, "mes": 8, "compromisos": [...], "total": 89.99 },
+  "mesPlus2": { "anio": 2026, "mes": 9, "compromisos": [...], "total": 45.00 },
+  "mesPlus3": { "anio": 2026, "mes": 10, "compromisos": [...], "total": 30.00 }
+}
+```
+
+**Lógica de detección (pseudocódigo):**
+
+```typescript
+function compromisosPorMes(anio: number, mes: number): Compromiso[] {
+  return compromisos.filter(c => {
+    if (c.tipo === 'mensual') return true;
+    if (c.tipo === 'anual') return c.mes === mes;
+    if (c.tipo === 'unico') return c.mes === mes && (!c.anio || c.anio === anio);
+    return false;
+  });
+}
+
+function alertasPlanificacion(anioBase: number, mesBase: number): AlertasPlanificacion {
+  return [0, 1, 2, 3].map(offset => {
+    const { anio, mes } = sumarMeses(anioBase, mesBase, offset);
+    const lista = compromisosPorMes(anio, mes);
+    return {
+      anio, mes,
+      compromisos: lista,
+      total: lista.reduce((sum, c) => sum + (c.cantidad || 0), 0)
+    };
+  });
+}
+```
+
+**Comportamiento en UI:**
+
+- Al abrir el formulario de planificación, se muestran **alertas por mes** con el total estimado de compromisos
+- Si `es_estimado = true`, el total se muestra como "≈ 150€" (aproximado)
+- Si no hay compromisos en un mes, no se muestra alerta para ese mes
+- Las alertas se actualizan al crear/editar/eliminar un compromiso
+
+**Ejemplo de uso:**
+
+| Mes | Compromisos | Total |
+|---|---|---|
+| Jul 2026 (actual) | Netflix, HBO, Seguro coche | ≈ 45€ |
+| Ago 2026 | Netflix, HBO, Seguro coche | ≈ 45€ |
+| Sep 2026 | Netflix, HBO, Seguro coche, IBI | ≈ 200€ |
+| Oct 2026 | Netflix, HBO, Seguro coche | ≈ 45€ |
 
 ---
 
@@ -505,6 +580,14 @@ unico   → solo si c.mes = mes AND (c.anio = null OR c.anio = anioActual)
 
 ### CategoriaCompromiso
 `impuestos` · `suscripciones` · `seguros` · `tramites` · `otros`
+
+### Compromisos — Tipos y comportamiento
+
+| Tipo | Campo `mes` | Campo `anio` | Comportamiento |
+|---|---|---|---|
+| `mensual` | `0` (ignorado) | `null` | Aparece TODOS los meses |
+| `anual` | `1-12` | `null` | Aparece en ese mes cada año |
+| `unico` | `1-12` | obligatorio | Aparece solo en mes+año específico |
 
 ### CategoriaGasto
 `aseo` · `coche` · `comida` · `discord` · `ejercicio` · `hacienda` · `medicamento` · `ocio` · `otros` · `trabajo`
@@ -557,114 +640,115 @@ INSERT INTO cuentas (id, plataforma_id, nombre, tipo, orden) VALUES
 
 ### 4.1 Plataformas
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/plataformas` | Listar plataformas |
-| `GET` | `/plataformas/{id}` | Obtener plataforma |
-| `POST` | `/plataformas` | Crear plataforma |
-| `PUT` | `/plataformas/{id}` | Actualizar plataforma |
-| `DELETE` | `/plataformas/{id}` | Eliminar plataforma |
+| Método | Ruta | Descripción | Web |
+|---|---|---|---|
+| `GET` | `/plataformas` | Listar plataformas | ✅ |
+| `GET` | `/plataformas/{id}` | Obtener plataforma | ⬜ |
+| `POST` | `/plataformas` | Crear plataforma | ⬜ |
+| `PUT` | `/plataformas/{id}` | Actualizar plataforma | ⬜ |
+| `DELETE` | `/plataformas/{id}` | Eliminar plataforma | ⬜ |
 
 ### 4.2 Cuentas
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/cuentas` | Listar cuentas (filtro `?plataformaId=`) |
-| `GET` | `/cuentas/{id}` | Obtener cuenta |
-| `POST` | `/cuentas` | Crear cuenta |
-| `PUT` | `/cuentas/{id}` | Actualizar cuenta |
-| `DELETE` | `/cuentas/{id}` | Eliminar cuenta |
+| Método | Ruta | Descripción | Web |
+|---|---|---|---|
+| `GET` | `/cuentas` | Listar cuentas (filtro `?plataformaId=`) | ✅ |
+| `GET` | `/cuentas/{id}` | Obtener cuenta | ⬜ |
+| `POST` | `/cuentas` | Crear cuenta | ⬜ |
+| `PUT` | `/cuentas/{id}` | Actualizar cuenta | ⬜ |
+| `DELETE` | `/cuentas/{id}` | Eliminar cuenta | ⬜ |
 
 ### 4.3 Instantáneas
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/instantaneas?anio&mes&cuentaId` | Listar instantáneas (filtros opcionales) |
-| `GET` | `/instantaneas/{id}` | Obtener instantánea |
-| `POST` | `/instantaneas` | Crear instantánea |
-| `POST` | `/instantaneas/upsert` | Crear o actualizar (upsert) |
-| `PUT` | `/instantaneas/{id}` | Actualizar instantánea |
-| `DELETE` | `/instantaneas/{id}` | Eliminar instantánea |
-| `POST` | `/instantaneas/{instantaneaId}/tareas/{elementoId}/alternar` | Alternar elemento de la lista de tareas |
+| Método | Ruta | Descripción | Web |
+|---|---|---|---|
+| `GET` | `/instantaneas?anio&mes&cuentaId` | Listar instantáneas (filtros opcionales) | ⬜ |
+| `GET` | `/instantaneas/{id}` | Obtener instantánea | ⬜ |
+| `POST` | `/instantaneas` | Crear instantánea | ⬜ |
+| `POST` | `/instantaneas/upsert` | Crear o actualizar (upsert) | ⬜ |
+| `PUT` | `/instantaneas/{id}` | Actualizar instantánea | ⬜ |
+| `DELETE` | `/instantaneas/{id}` | Eliminar instantánea | ⬜ |
+| `POST` | `/instantaneas/{instantaneaId}/tareas/{elementoId}/alternar` | Alternar elemento de la lista de tareas | ⬜ |
 
 ### 4.4 Posiciones de inversión
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/posiciones?instantaneaId` | Listar posiciones de una instantánea |
-| `POST` | `/posiciones` | Crear posición |
-| `DELETE` | `/posiciones/{id}` | Eliminar posición |
+| Método | Ruta | Descripción | Web |
+|---|---|---|---|
+| `GET` | `/posiciones?instantaneaId` | Listar posiciones de una instantánea | ⬜ |
+| `POST` | `/posiciones` | Crear posición | ⬜ |
+| `DELETE` | `/posiciones/{id}` | Eliminar posición | ⬜ |
 
 ### 4.5 Operaciones de inversión
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/operaciones?cuentaId` | Listar operaciones (filtro por cuenta) |
-| `POST` | `/operaciones` | Crear operación |
-| `DELETE` | `/operaciones/{id}` | Eliminar operación |
+| Método | Ruta | Descripción | Web |
+|---|---|---|---|
+| `GET` | `/operaciones?cuentaId` | Listar operaciones (filtro por cuenta) | ⬜ |
+| `POST` | `/operaciones` | Crear operación | ⬜ |
+| `DELETE` | `/operaciones/{id}` | Eliminar operación | ⬜ |
 
 ### 4.6 Gastos
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/gastos?instantaneaId` | Listar gastos de la instantánea |
-| `POST` | `/gastos` | Crear gasto |
-| `DELETE` | `/gastos/{id}?instantaneaId` | Eliminar gasto (decrementa gastos de la instantánea) |
+| Método | Ruta | Descripción | Web |
+|---|---|---|---|
+| `GET` | `/gastos?instantaneaId` | Listar gastos de la instantánea | ⬜ |
+| `POST` | `/gastos` | Crear gasto | ⬜ |
+| `DELETE` | `/gastos/{id}?instantaneaId` | Eliminar gasto (decrementa gastos de la instantánea) | ⬜ |
 
 ### 4.7 Ingresos
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/ingresos?instantaneaId` | Listar ingresos de la instantánea |
-| `POST` | `/ingresos` | Crear ingreso |
-| `DELETE` | `/ingresos/{id}?instantaneaId` | Eliminar ingreso (decrementa ingresos de la instantánea) |
+| Método | Ruta | Descripción | Web |
+|---|---|---|---|
+| `GET` | `/ingresos?instantaneaId` | Listar ingresos de la instantánea | ⬜ |
+| `POST` | `/ingresos` | Crear ingreso | ⬜ |
+| `DELETE` | `/ingresos/{id}?instantaneaId` | Eliminar ingreso (decrementa ingresos de la instantánea) | ⬜ |
 
 ### 4.8 Crowdlending
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/crowdlending?plataformaId` | Listar inversiones crowdlending |
-| `POST` | `/crowdlending` | Crear inversión crowdlending |
-| `DELETE` | `/crowdlending/{id}` | Eliminar inversión crowdlending |
+| Método | Ruta | Descripción | Web |
+|---|---|---|---|
+| `GET` | `/crowdlending?plataformaId` | Listar inversiones crowdlending | ⬜ |
+| `POST` | `/crowdlending` | Crear inversión crowdlending | ⬜ |
+| `DELETE` | `/crowdlending/{id}` | Eliminar inversión crowdlending | ⬜ |
 
 ### 4.9 Fondos MyInvestor
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/fondos-myinvestor` | Listar fondos |
-| `GET` | `/fondos-myinvestor/{id}` | Obtener fondo |
-| `POST` | `/fondos-myinvestor` | Crear fondo |
-| `PUT` | `/fondos-myinvestor/{id}` | Actualizar fondo |
-| `DELETE` | `/fondos-myinvestor/{id}` | Eliminar fondo |
+| Método | Ruta | Descripción | Web |
+|---|---|---|---|
+| `GET` | `/fondos-myinvestor` | Listar fondos | ⬜ |
+| `GET` | `/fondos-myinvestor/{id}` | Obtener fondo | ⬜ |
+| `POST` | `/fondos-myinvestor` | Crear fondo | ⬜ |
+| `PUT` | `/fondos-myinvestor/{id}` | Actualizar fondo | ⬜ |
+| `DELETE` | `/fondos-myinvestor/{id}` | Eliminar fondo | ⬜ |
 
 ### 4.10 Balances de fondo
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/balances-fondo?anio&mes` | Listar saldos del mes |
-| `POST` | `/balances-fondo` | Crear saldo |
-| `PUT` | `/balances-fondo/{id}` | Actualizar saldo |
-| `DELETE` | `/balances-fondo/{id}` | Eliminar saldo |
+| Método | Ruta | Descripción | Web |
+|---|---|---|---|
+| `GET` | `/balances-fondo?anio&mes` | Listar saldos del mes | ⬜ |
+| `POST` | `/balances-fondo` | Crear saldo | ⬜ |
+| `PUT` | `/balances-fondo/{id}` | Actualizar saldo | ⬜ |
+| `DELETE` | `/balances-fondo/{id}` | Eliminar saldo | ⬜ |
 
 ### 4.11 Asignaciones de salario
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/asignaciones-salario?anio&mes` | Distribuciones del mes |
-| `POST` | `/asignaciones-salario` | Crear distribución |
-| `PUT` | `/asignaciones-salario/{id}` | Actualizar distribución |
-| `DELETE` | `/asignaciones-salario/{id}` | Eliminar distribución |
+| Método | Ruta | Descripción | Web |
+|---|---|---|---|
+| `GET` | `/asignaciones-salario?anio&mes` | Distribuciones del mes | ⬜ |
+| `POST` | `/asignaciones-salario` | Crear distribución | ⬜ |
+| `PUT` | `/asignaciones-salario/{id}` | Actualizar distribución | ⬜ |
+| `DELETE` | `/asignaciones-salario/{id}` | Eliminar distribución | ⬜ |
 
 ### 4.12 Compromisos
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/compromisos` | Todos los compromisos |
-| `GET` | `/compromisos?mes=` | Compromisos filtrados por mes |
-| `GET` | `/compromisos/{id}` | Obtener compromiso |
-| `POST` | `/compromisos` | Crear compromiso |
-| `PUT` | `/compromisos/{id}` | Actualizar compromiso |
-| `DELETE` | `/compromisos/{id}` | Eliminar compromiso |
+| Método | Ruta | Descripción | Web |
+|---|---|---|---|
+| `GET` | `/compromisos` | Todos los compromisos | ⬜ |
+| `GET` | `/compromisos?mes=&anio=` | Compromisos filtrados por mes y año | ⬜ |
+| `GET` | `/compromisos/{id}` | Obtener compromiso | ⬜ |
+| `GET` | `/compromisos/alertas?anio&mes` | Alertas del mes actual y 3 siguientes | ⬜ |
+| `POST` | `/compromisos` | Crear compromiso | ⬜ |
+| `PUT` | `/compromisos/{id}` | Actualizar compromiso | ⬜ |
+| `DELETE` | `/compromisos/{id}` | Eliminar compromiso | ⬜ |
 
 ---
 
@@ -760,12 +844,13 @@ INSERT INTO cuentas (id, plataforma_id, nombre, tipo, orden) VALUES
 | `GET /plataformas` | Selector de destino en distribución |
 | `GET/POST/DELETE /asignaciones-salario` | CRUD de distribuciones de sueldo |
 | `GET/POST/PUT/DELETE /compromisos` | CRUD de compromisos |
+| `GET /compromisos/alertas?anio&mes` | Alertas de compromisos mes actual + 3 siguientes |
 | `GET /instantaneas?cuentaId` | Buscar snapshot para registrar ingresos |
 | `GET/POST/DELETE /ingresos` | CRUD de ingresos del mes |
 
 **Entidades consumidas:** Platform, SalaryAllocation, Commitment, MonthlySnapshot, IncomeSource
 
-**Nota:** El endpoint `GET /compromisos` también alimenta los avisos que se muestran al planificar la distribución de nómina (mes + 2 siguientes).
+**Nota sobre compromisos:** El endpoint `GET /compromisos/alertas` devuelve un desglose por mes (actual + 3 siguientes) con los compromisos que aplican a cada uno. Se muestra al planificar la distribución de nómina para que el usuario conozca sus obligaciones antes de decidir el destino del salario.
 
 ---
 
