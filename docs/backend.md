@@ -12,7 +12,7 @@ Documentación completa del backend: tablas, endpoints, modelos de datos y su us
 | **Fase 2** | `instantaneas_mensuales` | CRUD completo + upsert | `FinancialDataService` carga desde API | ✅ Migrado |
 | **Fase 3** | `gastos`, `fuentes_ingreso`, `elementos_lista_tareas` | CRUD completo + incrementales | `FinancialDataService` carga/muta desde API | ✅ Migrado |
 | **Fase 4** | `posiciones_inversion`, `operaciones_inversion` | CRUD completo | `FinancialDataService` carga/muta desde API | ✅ Migrado |
-| **Fase 5** | `inversiones_crowdlending`, `fondos_myinvestor`, `balances_fondo` | — | — | ⬜ Pendiente |
+| **Fase 5** | `inversiones_crowdlending`, `fondos_myinvestor`, `balances_fondo` | CRUD completo | `FinancialDataService` carga/muta desde API | ✅ Migrado |
 | **Fase 6** | `asignaciones_salario`, `compromisos` | — | — | ⬜ Pendiente |
 
 ### Pantallas migradas
@@ -708,28 +708,28 @@ INSERT INTO cuentas (id, plataforma_id, nombre, tipo, orden) VALUES
 
 | Método | Ruta | Descripción | Web |
 |---|---|---|---|
-| `GET` | `/crowdlending?plataformaId` | Listar inversiones crowdlending | ⬜ |
-| `POST` | `/crowdlending` | Crear inversión crowdlending | ⬜ |
-| `DELETE` | `/crowdlending/{id}` | Eliminar inversión crowdlending | ⬜ |
+| `GET` | `/crowdlending?plataformaId` | Listar inversiones crowdlending | ✅ |
+| `POST` | `/crowdlending` | Crear inversión crowdlending | ✅ |
+| `DELETE` | `/crowdlending/{id}` | Eliminar inversión crowdlending | ✅ |
 
 ### 4.9 Fondos MyInvestor
 
 | Método | Ruta | Descripción | Web |
 |---|---|---|---|
-| `GET` | `/fondos-myinvestor` | Listar fondos | ⬜ |
-| `GET` | `/fondos-myinvestor/{id}` | Obtener fondo | ⬜ |
-| `POST` | `/fondos-myinvestor` | Crear fondo | ⬜ |
-| `PUT` | `/fondos-myinvestor/{id}` | Actualizar fondo | ⬜ |
-| `DELETE` | `/fondos-myinvestor/{id}` | Eliminar fondo | ⬜ |
+| `GET` | `/fondos-myinvestor` | Listar fondos | ✅ |
+| `GET` | `/fondos-myinvestor/{id}` | Obtener fondo | ✅ |
+| `POST` | `/fondos-myinvestor` | Crear fondo | ✅ |
+| `PUT` | `/fondos-myinvestor/{id}` | Actualizar fondo | ✅ |
+| `DELETE` | `/fondos-myinvestor/{id}` | Eliminar fondo | ✅ |
 
 ### 4.10 Balances de fondo
 
 | Método | Ruta | Descripción | Web |
 |---|---|---|---|
-| `GET` | `/balances-fondo?anio&mes` | Listar saldos del mes | ⬜ |
-| `POST` | `/balances-fondo` | Crear saldo | ⬜ |
-| `PUT` | `/balances-fondo/{id}` | Actualizar saldo | ⬜ |
-| `DELETE` | `/balances-fondo/{id}` | Eliminar saldo | ⬜ |
+| `GET` | `/balances-fondo?anio&mes` | Listar saldos del mes | ✅ |
+| `POST` | `/balances-fondo` | Crear saldo | ✅ |
+| `PUT` | `/balances-fondo/{id}` | Actualizar saldo | ✅ |
+| `DELETE` | `/balances-fondo/{id}` | Eliminar saldo | ✅ |
 
 ### 4.11 Asignaciones de salario
 
@@ -1004,11 +1004,11 @@ Orden recomendado para migrar de datos hardcodeados a llamadas reales. Cada fase
 
 ---
 
-### Fase 5 — Productos especializados (crowdlending + fondos MyInvestor)
+### Fase 5 — Productos especializados (crowdlending + fondos MyInvestor) ✅
 
 **Por qué:** Datos específicos de ciertas plataformas. No bloquean a otras pantallas.
 
-**Endpoints a crear:**
+**Endpoints creados:**
 
 | Método | Ruta | Tipo |
 |---|---|---|
@@ -1025,9 +1025,11 @@ Orden recomendado para migrar de datos hardcodeados a llamadas reales. Cada fase
 | `DELETE` | `/balances-fondo/{id}` | Escritura |
 
 **Cambios en frontend:**
-- `crowdlending` signal → HTTP
-- `myInvestorFunds`, `fundBalances` signals → HTTP
-- CRUD methods → HTTP
+- `crowdlending` signal → HTTP GET en `ngOnInit`
+- `myInvestorFunds`, `fundBalances` signals → HTTP GET en `ngOnInit`
+- `addCrowdlendingInvestment`, `deleteCrowdlendingInvestment` → HTTP
+- `addMyInvestorFund`, `updateMyInvestorFund`, `deleteMyInvestorFund` → HTTP
+- `addFundBalance`, `updateFundBalance`, `deleteFundBalance` → HTTP
 
 **Pantallas afectadas:**
 - **EntryForm (Mintos, Equito, Urbanitae, MyInvestor)** — formularios de crowdlending y fondos funcionales
@@ -1113,5 +1115,5 @@ base        core         gastos/      inversiones   crowdlending   nómina      
 | 3 | PlatformDetail | Fase 4 ✅ |
 | 4 | Trends | Fase 2 ✅ |
 | 5 | TradeLog | Fase 4 ✅ |
-| 6 | EntryForm | Fase 5 (todas las tabs) |
+| 6 | EntryForm | Fase 5 ✅ (todas las tabs) |
 | 7 | Income | Fase 6 |

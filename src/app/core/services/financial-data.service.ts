@@ -63,6 +63,15 @@ export class FinancialDataService implements OnInit {
             .subscribe(holdings => this.holdings.update(arr => [...arr, ...holdings]));
         }
       });
+
+    this.http.get<CrowdlendingInvestment[]>(`${API_URL}/crowdlending`)
+      .subscribe(data => this.crowdlending.set(data));
+
+    this.http.get<MyInvestorFund[]>(`${API_URL}/fondos-myinvestor`)
+      .subscribe(data => this.myInvestorFunds.set(data));
+
+    this.http.get<FundBalance[]>(`${API_URL}/balances-fondo`)
+      .subscribe(data => this.fundBalances.set(data));
   }
 
   getAccountsByPlatform(platformId: string): Account[] {
@@ -325,11 +334,24 @@ export class FinancialDataService implements OnInit {
   }
 
   addCrowdlendingInvestment(investment: CrowdlendingInvestment): void {
-    this.crowdlending.update(arr => [...arr, investment]);
+    this.http.post<CrowdlendingInvestment>(`${API_URL}/crowdlending`, {
+      id: investment.id,
+      platformId: investment.platformId,
+      projectName: investment.projectName,
+      investedAmount: investment.investedAmount,
+      interestRate: investment.interestRate,
+      termMonths: investment.termMonths,
+      startDate: investment.startDate,
+      endDate: investment.endDate,
+      monthlyReturn: investment.monthlyReturn,
+      totalReturned: investment.totalReturned,
+      status: investment.status,
+    }).subscribe(created => this.crowdlending.update(arr => [...arr, created]));
   }
 
   deleteCrowdlendingInvestment(id: string): void {
-    this.crowdlending.update(arr => arr.filter(c => c.id !== id));
+    this.http.delete(`${API_URL}/crowdlending/${id}`)
+      .subscribe(() => this.crowdlending.update(arr => arr.filter(c => c.id !== id)));
   }
 
   deleteSnapshot(id: string): void {
@@ -343,15 +365,24 @@ export class FinancialDataService implements OnInit {
   }
 
   addMyInvestorFund(fund: MyInvestorFund): void {
-    this.myInvestorFunds.update(arr => [...arr, fund]);
+    this.http.post<MyInvestorFund>(`${API_URL}/fondos-myinvestor`, {
+      id: fund.id,
+      code: fund.code,
+      name: fund.name,
+    }).subscribe(created => this.myInvestorFunds.update(arr => [...arr, created]));
   }
 
   updateMyInvestorFund(id: string, data: Partial<MyInvestorFund>): void {
-    this.myInvestorFunds.update(arr => arr.map(f => f.id === id ? { ...f, ...data } : f));
+    this.http.put<MyInvestorFund>(`${API_URL}/fondos-myinvestor/${id}`, {
+      id,
+      code: data.code,
+      name: data.name,
+    }).subscribe(updated => this.myInvestorFunds.update(arr => arr.map(f => f.id === id ? updated : f)));
   }
 
   deleteMyInvestorFund(id: string): void {
-    this.myInvestorFunds.update(arr => arr.filter(f => f.id !== id));
+    this.http.delete(`${API_URL}/fondos-myinvestor/${id}`)
+      .subscribe(() => this.myInvestorFunds.update(arr => arr.filter(f => f.id !== id)));
   }
 
   getFundBalancesByMonth(year: number, month: number): FundBalance[] {
@@ -367,15 +398,28 @@ export class FinancialDataService implements OnInit {
   }
 
   addFundBalance(balance: FundBalance): void {
-    this.fundBalances.update(arr => [...arr, balance]);
+    this.http.post<FundBalance>(`${API_URL}/balances-fondo`, {
+      id: balance.id,
+      fundId: balance.fundId,
+      year: balance.year,
+      month: balance.month,
+      balance: balance.balance,
+    }).subscribe(created => this.fundBalances.update(arr => [...arr, created]));
   }
 
   updateFundBalance(id: string, data: Partial<FundBalance>): void {
-    this.fundBalances.update(arr => arr.map(b => b.id === id ? { ...b, ...data } : b));
+    this.http.put<FundBalance>(`${API_URL}/balances-fondo/${id}`, {
+      id,
+      fundId: data.fundId,
+      year: data.year,
+      month: data.month,
+      balance: data.balance,
+    }).subscribe(updated => this.fundBalances.update(arr => arr.map(b => b.id === id ? updated : b)));
   }
 
   deleteFundBalance(id: string): void {
-    this.fundBalances.update(arr => arr.filter(b => b.id !== id));
+    this.http.delete(`${API_URL}/balances-fondo/${id}`)
+      .subscribe(() => this.fundBalances.update(arr => arr.filter(b => b.id !== id)));
   }
 
 }
