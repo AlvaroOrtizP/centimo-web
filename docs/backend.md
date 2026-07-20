@@ -11,7 +11,7 @@ Documentación completa del backend: tablas, endpoints, modelos de datos y su us
 | **Fase 1** | `plataformas`, `cuentas` | CRUD completo + semilla | `FinancialDataService` carga desde API | ✅ Migrado |
 | **Fase 2** | `instantaneas_mensuales` | CRUD completo + upsert | `FinancialDataService` carga desde API | ✅ Migrado |
 | **Fase 3** | `gastos`, `fuentes_ingreso`, `elementos_lista_tareas` | CRUD completo + incrementales | `FinancialDataService` carga/muta desde API | ✅ Migrado |
-| **Fase 4** | `posiciones_inversion`, `operaciones_inversion` | — | — | ⬜ Pendiente |
+| **Fase 4** | `posiciones_inversion`, `operaciones_inversion` | CRUD completo | `FinancialDataService` carga/muta desde API | ✅ Migrado |
 | **Fase 5** | `inversiones_crowdlending`, `fondos_myinvestor`, `balances_fondo` | — | — | ⬜ Pendiente |
 | **Fase 6** | `asignaciones_salario`, `compromisos` | — | — | ⬜ Pendiente |
 
@@ -21,9 +21,9 @@ Documentación completa del backend: tablas, endpoints, modelos de datos y su us
 |---|---|---|
 | Dashboard | `/` | Fase 2 (platforms, accounts, instantáneas desde API) |
 | Vista Mensual | `/month/:year/:month` | Fase 3 (gastos e ingresos desde API) |
-| Detalle Plataforma | `/platform/:id` | Fase 2 (platforms, accounts, instantáneas desde API) |
+| Detalle Plataforma | `/platform/:id` | Fase 4 (platforms, accounts, instantáneas, posiciones, operaciones desde API) |
 | Tendencias | `/trends` | Fase 2 (platforms, accounts, instantáneas desde API) |
-| Trades | `/trades` | Fase 1 (platforms + accounts desde API) |
+| Trades | `/trades` | Fase 4 (platforms, accounts, operaciones desde API) |
 | Entrada Datos | `/entry/:platformId` | Fase 3 (gastos, ingresos y tareas desde API) |
 | Nómina | `/income` | Fase 2 (platforms, accounts, instantáneas desde API) |
 
@@ -676,17 +676,17 @@ INSERT INTO cuentas (id, plataforma_id, nombre, tipo, orden) VALUES
 
 | Método | Ruta | Descripción | Web |
 |---|---|---|---|
-| `GET` | `/posiciones?instantaneaId` | Listar posiciones de una instantánea | ⬜ |
-| `POST` | `/posiciones` | Crear posición | ⬜ |
-| `DELETE` | `/posiciones/{id}` | Eliminar posición | ⬜ |
+| `GET` | `/posiciones?instantaneaId` | Listar posiciones de una instantánea | ✅ |
+| `POST` | `/posiciones` | Crear posición | ✅ |
+| `DELETE` | `/posiciones/{id}` | Eliminar posición | ✅ |
 
 ### 4.5 Operaciones de inversión
 
 | Método | Ruta | Descripción | Web |
 |---|---|---|---|
-| `GET` | `/operaciones?cuentaId` | Listar operaciones (filtro por cuenta) | ⬜ |
-| `POST` | `/operaciones` | Crear operación | ⬜ |
-| `DELETE` | `/operaciones/{id}` | Eliminar operación | ⬜ |
+| `GET` | `/operaciones?cuentaId` | Listar operaciones (filtro por cuenta) | ✅ |
+| `POST` | `/operaciones` | Crear operación | ✅ |
+| `DELETE` | `/operaciones/{id}` | Eliminar operación | ✅ |
 
 ### 4.6 Gastos
 
@@ -974,11 +974,11 @@ Orden recomendado para migrar de datos hardcodeados a llamadas reales. Cada fase
 
 ---
 
-### Fase 4 — Posiciones e operaciones de inversión
+### Fase 4 — Posiciones e operaciones de inversión ✅
 
 **Por qué:** Datos de inversiones. `posiciones` depende de `instantaneas`, `operaciones` depende de `cuentas`.
 
-**Endpoints a crear:**
+**Endpoints creados:**
 
 | Método | Ruta | Tipo |
 |---|---|---|
@@ -990,9 +990,10 @@ Orden recomendado para migrar de datos hardcodeados a llamadas reales. Cada fase
 | `DELETE` | `/operaciones/{id}` | Escritura |
 
 **Cambios en frontend:**
-- `holdings` signal → HTTP GET
-- `trades` signal → HTTP GET
-- `addHolding`, `deleteHolding`, `addTrade`, `deleteTrade` → HTTP
+- `holdings` signal → HTTP GET por instantánea en `ngOnInit`
+- `trades` signal → HTTP GET por cuenta en `ngOnInit`
+- `addHolding`, `deleteHolding` → HTTP POST/DELETE a `/posiciones`
+- `addTrade`, `deleteTrade` → HTTP POST/DELETE a `/operaciones`
 
 **Pantallas afectadas:**
 - **PlatformDetail** — holdings y trades de la plataforma
@@ -1109,8 +1110,8 @@ base        core         gastos/      inversiones   crowdlending   nómina      
 |---|---|---|
 | 1 | Dashboard | Fase 2 ✅ |
 | 2 | MonthlyView | Fase 3 |
-| 3 | PlatformDetail | Fase 4 |
+| 3 | PlatformDetail | Fase 4 ✅ |
 | 4 | Trends | Fase 2 ✅ |
-| 5 | TradeLog | Fase 4 |
+| 5 | TradeLog | Fase 4 ✅ |
 | 6 | EntryForm | Fase 5 (todas las tabs) |
 | 7 | Income | Fase 6 |

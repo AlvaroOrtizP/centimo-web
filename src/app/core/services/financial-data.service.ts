@@ -43,7 +43,13 @@ export class FinancialDataService implements OnInit {
       .subscribe(data => this.platforms.set(data));
 
     this.http.get<Account[]>(`${API_URL}/cuentas`)
-      .subscribe(data => this.accounts.set(data));
+      .subscribe(accounts => {
+        this.accounts.set(accounts);
+        for (const account of accounts) {
+          this.http.get<InvestmentTransaction[]>(`${API_URL}/operaciones`, { params: { cuentaId: account.id } })
+            .subscribe(trades => this.trades.update(arr => [...arr, ...trades]));
+        }
+      });
 
     this.http.get<MonthlySnapshot[]>(`${API_URL}/instantaneas`)
       .subscribe(data => {
@@ -53,6 +59,8 @@ export class FinancialDataService implements OnInit {
             .subscribe(expenses => this.expenses.update(arr => [...arr, ...expenses]));
           this.http.get<IncomeSource[]>(`${API_URL}/ingresos`, { params: { instantaneaId: snapshot.id } })
             .subscribe(incomes => this.incomes.update(arr => [...arr, ...incomes]));
+          this.http.get<InvestmentHolding[]>(`${API_URL}/posiciones`, { params: { instantaneaId: snapshot.id } })
+            .subscribe(holdings => this.holdings.update(arr => [...arr, ...holdings]));
         }
       });
   }
@@ -209,7 +217,15 @@ export class FinancialDataService implements OnInit {
   }
 
   addHolding(holding: InvestmentHolding): void {
-    this.holdings.update(arr => [...arr, holding]);
+    this.http.post<InvestmentHolding>(`${API_URL}/posiciones`, {
+      id: holding.id,
+      snapshotId: holding.snapshotId,
+      assetName: holding.assetName,
+      assetType: holding.assetType,
+      quantity: holding.quantity,
+      valuePerUnit: holding.valuePerUnit,
+      totalValue: holding.totalValue,
+    }).subscribe(created => this.holdings.update(arr => [...arr, created]));
   }
 
   addExpense(expense: Expense): void {
@@ -284,11 +300,28 @@ export class FinancialDataService implements OnInit {
   }
 
   addTrade(trade: InvestmentTransaction): void {
-    this.trades.update(arr => [...arr, trade]);
+    this.http.post<InvestmentTransaction>(`${API_URL}/operaciones`, {
+      id: trade.id,
+      accountId: trade.accountId,
+      assetName: trade.assetName,
+      assetType: trade.assetType,
+      type: trade.type,
+      buyDate: trade.buyDate,
+      buyQuantity: trade.buyQuantity,
+      buyPricePerUnit: trade.buyPricePerUnit,
+      buyTotalCost: trade.buyTotalCost,
+      sellDate: trade.sellDate,
+      sellPricePerUnit: trade.sellPricePerUnit,
+      sellTotalReceived: trade.sellTotalReceived,
+      sellQuantity: trade.sellQuantity,
+      pnl: trade.pnl,
+      status: trade.status,
+    }).subscribe(created => this.trades.update(arr => [...arr, created]));
   }
 
   deleteTrade(id: string): void {
-    this.trades.update(arr => arr.filter(t => t.id !== id));
+    this.http.delete(`${API_URL}/operaciones/${id}`)
+      .subscribe(() => this.trades.update(arr => arr.filter(t => t.id !== id)));
   }
 
   addCrowdlendingInvestment(investment: CrowdlendingInvestment): void {
@@ -305,7 +338,8 @@ export class FinancialDataService implements OnInit {
   }
 
   deleteHolding(id: string): void {
-    this.holdings.update(arr => arr.filter(h => h.id !== id));
+    this.http.delete(`${API_URL}/posiciones/${id}`)
+      .subscribe(() => this.holdings.update(arr => arr.filter(h => h.id !== id)));
   }
 
   addMyInvestorFund(fund: MyInvestorFund): void {
