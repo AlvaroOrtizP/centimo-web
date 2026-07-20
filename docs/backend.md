@@ -13,7 +13,7 @@ Documentación completa del backend: tablas, endpoints, modelos de datos y su us
 | **Fase 3** | `gastos`, `fuentes_ingreso`, `elementos_lista_tareas` | CRUD completo + incrementales | `FinancialDataService` carga/muta desde API | ✅ Migrado |
 | **Fase 4** | `posiciones_inversion`, `operaciones_inversion` | CRUD completo | `FinancialDataService` carga/muta desde API | ✅ Migrado |
 | **Fase 5** | `inversiones_crowdlending`, `fondos_myinvestor`, `balances_fondo` | CRUD completo | `FinancialDataService` carga/muta desde API | ✅ Migrado |
-| **Fase 6** | `asignaciones_salario`, `compromisos` | — | — | ⬜ Pendiente |
+| **Fase 6** | `asignaciones_salario`, `compromisos` | CRUD completo + alertas | `FinancialDataService` carga/muta desde API | ✅ Migrado |
 
 ### Pantallas migradas
 
@@ -735,22 +735,22 @@ INSERT INTO cuentas (id, plataforma_id, nombre, tipo, orden) VALUES
 
 | Método | Ruta | Descripción | Web |
 |---|---|---|---|
-| `GET` | `/asignaciones-salario?anio&mes` | Distribuciones del mes | ⬜ |
-| `POST` | `/asignaciones-salario` | Crear distribución | ⬜ |
-| `PUT` | `/asignaciones-salario/{id}` | Actualizar distribución | ⬜ |
-| `DELETE` | `/asignaciones-salario/{id}` | Eliminar distribución | ⬜ |
+| `GET` | `/asignaciones-salario?anio&mes` | Distribuciones del mes | ✅ |
+| `POST` | `/asignaciones-salario` | Crear distribución | ✅ |
+| `PUT` | `/asignaciones-salario/{id}` | Actualizar distribución | ✅ |
+| `DELETE` | `/asignaciones-salario/{id}` | Eliminar distribución | ✅ |
 
 ### 4.12 Compromisos
 
 | Método | Ruta | Descripción | Web |
 |---|---|---|---|
-| `GET` | `/compromisos` | Todos los compromisos | ⬜ |
-| `GET` | `/compromisos?mes=&anio=` | Compromisos filtrados por mes y año | ⬜ |
-| `GET` | `/compromisos/{id}` | Obtener compromiso | ⬜ |
-| `GET` | `/compromisos/alertas?anio&mes` | Alertas del mes actual y 3 siguientes | ⬜ |
-| `POST` | `/compromisos` | Crear compromiso | ⬜ |
-| `PUT` | `/compromisos/{id}` | Actualizar compromiso | ⬜ |
-| `DELETE` | `/compromisos/{id}` | Eliminar compromiso | ⬜ |
+| `GET` | `/compromisos` | Todos los compromisos | ✅ |
+| `GET` | `/compromisos?mes=&anio=` | Compromisos filtrados por mes y año | ✅ |
+| `GET` | `/compromisos/{id}` | Obtener compromiso | ✅ |
+| `GET` | `/compromisos/alertas?anio&mes` | Alertas del mes actual y 3 siguientes | ✅ |
+| `POST` | `/compromisos` | Crear compromiso | ✅ |
+| `PUT` | `/compromisos/{id}` | Actualizar compromiso | ✅ |
+| `DELETE` | `/compromisos/{id}` | Eliminar compromiso | ✅ |
 
 ---
 
@@ -1038,11 +1038,11 @@ Orden recomendado para migrar de datos hardcodeados a llamadas reales. Cada fase
 
 ---
 
-### Fase 6 — Planificación (nómina)
+### Fase 6 — Planificación (nómina) ✅
 
 **Por qué:** Entidades independientes. Solo afectan a la pantalla de Nómina.
 
-**Endpoints a crear:**
+**Endpoints creados:**
 
 | Método | Ruta | Tipo |
 |---|---|---|
@@ -1051,12 +1051,13 @@ Orden recomendado para migrar de datos hardcodeados a llamadas reales. Cada fase
 | `PUT` | `/asignaciones-salario/{id}` | Escritura |
 | `DELETE` | `/asignaciones-salario/{id}` | Escritura |
 | `GET` | `/compromisos` | Lectura |
+| `GET` | `/compromisos/alertas?anio&mes` | Alertas |
 | `POST` | `/compromisos` | Escritura |
 | `PUT` | `/compromisos/{id}` | Escritura |
 | `DELETE` | `/compromisos/{id}` | Escritura |
 
 **Cambios en frontend:**
-- `salaryAllocations`, `commitments` signals → HTTP
+- `salaryAllocations`, `commitments` signals → HTTP GET en `ngOnInit`
 - CRUD methods → HTTP
 
 **Pantallas afectadas:**
@@ -1116,4 +1117,4 @@ base        core         gastos/      inversiones   crowdlending   nómina      
 | 4 | Trends | Fase 2 ✅ |
 | 5 | TradeLog | Fase 4 ✅ |
 | 6 | EntryForm | Fase 5 ✅ (todas las tabs) |
-| 7 | Income | Fase 6 |
+| 7 | Income | Fase 6 ✅ |

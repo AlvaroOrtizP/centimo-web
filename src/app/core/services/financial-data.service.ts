@@ -72,6 +72,12 @@ export class FinancialDataService implements OnInit {
 
     this.http.get<FundBalance[]>(`${API_URL}/balances-fondo`)
       .subscribe(data => this.fundBalances.set(data));
+
+    this.http.get<SalaryAllocation[]>(`${API_URL}/asignaciones-salario`)
+      .subscribe(data => this.salaryAllocations.set(data));
+
+    this.http.get<Commitment[]>(`${API_URL}/compromisos`)
+      .subscribe(data => this.commitments.set(data));
   }
 
   getAccountsByPlatform(platformId: string): Account[] {
@@ -273,15 +279,32 @@ export class FinancialDataService implements OnInit {
   }
 
   addSalaryAllocation(allocation: SalaryAllocation): void {
-    this.salaryAllocations.update(arr => [...arr, allocation]);
+    this.http.post<SalaryAllocation>(`${API_URL}/asignaciones-salario`, {
+      id: allocation.id,
+      year: allocation.year,
+      month: allocation.month,
+      platformId: allocation.platformId,
+      type: allocation.type,
+      value: allocation.value,
+      note: allocation.note,
+    }).subscribe(created => this.salaryAllocations.update(arr => [...arr, created]));
   }
 
   updateSalaryAllocation(id: string, data: Partial<SalaryAllocation>): void {
-    this.salaryAllocations.update(arr => arr.map(a => a.id === id ? { ...a, ...data } : a));
+    this.http.put<SalaryAllocation>(`${API_URL}/asignaciones-salario/${id}`, {
+      id,
+      year: data.year,
+      month: data.month,
+      platformId: data.platformId,
+      type: data.type,
+      value: data.value,
+      note: data.note,
+    }).subscribe(updated => this.salaryAllocations.update(arr => arr.map(a => a.id === id ? updated : a)));
   }
 
   deleteSalaryAllocation(id: string): void {
-    this.salaryAllocations.update(arr => arr.filter(a => a.id !== id));
+    this.http.delete(`${API_URL}/asignaciones-salario/${id}`)
+      .subscribe(() => this.salaryAllocations.update(arr => arr.filter(a => a.id !== id)));
   }
 
   getCommitmentsByMonth(month: number): Commitment[] {
@@ -297,15 +320,34 @@ export class FinancialDataService implements OnInit {
   }
 
   addCommitment(commitment: Commitment): void {
-    this.commitments.update(arr => [...arr, commitment]);
+    this.http.post<Commitment>(`${API_URL}/compromisos`, {
+      id: commitment.id,
+      description: commitment.description,
+      month: commitment.month,
+      year: commitment.year,
+      type: commitment.type,
+      category: commitment.category,
+      amount: commitment.amount,
+      isEstimated: commitment.isEstimated,
+    }).subscribe(created => this.commitments.update(arr => [...arr, created]));
   }
 
   updateCommitment(id: string, data: Partial<Commitment>): void {
-    this.commitments.update(arr => arr.map(a => a.id === id ? { ...a, ...data } : a));
+    this.http.put<Commitment>(`${API_URL}/compromisos/${id}`, {
+      id,
+      description: data.description,
+      month: data.month,
+      year: data.year,
+      type: data.type,
+      category: data.category,
+      amount: data.amount,
+      isEstimated: data.isEstimated,
+    }).subscribe(updated => this.commitments.update(arr => arr.map(a => a.id === id ? updated : a)));
   }
 
   deleteCommitment(id: string): void {
-    this.commitments.update(arr => arr.filter(a => a.id !== id));
+    this.http.delete(`${API_URL}/compromisos/${id}`)
+      .subscribe(() => this.commitments.update(arr => arr.filter(a => a.id !== id)));
   }
 
   addTrade(trade: InvestmentTransaction): void {
