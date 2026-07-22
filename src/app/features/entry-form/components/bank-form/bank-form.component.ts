@@ -160,7 +160,7 @@ export class BankFormComponent {
 
     const existing = this.service.getSnapshot(acc.id, y, m);
     const incomeDelta = existing ? totalIncome - existing.income : totalIncome;
-    this.service.upsertSnapshot(acc.id, y, m, this.balance(), incomeDelta, totalExpenses);
+    this.service.upsertSnapshot(acc.id, y, m, this.balance(), incomeDelta, totalExpenses).subscribe();
 
     for (const inc of this.incomes()) {
       this.service.addIncome({
@@ -179,7 +179,7 @@ export class BankFormComponent {
         category: exp.category,
         amount: exp.amount,
         description: exp.description,
-      });
+      }).subscribe();
     }
 
     this.incomes.set([]);

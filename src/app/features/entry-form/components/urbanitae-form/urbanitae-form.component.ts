@@ -296,7 +296,7 @@ export class UrbanitaeFormComponent {
     const accId = this.accountId();
     if (!accId) { return; }
 
-    this.service.upsertSnapshot(accId, this.localYear(), this.localMonth(), bal, 0);
+    this.service.upsertSnapshot(accId, this.localYear(), this.localMonth(), bal, 0).subscribe();
 
     this.savedBalance.set(true);
     setTimeout(() => this.savedBalance.set(false), 2000);

@@ -252,7 +252,7 @@ export class B100FormComponent {
     if (bal === null) { return; }
 
     const inter = this.savingsInterest() ?? 0;
-    this.service.upsertSnapshot(this.SAVINGS_ID, this.localYear(), this.localMonth(), bal, inter);
+    this.service.upsertSnapshot(this.SAVINGS_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
 
     this.savingsInterest.set(null);
     this.savedSavings.set(true);
@@ -264,7 +264,7 @@ export class B100FormComponent {
     if (bal === null) { return; }
 
     const inter = this.investmentInterest() ?? 0;
-    this.service.upsertSnapshot(this.INVESTMENT_ID, this.localYear(), this.localMonth(), bal, inter);
+    this.service.upsertSnapshot(this.INVESTMENT_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
 
     this.investmentInterest.set(null);
     this.savedInvestment.set(true);

@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 
 import { SnapshotsService } from '../../api/generated/api/snapshots.service';
 import { IncomesService } from '../../api/generated/api/incomes.service';
+import { ExpensesService } from '../../api/generated/api/expenses.service';
 import { NominaService } from '../../api/generated/api/nomina.service';
 import { SnapshotResponse } from '../../api/generated/model/snapshotResponse';
 import { SnapshotUpsert } from '../../api/generated/model/snapshotUpsert';
@@ -12,6 +13,7 @@ import { NominaCreate } from '../../api/generated/model/nominaCreate';
 import { NominaResponse } from '../../api/generated/model/nominaResponse';
 import { MonthlySnapshotCreate } from '../../api/generated/model/monthlySnapshotCreate';
 import { IncomeSourceCreate } from '../../api/generated/model/incomeSourceCreate';
+import { ExpenseCreate } from '../../api/generated/model/expenseCreate';
 
 import { Platform } from '../../models/platform';
 import { Account } from '../../models/account';
@@ -34,6 +36,7 @@ import { Commitment } from '../../models/commitment';
 export class FinancialDataService {
   private readonly snapshotsService = inject(SnapshotsService);
   private readonly incomesService = inject(IncomesService);
+  private readonly expensesService = inject(ExpensesService);
   private readonly nominaService = inject(NominaService);
 
   readonly platforms = signal<Platform[]>([]);
@@ -220,7 +223,7 @@ export class FinancialDataService {
     this.snapshots.update(arr => arr.map(s => s.id === id ? { ...s, ...data } : s));
   }
 
-  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number): void {
+  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number): Observable<SnapshotResponse> {
     const body: SnapshotUpsert = {
       accountId,
       year,
@@ -229,28 +232,31 @@ export class FinancialDataService {
       incomeDelta,
       expenses,
     };
-    this.snapshotsService.upsertSnapshot(body).subscribe(result => {
-      const snapshot: MonthlySnapshot = {
-        id: result.id,
-        accountId: result.accountId,
-        year: result.year,
-        month: result.month,
-        balance: result.balance,
-        income: result.income,
-        expenses: result.expenses,
-        contribution: result.contribution ?? undefined,
-        notes: result.notes ?? undefined,
-        checklistItems: result.checklistItems ?? undefined,
-      };
-      const existing = this.getSnapshot(accountId, year, month);
-      if (existing) {
-        this.snapshots.update(arr => arr.map(s =>
-          s.id === existing.id ? snapshot : s
-        ));
-      } else {
-        this.snapshots.update(arr => [...arr, snapshot]);
-      }
-    });
+    return this.snapshotsService.upsertSnapshot(body).pipe(
+      map(result => {
+        const snapshot: MonthlySnapshot = {
+          id: result.id,
+          accountId: result.accountId,
+          year: result.year,
+          month: result.month,
+          balance: result.balance,
+          income: result.income,
+          expenses: result.expenses,
+          contribution: result.contribution ?? undefined,
+          notes: result.notes ?? undefined,
+          checklistItems: result.checklistItems ?? undefined,
+        };
+        const existing = this.getSnapshot(accountId, year, month);
+        if (existing) {
+          this.snapshots.update(arr => arr.map(s =>
+            s.id === existing.id ? snapshot : s
+          ));
+        } else {
+          this.snapshots.update(arr => [...arr, snapshot]);
+        }
+        return result;
+      }),
+    );
   }
 
   toggleChecklistItem(snapshotId: string, itemId: string): void {
@@ -271,14 +277,34 @@ export class FinancialDataService {
     this.holdings.update(arr => [...arr, holding]);
   }
 
-  addExpense(expense: Expense): void {
-    // TODO: this.http.post<Expense>(`${API_URL}/gastos`, { ... }).subscribe(created => this.expenses.update(arr => [...arr, created]));
-    this.expenses.update(arr => [...arr, expense]);
+  addExpense(expense: Expense): Observable<Expense> {
+    const create: ExpenseCreate = {
+      snapshotId: expense.snapshotId,
+      category: expense.category,
+      amount: expense.amount,
+      date: expense.date,
+      description: expense.description ?? null,
+    };
+    return this.expensesService.createExpense(create).pipe(
+      map(created => {
+        const result: Expense = {
+          id: created.id,
+          snapshotId: created.snapshotId,
+          category: created.category,
+          amount: created.amount,
+          date: created.date,
+          description: created.description ?? undefined,
+        };
+        this.expenses.update(arr => [...arr, result]);
+        return result;
+      }),
+    );
   }
 
-  deleteExpense(id: string): void {
-    // TODO: this.http.delete(`${API_URL}/gastos/${id}`).subscribe(() => ...);
-    this.expenses.update(arr => arr.filter(e => e.id !== id));
+  deleteExpense(id: string, snapshotId: string): void {
+    this.expensesService.deleteExpense(id, snapshotId).subscribe(() => {
+      this.expenses.update(arr => arr.filter(e => e.id !== id));
+    });
   }
 
   addIncome(income: IncomeSource): void {

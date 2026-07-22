@@ -1,8 +1,8 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { switchMap } from 'rxjs/operators';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
-import { EXPENSES_PLATFORM_ID } from '../../../../core/constants/platform.constants';
 import { Account } from '../../../../models/account';
 import { ExpenseCategory } from '../../../../models/expense-category';
 import { Expense } from '../../../../models/expense';
@@ -95,9 +95,7 @@ export class ExpenseFormComponent {
   readonly month = input.required<number>();
 
   protected readonly accountId = computed(() => {
-    const accs = this.accounts();
-    const gastos = accs.find(a => a.platformId === EXPENSES_PLATFORM_ID);
-    return gastos?.id ?? accs[0]?.id ?? '';
+    return 'bbva-gasto';
   });
 
   protected readonly snapshotId = computed(() => {
@@ -125,39 +123,26 @@ export class ExpenseFormComponent {
     const m = this.month();
     const snapshotId = this.snapshotId();
 
-    const existing = this.service.getSnapshot(accId, y, m);
-    if (!existing) {
-      this.service.addSnapshot({
-        id: snapshotId,
-        accountId: accId,
-        year: y,
-        month: m,
-        balance: 0,
-        income: 0,
-        expenses: this.amount(),
-      });
-    } else {
-      this.service.updateSnapshot(existing.id, { expenses: existing.expenses + this.amount() });
-    }
-
-    this.service.addExpense({
-      id: `exp-${snapshotId}-${Date.now()}`,
-      snapshotId,
-      category: this.category() as ExpenseCategory,
-      amount: this.amount(),
-      date: this.date(),
-      description: this.description() || undefined,
+    this.service.upsertSnapshot(accId, y, m, 0, 0, this.amount()).pipe(
+      switchMap(() => this.service.addExpense({
+        id: `exp-${snapshotId}-${Date.now()}`,
+        snapshotId,
+        category: this.category() as ExpenseCategory,
+        amount: this.amount(),
+        date: this.date(),
+        description: this.description() || undefined,
+      })),
+    ).subscribe(() => {
+      this.category.set('');
+      this.amount.set(0);
+      this.date.set('');
+      this.description.set('');
+      this.saved.set(true);
+      setTimeout(() => this.saved.set(false), 2000);
     });
-
-    this.category.set('');
-    this.amount.set(0);
-    this.date.set('');
-    this.description.set('');
-    this.saved.set(true);
-    setTimeout(() => this.saved.set(false), 2000);
   }
 
   protected deleteExpense(exp: Expense): void {
-    this.service.deleteExpense(exp.id);
+    this.service.deleteExpense(exp.id, this.snapshotId());
   }
 }

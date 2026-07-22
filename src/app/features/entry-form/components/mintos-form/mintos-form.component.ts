@@ -144,7 +144,7 @@ export class MintosFormComponent {
     if (bal === null) { return; }
 
     const contrib = this.contribution() ?? 0;
-    this.service.upsertSnapshot(this.MINTOS_ACCOUNT_ID, this.localYear(), this.localMonth(), bal, contrib);
+    this.service.upsertSnapshot(this.MINTOS_ACCOUNT_ID, this.localYear(), this.localMonth(), bal, contrib).subscribe();
 
     this.contribution.set(null);
     this.saved.set(true);

@@ -155,7 +155,7 @@ export class RevolutFormComponent {
     if (bal === null) { return; }
 
     const inter = this.interest() ?? 0;
-    this.service.upsertSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth(), bal, inter);
+    this.service.upsertSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
 
     this.interest.set(null);
     this.saved.set(true);

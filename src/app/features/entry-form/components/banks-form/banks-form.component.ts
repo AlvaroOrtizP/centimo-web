@@ -198,7 +198,7 @@ export class BanksFormComponent {
     const bal = this.bbvaBalance();
     if (bal === null) { return; }
 
-    this.service.upsertSnapshot(this.BBVA_ID, this.localYear(), this.localMonth(), bal, 0);
+    this.service.upsertSnapshot(this.BBVA_ID, this.localYear(), this.localMonth(), bal, 0).subscribe();
 
     this.savedBBVA.set(true);
     setTimeout(() => this.savedBBVA.set(false), 2000);
@@ -208,7 +208,7 @@ export class BanksFormComponent {
     const bal = this.caixaBalance();
     if (bal === null) { return; }
 
-    this.service.upsertSnapshot(this.CAIXA_ID, this.localYear(), this.localMonth(), bal, 0);
+    this.service.upsertSnapshot(this.CAIXA_ID, this.localYear(), this.localMonth(), bal, 0).subscribe();
 
     this.savedCaixa.set(true);
     setTimeout(() => this.savedCaixa.set(false), 2000);
