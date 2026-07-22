@@ -66,6 +66,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Platform'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
     post:
       tags: [Platforms]
       operationId: createPlatform
@@ -83,6 +87,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Platform'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
   /platforms/{id}:
     parameters:
@@ -150,6 +158,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Account'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
     post:
       tags: [Accounts]
       operationId: createAccount
@@ -167,6 +179,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Account'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
   /accounts/{id}:
     parameters:
@@ -241,6 +257,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SalaryAllocation'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
     post:
       tags: [SalaryAllocations]
       operationId: createSalaryAllocation
@@ -258,6 +278,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SalaryAllocation'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
   /salary-allocations/{id}:
     parameters:
@@ -316,6 +340,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Commitment'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
     post:
       tags: [Commitments]
       operationId: createCommitment
@@ -333,6 +361,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Commitment'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
   /commitments/{id}:
     parameters:
@@ -405,6 +437,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Alert'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
     post:
       tags: [Alerts]
       operationId: createAlert
@@ -422,6 +458,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Alert'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
   /alerts/{id}:
     parameters:
@@ -473,35 +513,36 @@ paths:
   # ════════════════════════════════════════════
 
   # ── Snapshots ──
-  /snapshots:
+  /snapshots/accounts/{year}/{month}:
     get:
-      tags: [Snapshots]
-      operationId: listSnapshots
-      summary: Listar snapshots
+      tags: [ Snapshots ]
+      operationId: getSnapshotByAccountAndDate
+      summary: Obtener la instantánea única de una cuenta en un mes concreto
       parameters:
         - name: year
-          in: query
+          in: path
+          required: true
           schema:
             type: integer
+          example: 2026
         - name: month
-          in: query
+          in: path
+          required: true
           schema:
             type: integer
             minimum: 1
             maximum: 12
-        - name: accountId
-          in: query
-          schema:
-            type: string
+          example: 7
       responses:
         '200':
-          description: Lista de snapshots
+          description: Instantánea encontrada
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MonthlySnapshot'
+                $ref: '#/components/schemas/SnapshotResponse'
+        '404':
+          description: No existe instantánea para esa cuenta en el mes indicado
+  /snapshots:
     post:
       tags: [Snapshots]
       operationId: createSnapshot
@@ -518,7 +559,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MonthlySnapshot'
+                $ref: '#/components/schemas/SnapshotResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
   /snapshots/{id}:
     parameters:
@@ -533,7 +578,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MonthlySnapshot'
+                $ref: '#/components/schemas/SnapshotResponse'
         '404':
           $ref: '#/components/responses/NotFound'
     put:
@@ -552,7 +597,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MonthlySnapshot'
+                $ref: '#/components/schemas/SnapshotResponse'
         '404':
           $ref: '#/components/responses/NotFound'
     delete:
@@ -585,7 +630,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MonthlySnapshot'
+                $ref: '#/components/schemas/SnapshotResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
   # ── Expenses ──
   /expenses:
@@ -608,6 +657,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Expense'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
     post:
       tags: [Expenses]
       operationId: createExpense
@@ -625,6 +678,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Expense'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
   /expenses/{id}:
     parameters:
@@ -669,6 +726,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/IncomeSource'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
     post:
       tags: [Incomes]
       operationId: createIncome
@@ -686,6 +747,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/IncomeSource'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
   /incomes/{id}:
     parameters:
@@ -732,7 +797,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MonthlySnapshot'
+                $ref: '#/components/schemas/SnapshotResponse'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -761,6 +826,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/InvestmentHolding'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
     post:
       tags: [Holdings]
       operationId: createHolding
@@ -778,6 +847,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InvestmentHolding'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
   /holdings/{id}:
     parameters:
@@ -813,6 +886,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/InvestmentTransaction'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
     post:
       tags: [Trades]
       operationId: createTrade
@@ -830,6 +907,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InvestmentTransaction'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
   /trades/{id}:
     parameters:
@@ -868,6 +949,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/CrowdlendingInvestment'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
     post:
       tags: [Crowdlending]
       operationId: createCrowdlending
@@ -885,6 +970,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CrowdlendingInvestment'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
   /crowdlending/{id}:
     parameters:
@@ -914,6 +1003,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/MyInvestorFund'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
     post:
       tags: [MyInvestorFunds]
       operationId: createMyInvestorFund
@@ -931,6 +1024,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MyInvestorFund'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
   /myinvestor-funds/{id}:
     parameters:
@@ -1005,6 +1102,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/FundBalance'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
     post:
       tags: [FundBalances]
       operationId: createFundBalance
@@ -1022,6 +1123,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FundBalance'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
   /fund-balances/{id}:
     parameters:
@@ -1087,6 +1192,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MonthlySummary'
+        '400':
+          description: Parámetros de fecha inválidos
+        '404':
+          description: Error generico 404
 
   /summaries/available-months:
     get:
@@ -1103,6 +1212,10 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/YearMonth'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
 
 # ════════════════════════════════════════════
 #  COMPONENTES REUTILIZABLES
@@ -1525,7 +1638,7 @@ components:
           type: integer
 
     # ═══════════ MonthlySnapshot ═══════════
-    MonthlySnapshot:
+    SnapshotResponse:
       type: object
       required: [id, accountId, year, month, balance, income, expenses]
       properties:
@@ -1541,16 +1654,16 @@ components:
           maximum: 12
         balance:
           type: number
-          format: float
+          format: decimal
         income:
           type: number
-          format: float
+          format: decimal
         expenses:
           type: number
-          format: float
+          format: decimal
         contribution:
           type: number
-          format: float
+          format: decimal
           nullable: true
         notes:
           type: string
@@ -1879,7 +1992,7 @@ components:
         interestRate:
           type: number
           format: float
-          description: Tipo de interés (ej: 8.5 = 8.5%)
+          description: Tipo de interes
         termMonths:
           type: integer
         startDate:
