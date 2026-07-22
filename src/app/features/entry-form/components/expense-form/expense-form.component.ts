@@ -123,7 +123,7 @@ export class ExpenseFormComponent {
     const m = this.month();
     const snapshotId = this.snapshotId();
 
-    this.service.upsertSnapshot(accId, y, m, 0, 0, this.amount()).pipe(
+    this.service.upsertSnapshot(accId, y, m, 0, 0).pipe(
       switchMap(() => this.service.addExpense({
         id: `exp-${snapshotId}-${Date.now()}`,
         snapshotId,
