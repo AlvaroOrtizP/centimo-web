@@ -1,5 +1,5 @@
-import { Injectable, inject, signal, computed, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal, computed } from '@angular/core';
+// import { HttpClient } from '@angular/common/http';
 
 import { Platform } from '../../models/platform';
 import { Account } from '../../models/account';
@@ -16,11 +16,11 @@ import { MonthlySummary } from '../../models/monthly-summary';
 import { SalaryAllocation } from '../../models/salary-allocation';
 import { Commitment } from '../../models/commitment';
 
-const API_URL = 'http://localhost:8080';
+// const API_URL = 'http://localhost:8080';
 
 @Injectable({ providedIn: 'root' })
-export class FinancialDataService implements OnInit {
-  private readonly http = inject(HttpClient);
+export class FinancialDataService {
+  // private readonly http = inject(HttpClient);
 
   readonly platforms = signal<Platform[]>([]);
   readonly accounts = signal<Account[]>([]);
@@ -38,47 +38,48 @@ export class FinancialDataService implements OnInit {
   readonly currentYear = signal(new Date().getFullYear());
   readonly currentMonth = signal(new Date().getMonth() + 1);
 
-  ngOnInit(): void {
-    this.http.get<Platform[]>(`${API_URL}/plataformas`)
-      .subscribe(data => this.platforms.set(data));
-
-    this.http.get<Account[]>(`${API_URL}/cuentas`)
-      .subscribe(accounts => {
-        this.accounts.set(accounts);
-        for (const account of accounts) {
-          this.http.get<InvestmentTransaction[]>(`${API_URL}/operaciones`, { params: { cuentaId: account.id } })
-            .subscribe(trades => this.trades.update(arr => [...arr, ...trades]));
-        }
-      });
-
-    this.http.get<MonthlySnapshot[]>(`${API_URL}/instantaneas`)
-      .subscribe(data => {
-        this.snapshots.set(data);
-        for (const snapshot of data) {
-          this.http.get<Expense[]>(`${API_URL}/gastos`, { params: { instantaneaId: snapshot.id } })
-            .subscribe(expenses => this.expenses.update(arr => [...arr, ...expenses]));
-          this.http.get<IncomeSource[]>(`${API_URL}/ingresos`, { params: { instantaneaId: snapshot.id } })
-            .subscribe(incomes => this.incomes.update(arr => [...arr, ...incomes]));
-          this.http.get<InvestmentHolding[]>(`${API_URL}/posiciones`, { params: { instantaneaId: snapshot.id } })
-            .subscribe(holdings => this.holdings.update(arr => [...arr, ...holdings]));
-        }
-      });
-
-    this.http.get<CrowdlendingInvestment[]>(`${API_URL}/crowdlending`)
-      .subscribe(data => this.crowdlending.set(data));
-
-    this.http.get<MyInvestorFund[]>(`${API_URL}/fondos-myinvestor`)
-      .subscribe(data => this.myInvestorFunds.set(data));
-
-    this.http.get<FundBalance[]>(`${API_URL}/balances-fondo`)
-      .subscribe(data => this.fundBalances.set(data));
-
-    this.http.get<SalaryAllocation[]>(`${API_URL}/asignaciones-salario`)
-      .subscribe(data => this.salaryAllocations.set(data));
-
-    this.http.get<Commitment[]>(`${API_URL}/compromisos`)
-      .subscribe(data => this.commitments.set(data));
-  }
+  // TODO: descomentar llamadas al backend una a una
+  // ngOnInit(): void {
+  //   this.http.get<Platform[]>(`${API_URL}/plataformas`)
+  //     .subscribe(data => this.platforms.set(data));
+  //
+  //   this.http.get<Account[]>(`${API_URL}/cuentas`)
+  //     .subscribe(accounts => {
+  //       this.accounts.set(accounts);
+  //       for (const account of accounts) {
+  //         this.http.get<InvestmentTransaction[]>(`${API_URL}/operaciones`, { params: { cuentaId: account.id } })
+  //           .subscribe(trades => this.trades.update(arr => [...arr, ...trades]));
+  //       }
+  //     });
+  //
+  //   this.http.get<MonthlySnapshot[]>(`${API_URL}/instantaneas`)
+  //     .subscribe(data => {
+  //       this.snapshots.set(data);
+  //       for (const snapshot of data) {
+  //         this.http.get<Expense[]>(`${API_URL}/gastos`, { params: { instantaneaId: snapshot.id } })
+  //           .subscribe(expenses => this.expenses.update(arr => [...arr, ...expenses]));
+  //         this.http.get<IncomeSource[]>(`${API_URL}/ingresos`, { params: { instantaneaId: snapshot.id } })
+  //           .subscribe(incomes => this.incomes.update(arr => [...arr, ...incomes]));
+  //         this.http.get<InvestmentHolding[]>(`${API_URL}/posiciones`, { params: { instantaneaId: snapshot.id } })
+  //           .subscribe(holdings => this.holdings.update(arr => [...arr, ...holdings]));
+  //       }
+  //     });
+  //
+  //   this.http.get<CrowdlendingInvestment[]>(`${API_URL}/crowdlending`)
+  //     .subscribe(data => this.crowdlending.set(data));
+  //
+  //   this.http.get<MyInvestorFund[]>(`${API_URL}/fondos-myinvestor`)
+  //     .subscribe(data => this.myInvestorFunds.set(data));
+  //
+  //   this.http.get<FundBalance[]>(`${API_URL}/balances-fondo`)
+  //     .subscribe(data => this.fundBalances.set(data));
+  //
+  //   this.http.get<SalaryAllocation[]>(`${API_URL}/asignaciones-salario`)
+  //     .subscribe(data => this.salaryAllocations.set(data));
+  //
+  //   this.http.get<Commitment[]>(`${API_URL}/compromisos`)
+  //     .subscribe(data => this.commitments.set(data));
+  // }
 
   getAccountsByPlatform(platformId: string): Account[] {
     return this.accounts().filter(a => a.platformId === platformId);
@@ -175,103 +176,74 @@ export class FinancialDataService implements OnInit {
   }
 
   addSnapshot(snapshot: MonthlySnapshot): void {
-    this.http.post<MonthlySnapshot>(`${API_URL}/instantaneas`, {
-      id: snapshot.id,
-      accountId: snapshot.accountId,
-      year: snapshot.year,
-      month: snapshot.month,
-      balance: snapshot.balance,
-      income: snapshot.income,
-      expenses: snapshot.expenses,
-      contribution: snapshot.contribution,
-      notes: snapshot.notes,
-    }).subscribe(created => this.snapshots.update(arr => [...arr, created]));
+    // TODO: this.http.post<MonthlySnapshot>(`${API_URL}/instantaneas`, { ... }).subscribe(created => this.snapshots.update(arr => [...arr, created]));
+    this.snapshots.update(arr => [...arr, snapshot]);
   }
 
   updateSnapshot(id: string, data: Partial<MonthlySnapshot>): void {
-    this.http.put<MonthlySnapshot>(`${API_URL}/instantaneas/${id}`, {
-      balance: data.balance,
-      income: data.income,
-      expenses: data.expenses,
-      contribution: data.contribution,
-      notes: data.notes,
-    }).subscribe(updated => this.snapshots.update(arr => arr.map(s => s.id === id ? updated : s)));
+    // TODO: this.http.put<MonthlySnapshot>(`${API_URL}/instantaneas/${id}`, { ... }).subscribe(updated => ...);
+    this.snapshots.update(arr => arr.map(s => s.id === id ? { ...s, ...data } : s));
   }
 
   upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number): void {
-    this.http.post<MonthlySnapshot>(`${API_URL}/instantaneas/upsert`, {
-      accountId,
-      year,
-      month,
-      balance,
-      deltaIncome: incomeDelta,
-      expenses,
-    }).subscribe(result => {
-      const existing = this.getSnapshot(accountId, year, month);
-      if (existing) {
-        this.snapshots.update(arr => arr.map(s => s.id === result.id ? result : s));
-      } else {
-        this.snapshots.update(arr => [...arr, result]);
-      }
-    });
+    // TODO: this.http.post<MonthlySnapshot>(`${API_URL}/instantaneas/upsert`, { ... }).subscribe(result => ...);
+    const existing = this.getSnapshot(accountId, year, month);
+    if (existing) {
+      this.snapshots.update(arr => arr.map(s =>
+        s.id === existing.id ? { ...s, balance, income: s.income + incomeDelta, ...(expenses !== undefined ? { expenses } : {}) } : s
+      ));
+    } else {
+      const newSnapshot: MonthlySnapshot = {
+        id: crypto.randomUUID(),
+        accountId,
+        year,
+        month,
+        balance,
+        income: incomeDelta,
+        expenses: expenses ?? 0,
+        contribution: 0,
+        notes: '',
+      };
+      this.snapshots.update(arr => [...arr, newSnapshot]);
+    }
   }
 
   toggleChecklistItem(snapshotId: string, itemId: string): void {
-    this.http.post<any>(`${API_URL}/instantaneas/${snapshotId}/tareas/${itemId}/alternar`, {})
-      .subscribe(updated => {
-        this.snapshots.update(arr => arr.map(s => {
-          if (s.id !== snapshotId || !s.checklistItems) { return s; }
-          return {
-            ...s,
-            checklistItems: s.checklistItems.map(item =>
-              item.id === itemId ? { ...item, checked: updated.marcado } : item
-            ),
-          };
-        }));
-      });
+    // TODO: this.http.post<any>(`${API_URL}/instantaneas/${snapshotId}/tareas/${itemId}/alternar`, {}).subscribe(updated => ...);
+    this.snapshots.update(arr => arr.map(s => {
+      if (s.id !== snapshotId || !s.checklistItems) { return s; }
+      return {
+        ...s,
+        checklistItems: s.checklistItems.map(item =>
+          item.id === itemId ? { ...item, checked: !item.checked } : item
+        ),
+      };
+    }));
   }
 
   addHolding(holding: InvestmentHolding): void {
-    this.http.post<InvestmentHolding>(`${API_URL}/posiciones`, {
-      id: holding.id,
-      snapshotId: holding.snapshotId,
-      assetName: holding.assetName,
-      assetType: holding.assetType,
-      quantity: holding.quantity,
-      valuePerUnit: holding.valuePerUnit,
-      totalValue: holding.totalValue,
-    }).subscribe(created => this.holdings.update(arr => [...arr, created]));
+    // TODO: this.http.post<InvestmentHolding>(`${API_URL}/posiciones`, { ... }).subscribe(created => this.holdings.update(arr => [...arr, created]));
+    this.holdings.update(arr => [...arr, holding]);
   }
 
   addExpense(expense: Expense): void {
-    this.http.post<Expense>(`${API_URL}/gastos`, {
-      id: expense.id,
-      snapshotId: expense.snapshotId,
-      category: expense.category,
-      amount: expense.amount,
-      date: expense.date,
-      description: expense.description,
-    }).subscribe(created => this.expenses.update(arr => [...arr, created]));
+    // TODO: this.http.post<Expense>(`${API_URL}/gastos`, { ... }).subscribe(created => this.expenses.update(arr => [...arr, created]));
+    this.expenses.update(arr => [...arr, expense]);
   }
 
   deleteExpense(id: string): void {
-    this.http.delete(`${API_URL}/gastos/${id}`)
-      .subscribe(() => this.expenses.update(arr => arr.filter(e => e.id !== id)));
+    // TODO: this.http.delete(`${API_URL}/gastos/${id}`).subscribe(() => ...);
+    this.expenses.update(arr => arr.filter(e => e.id !== id));
   }
 
   addIncome(income: IncomeSource): void {
-    this.http.post<IncomeSource>(`${API_URL}/ingresos`, {
-      id: income.id,
-      snapshotId: income.snapshotId,
-      source: income.source,
-      description: income.description,
-      amount: income.amount,
-    }).subscribe(created => this.incomes.update(arr => [...arr, created]));
+    // TODO: this.http.post<IncomeSource>(`${API_URL}/ingresos`, { ... }).subscribe(created => this.incomes.update(arr => [...arr, created]));
+    this.incomes.update(arr => [...arr, income]);
   }
 
   deleteIncome(id: string): void {
-    this.http.delete(`${API_URL}/ingresos/${id}`)
-      .subscribe(() => this.incomes.update(arr => arr.filter(i => i.id !== id)));
+    // TODO: this.http.delete(`${API_URL}/ingresos/${id}`).subscribe(() => ...);
+    this.incomes.update(arr => arr.filter(i => i.id !== id));
   }
 
   getSalaryAllocationsByMonth(year: number, month: number): SalaryAllocation[] {
@@ -279,32 +251,18 @@ export class FinancialDataService implements OnInit {
   }
 
   addSalaryAllocation(allocation: SalaryAllocation): void {
-    this.http.post<SalaryAllocation>(`${API_URL}/asignaciones-salario`, {
-      id: allocation.id,
-      year: allocation.year,
-      month: allocation.month,
-      platformId: allocation.platformId,
-      type: allocation.type,
-      value: allocation.value,
-      note: allocation.note,
-    }).subscribe(created => this.salaryAllocations.update(arr => [...arr, created]));
+    // TODO: this.http.post<SalaryAllocation>(`${API_URL}/asignaciones-salario`, { ... }).subscribe(created => this.salaryAllocations.update(arr => [...arr, created]));
+    this.salaryAllocations.update(arr => [...arr, allocation]);
   }
 
   updateSalaryAllocation(id: string, data: Partial<SalaryAllocation>): void {
-    this.http.put<SalaryAllocation>(`${API_URL}/asignaciones-salario/${id}`, {
-      id,
-      year: data.year,
-      month: data.month,
-      platformId: data.platformId,
-      type: data.type,
-      value: data.value,
-      note: data.note,
-    }).subscribe(updated => this.salaryAllocations.update(arr => arr.map(a => a.id === id ? updated : a)));
+    // TODO: this.http.put<SalaryAllocation>(`${API_URL}/asignaciones-salario/${id}`, { ... }).subscribe(updated => ...);
+    this.salaryAllocations.update(arr => arr.map(a => a.id === id ? { ...a, ...data } : a));
   }
 
   deleteSalaryAllocation(id: string): void {
-    this.http.delete(`${API_URL}/asignaciones-salario/${id}`)
-      .subscribe(() => this.salaryAllocations.update(arr => arr.filter(a => a.id !== id)));
+    // TODO: this.http.delete(`${API_URL}/asignaciones-salario/${id}`).subscribe(() => ...);
+    this.salaryAllocations.update(arr => arr.filter(a => a.id !== id));
   }
 
   getCommitmentsByMonth(month: number): Commitment[] {
@@ -320,111 +278,63 @@ export class FinancialDataService implements OnInit {
   }
 
   addCommitment(commitment: Commitment): void {
-    this.http.post<Commitment>(`${API_URL}/compromisos`, {
-      id: commitment.id,
-      description: commitment.description,
-      month: commitment.month,
-      year: commitment.year,
-      type: commitment.type,
-      category: commitment.category,
-      amount: commitment.amount,
-      isEstimated: commitment.isEstimated,
-    }).subscribe(created => this.commitments.update(arr => [...arr, created]));
+    // TODO: this.http.post<Commitment>(`${API_URL}/compromisos`, { ... }).subscribe(created => this.commitments.update(arr => [...arr, created]));
+    this.commitments.update(arr => [...arr, commitment]);
   }
 
   updateCommitment(id: string, data: Partial<Commitment>): void {
-    this.http.put<Commitment>(`${API_URL}/compromisos/${id}`, {
-      id,
-      description: data.description,
-      month: data.month,
-      year: data.year,
-      type: data.type,
-      category: data.category,
-      amount: data.amount,
-      isEstimated: data.isEstimated,
-    }).subscribe(updated => this.commitments.update(arr => arr.map(a => a.id === id ? updated : a)));
+    // TODO: this.http.put<Commitment>(`${API_URL}/compromisos/${id}`, { ... }).subscribe(updated => ...);
+    this.commitments.update(arr => arr.map(a => a.id === id ? { ...a, ...data } : a));
   }
 
   deleteCommitment(id: string): void {
-    this.http.delete(`${API_URL}/compromisos/${id}`)
-      .subscribe(() => this.commitments.update(arr => arr.filter(a => a.id !== id)));
+    // TODO: this.http.delete(`${API_URL}/compromisos/${id}`).subscribe(() => ...);
+    this.commitments.update(arr => arr.filter(a => a.id !== id));
   }
 
   addTrade(trade: InvestmentTransaction): void {
-    this.http.post<InvestmentTransaction>(`${API_URL}/operaciones`, {
-      id: trade.id,
-      accountId: trade.accountId,
-      assetName: trade.assetName,
-      assetType: trade.assetType,
-      type: trade.type,
-      buyDate: trade.buyDate,
-      buyQuantity: trade.buyQuantity,
-      buyPricePerUnit: trade.buyPricePerUnit,
-      buyTotalCost: trade.buyTotalCost,
-      sellDate: trade.sellDate,
-      sellPricePerUnit: trade.sellPricePerUnit,
-      sellTotalReceived: trade.sellTotalReceived,
-      sellQuantity: trade.sellQuantity,
-      pnl: trade.pnl,
-      status: trade.status,
-    }).subscribe(created => this.trades.update(arr => [...arr, created]));
+    // TODO: this.http.post<InvestmentTransaction>(`${API_URL}/operaciones`, { ... }).subscribe(created => this.trades.update(arr => [...arr, created]));
+    this.trades.update(arr => [...arr, trade]);
   }
 
   deleteTrade(id: string): void {
-    this.http.delete(`${API_URL}/operaciones/${id}`)
-      .subscribe(() => this.trades.update(arr => arr.filter(t => t.id !== id)));
+    // TODO: this.http.delete(`${API_URL}/operaciones/${id}`).subscribe(() => ...);
+    this.trades.update(arr => arr.filter(t => t.id !== id));
   }
 
   addCrowdlendingInvestment(investment: CrowdlendingInvestment): void {
-    this.http.post<CrowdlendingInvestment>(`${API_URL}/crowdlending`, {
-      id: investment.id,
-      platformId: investment.platformId,
-      projectName: investment.projectName,
-      investedAmount: investment.investedAmount,
-      interestRate: investment.interestRate,
-      termMonths: investment.termMonths,
-      startDate: investment.startDate,
-      endDate: investment.endDate,
-      monthlyReturn: investment.monthlyReturn,
-      totalReturned: investment.totalReturned,
-      status: investment.status,
-    }).subscribe(created => this.crowdlending.update(arr => [...arr, created]));
+    // TODO: this.http.post<CrowdlendingInvestment>(`${API_URL}/crowdlending`, { ... }).subscribe(created => this.crowdlending.update(arr => [...arr, created]));
+    this.crowdlending.update(arr => [...arr, investment]);
   }
 
   deleteCrowdlendingInvestment(id: string): void {
-    this.http.delete(`${API_URL}/crowdlending/${id}`)
-      .subscribe(() => this.crowdlending.update(arr => arr.filter(c => c.id !== id)));
+    // TODO: this.http.delete(`${API_URL}/crowdlending/${id}`).subscribe(() => ...);
+    this.crowdlending.update(arr => arr.filter(c => c.id !== id));
   }
 
   deleteSnapshot(id: string): void {
-    this.http.delete(`${API_URL}/instantaneas/${id}`)
-      .subscribe(() => this.snapshots.update(arr => arr.filter(s => s.id !== id)));
+    // TODO: this.http.delete(`${API_URL}/instantaneas/${id}`).subscribe(() => ...);
+    this.snapshots.update(arr => arr.filter(s => s.id !== id));
   }
 
   deleteHolding(id: string): void {
-    this.http.delete(`${API_URL}/posiciones/${id}`)
-      .subscribe(() => this.holdings.update(arr => arr.filter(h => h.id !== id)));
+    // TODO: this.http.delete(`${API_URL}/posiciones/${id}`).subscribe(() => ...);
+    this.holdings.update(arr => arr.filter(h => h.id !== id));
   }
 
   addMyInvestorFund(fund: MyInvestorFund): void {
-    this.http.post<MyInvestorFund>(`${API_URL}/fondos-myinvestor`, {
-      id: fund.id,
-      code: fund.code,
-      name: fund.name,
-    }).subscribe(created => this.myInvestorFunds.update(arr => [...arr, created]));
+    // TODO: this.http.post<MyInvestorFund>(`${API_URL}/fondos-myinvestor`, { ... }).subscribe(created => this.myInvestorFunds.update(arr => [...arr, created]));
+    this.myInvestorFunds.update(arr => [...arr, fund]);
   }
 
   updateMyInvestorFund(id: string, data: Partial<MyInvestorFund>): void {
-    this.http.put<MyInvestorFund>(`${API_URL}/fondos-myinvestor/${id}`, {
-      id,
-      code: data.code,
-      name: data.name,
-    }).subscribe(updated => this.myInvestorFunds.update(arr => arr.map(f => f.id === id ? updated : f)));
+    // TODO: this.http.put<MyInvestorFund>(`${API_URL}/fondos-myinvestor/${id}`, { ... }).subscribe(updated => ...);
+    this.myInvestorFunds.update(arr => arr.map(f => f.id === id ? { ...f, ...data } : f));
   }
 
   deleteMyInvestorFund(id: string): void {
-    this.http.delete(`${API_URL}/fondos-myinvestor/${id}`)
-      .subscribe(() => this.myInvestorFunds.update(arr => arr.filter(f => f.id !== id)));
+    // TODO: this.http.delete(`${API_URL}/fondos-myinvestor/${id}`).subscribe(() => ...);
+    this.myInvestorFunds.update(arr => arr.filter(f => f.id !== id));
   }
 
   getFundBalancesByMonth(year: number, month: number): FundBalance[] {
@@ -440,28 +350,18 @@ export class FinancialDataService implements OnInit {
   }
 
   addFundBalance(balance: FundBalance): void {
-    this.http.post<FundBalance>(`${API_URL}/balances-fondo`, {
-      id: balance.id,
-      fundId: balance.fundId,
-      year: balance.year,
-      month: balance.month,
-      balance: balance.balance,
-    }).subscribe(created => this.fundBalances.update(arr => [...arr, created]));
+    // TODO: this.http.post<FundBalance>(`${API_URL}/balances-fondo`, { ... }).subscribe(created => this.fundBalances.update(arr => [...arr, created]));
+    this.fundBalances.update(arr => [...arr, balance]);
   }
 
   updateFundBalance(id: string, data: Partial<FundBalance>): void {
-    this.http.put<FundBalance>(`${API_URL}/balances-fondo/${id}`, {
-      id,
-      fundId: data.fundId,
-      year: data.year,
-      month: data.month,
-      balance: data.balance,
-    }).subscribe(updated => this.fundBalances.update(arr => arr.map(b => b.id === id ? updated : b)));
+    // TODO: this.http.put<FundBalance>(`${API_URL}/balances-fondo/${id}`, { ... }).subscribe(updated => ...);
+    this.fundBalances.update(arr => arr.map(b => b.id === id ? { ...b, ...data } : b));
   }
 
   deleteFundBalance(id: string): void {
-    this.http.delete(`${API_URL}/balances-fondo/${id}`)
-      .subscribe(() => this.fundBalances.update(arr => arr.filter(b => b.id !== id)));
+    // TODO: this.http.delete(`${API_URL}/balances-fondo/${id}`).subscribe(() => ...);
+    this.fundBalances.update(arr => arr.filter(b => b.id !== id));
   }
 
 }
