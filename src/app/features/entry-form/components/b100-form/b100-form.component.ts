@@ -173,8 +173,8 @@ export class B100FormComponent {
 
   readonly accounts = input.required<Account[]>();
 
-  private readonly SAVINGS_ID = 'b100-savings';
-  private readonly INVESTMENT_ID = 'b100-investment';
+  private readonly SAVINGS_ID = 'b100-save';
+  private readonly INVESTMENT_ID = 'b100-heal';
 
   protected readonly months = MONTH_OPTIONS;
   protected readonly years = YEARS;

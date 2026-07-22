@@ -7,6 +7,7 @@ import { SnapshotsService } from '../../api/generated/api/snapshots.service';
 import { IncomesService } from '../../api/generated/api/incomes.service';
 import { NominaService } from '../../api/generated/api/nomina.service';
 import { SnapshotResponse } from '../../api/generated/model/snapshotResponse';
+import { SnapshotUpsert } from '../../api/generated/model/snapshotUpsert';
 import { NominaCreate } from '../../api/generated/model/nominaCreate';
 import { NominaResponse } from '../../api/generated/model/nominaResponse';
 import { MonthlySnapshotCreate } from '../../api/generated/model/monthlySnapshotCreate';
@@ -220,26 +221,36 @@ export class FinancialDataService {
   }
 
   upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number): void {
-    // TODO: this.http.post<MonthlySnapshot>(`${API_URL}/instantaneas/upsert`, { ... }).subscribe(result => ...);
-    const existing = this.getSnapshot(accountId, year, month);
-    if (existing) {
-      this.snapshots.update(arr => arr.map(s =>
-        s.id === existing.id ? { ...s, balance, income: s.income + incomeDelta, ...(expenses !== undefined ? { expenses } : {}) } : s
-      ));
-    } else {
-      const newSnapshot: MonthlySnapshot = {
-        id: crypto.randomUUID(),
-        accountId,
-        year,
-        month,
-        balance,
-        income: incomeDelta,
-        expenses: expenses ?? 0,
-        contribution: 0,
-        notes: '',
+    const body: SnapshotUpsert = {
+      accountId,
+      year,
+      month,
+      balance,
+      incomeDelta,
+      expenses,
+    };
+    this.snapshotsService.upsertSnapshot(body).subscribe(result => {
+      const snapshot: MonthlySnapshot = {
+        id: result.id,
+        accountId: result.accountId,
+        year: result.year,
+        month: result.month,
+        balance: result.balance,
+        income: result.income,
+        expenses: result.expenses,
+        contribution: result.contribution ?? undefined,
+        notes: result.notes ?? undefined,
+        checklistItems: result.checklistItems ?? undefined,
       };
-      this.snapshots.update(arr => [...arr, newSnapshot]);
-    }
+      const existing = this.getSnapshot(accountId, year, month);
+      if (existing) {
+        this.snapshots.update(arr => arr.map(s =>
+          s.id === existing.id ? snapshot : s
+        ));
+      } else {
+        this.snapshots.update(arr => [...arr, snapshot]);
+      }
+    });
   }
 
   toggleChecklistItem(snapshotId: string, itemId: string): void {
