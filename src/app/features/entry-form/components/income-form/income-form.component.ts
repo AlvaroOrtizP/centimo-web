@@ -1,7 +1,6 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { AccountType } from '../../../../models/account-type';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { Account } from '../../../../models/account';
 import { IncomeSource } from '../../../../models/income-source';
@@ -16,28 +15,22 @@ import { IncomeSource } from '../../../../models/income-source';
 
       <div class="flex flex-wrap gap-2">
         <input
-          type="text" placeholder="Fuente (nómina, interés...)" aria-label="Fuente"
-          class="w-36 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
-          [(ngModel)]="source"
-        />
-
-        <input
           type="number" placeholder="Cantidad (€)" aria-label="Cantidad"
           class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
           [(ngModel)]="amount"
         />
 
         <input
-          type="text" placeholder="Descripción" aria-label="Descripción"
+          type="text" placeholder="Note" aria-label="Note"
           class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
-          [(ngModel)]="description"
+          [(ngModel)]="note"
         />
 
         <button
           class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
-          [disabled]="!accountId() || !source() || !amount()"
+          [disabled]="!amount()"
           (click)="save()"
-        >Añadir Ingreso</button>
+        >Añadir Nomina</button>
       </div>
 
       @if (saved()) {
@@ -51,7 +44,6 @@ import { IncomeSource } from '../../../../models/income-source';
             @for (inc of incomes(); track inc.id) {
               <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
                 <span class="font-medium text-green-600 w-24">+{{ inc.amount.toLocaleString('es-ES') }} €</span>
-                <span class="text-gray-700 w-28">{{ inc.source }}</span>
                 <span class="flex-1 text-gray-500 truncate">{{ inc.description }}</span>
                 <button
                   class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
@@ -78,16 +70,10 @@ export class IncomeFormComponent {
   readonly month = input.required<number>();
   readonly year = input.required<number>();
 
-  protected readonly accountId = computed(() => {
-    const accs = this.accounts();
-    const checking = accs.find(a => a.type === AccountType.Checking);
-    return checking?.id ?? accs[0]?.id ?? '';
-  });
+  private readonly ACCOUNT_ID = 'bbva-nomina';
 
   protected readonly snapshotId = computed(() => {
-    const accId = this.accountId();
-    if (!accId) { return ''; }
-    return `${accId}-${this.year()}-${String(this.month()).padStart(2, '0')}`;
+    return `${this.ACCOUNT_ID}-${this.year()}-${String(this.month()).padStart(2, '0')}`;
   });
 
   protected readonly incomes = computed<IncomeSource[]>(() => {
@@ -96,45 +82,26 @@ export class IncomeFormComponent {
     return this.service.getIncomesBySnapshot(id);
   });
 
-  protected readonly source = signal('');
   protected readonly amount = signal(0);
-  protected readonly description = signal('');
+  protected readonly note = signal('');
   protected readonly saved = signal(false);
 
   protected save(): void {
-    const accId = this.accountId();
     const y = this.year();
     const m = this.month();
     const snapshotId = this.snapshotId();
 
-    const existing = this.service.getSnapshot(accId, y, m);
-    if (!existing) {
-      this.service.addSnapshot({
-        id: snapshotId,
-        accountId: accId,
-        year: y,
-        month: m,
-        balance: 0,
-        income: this.amount(),
-        expenses: 0,
-      });
-    } else {
-      this.service.updateSnapshot(existing.id, { income: existing.income + this.amount() });
-    }
-
-    this.service.addIncome({
-      id: `inc-${snapshotId}-${Date.now()}`,
-      snapshotId,
-      source: this.source(),
-      description: this.description(),
-      amount: this.amount(),
+    this.service.createNomina({
+      year: y,
+      month: m,
+      value: this.amount(),
+      note: this.note(),
+    }).subscribe(() => {
+      this.amount.set(0);
+      this.note.set('');
+      this.saved.set(true);
+      setTimeout(() => this.saved.set(false), 2000);
     });
-
-    this.source.set('');
-    this.amount.set(0);
-    this.description.set('');
-    this.saved.set(true);
-    setTimeout(() => this.saved.set(false), 2000);
   }
 
   protected deleteIncome(inc: IncomeSource): void {

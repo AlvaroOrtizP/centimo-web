@@ -4,7 +4,13 @@ import { map, catchError } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { SnapshotsService } from '../../api/generated/api/snapshots.service';
+import { IncomesService } from '../../api/generated/api/incomes.service';
+import { NominaService } from '../../api/generated/api/nomina.service';
 import { SnapshotResponse } from '../../api/generated/model/snapshotResponse';
+import { NominaCreate } from '../../api/generated/model/nominaCreate';
+import { NominaResponse } from '../../api/generated/model/nominaResponse';
+import { MonthlySnapshotCreate } from '../../api/generated/model/monthlySnapshotCreate';
+import { IncomeSourceCreate } from '../../api/generated/model/incomeSourceCreate';
 
 import { Platform } from '../../models/platform';
 import { Account } from '../../models/account';
@@ -26,6 +32,8 @@ import { Commitment } from '../../models/commitment';
 @Injectable({ providedIn: 'root' })
 export class FinancialDataService {
   private readonly snapshotsService = inject(SnapshotsService);
+  private readonly incomesService = inject(IncomesService);
+  private readonly nominaService = inject(NominaService);
 
   readonly platforms = signal<Platform[]>([]);
   readonly accounts = signal<Account[]>([]);
@@ -81,6 +89,34 @@ export class FinancialDataService {
       catchError((error: HttpErrorResponse) => {
         console.log('[FinancialData] fetchSnapshotFromBackend error', error.status);
         return error.status === 404 ? of(null) : of(null);
+      }),
+    );
+  }
+
+  fetchNominaFromBackend(year: number, month: number): Observable<NominaResponse | null> {
+    console.log('[FinancialData] fetchNominaFromBackend called', { year, month });
+    return this.nominaService.getNominaAndDate(year, month).pipe(
+      map(response => {
+        console.log('[FinancialData] fetchNominaFromBackend response', response);
+        return response as NominaResponse;
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.log('[FinancialData] fetchNominaFromBackend error', error.status);
+        return error.status === 404 ? of(null) : of(null);
+      }),
+    );
+  }
+
+  createNomina(nomina: NominaCreate): Observable<NominaResponse | null> {
+    console.log('[FinancialData] createNomina called', nomina);
+    return this.nominaService.createNomina(nomina).pipe(
+      map(response => {
+        console.log('[FinancialData] createNomina response', response);
+        return response as NominaResponse;
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.log('[FinancialData] createNomina error', error.status);
+        return of(null);
       }),
     );
   }
@@ -152,8 +188,30 @@ export class FinancialDataService {
   }
 
   addSnapshot(snapshot: MonthlySnapshot): void {
-    // TODO: this.http.post<MonthlySnapshot>(`${API_URL}/instantaneas`, { ... }).subscribe(created => this.snapshots.update(arr => [...arr, created]));
-    this.snapshots.update(arr => [...arr, snapshot]);
+    const create: MonthlySnapshotCreate = {
+      accountId: snapshot.accountId,
+      year: snapshot.year,
+      month: snapshot.month,
+      balance: snapshot.balance,
+      income: snapshot.income,
+      expenses: snapshot.expenses,
+      contribution: snapshot.contribution ?? null,
+      notes: snapshot.notes ?? null,
+    };
+    this.snapshotsService.createSnapshot(create).subscribe(created => {
+      this.snapshots.update(arr => [...arr, {
+        id: created.id,
+        accountId: created.accountId,
+        year: created.year,
+        month: created.month,
+        balance: created.balance,
+        income: created.income,
+        expenses: created.expenses,
+        contribution: created.contribution ?? undefined,
+        notes: created.notes ?? undefined,
+        checklistItems: created.checklistItems ?? undefined,
+      }]);
+    });
   }
 
   updateSnapshot(id: string, data: Partial<MonthlySnapshot>): void {
@@ -213,8 +271,21 @@ export class FinancialDataService {
   }
 
   addIncome(income: IncomeSource): void {
-    // TODO: this.http.post<IncomeSource>(`${API_URL}/ingresos`, { ... }).subscribe(created => this.incomes.update(arr => [...arr, created]));
-    this.incomes.update(arr => [...arr, income]);
+    const create: IncomeSourceCreate = {
+      snapshotId: income.snapshotId,
+      source: income.source,
+      description: income.description,
+      amount: income.amount,
+    };
+    this.incomesService.createIncome(create).subscribe(created => {
+      this.incomes.update(arr => [...arr, {
+        id: created.id,
+        snapshotId: created.snapshotId,
+        source: created.source,
+        description: created.description,
+        amount: created.amount,
+      }]);
+    });
   }
 
   deleteIncome(id: string): void {

@@ -10,6 +10,6 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
     provideHttpClient(),
-    provideApi('http://localhost:8080/api/v1'),
+    provideApi('http://localhost:8080'),
   ]
 };

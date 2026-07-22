@@ -164,19 +164,17 @@ export class SalaryDistributionComponent {
 
   protected readonly monthlySalary = signal(0);
 
-  private readonly SALARY_ACCOUNT_ID = 'bbva-checking';
-
   constructor() {
     effect(() => {
       const year = this.year();
       const month = this.month();
-      console.log('[SalaryDistribution] effect triggered', { accountId: this.SALARY_ACCOUNT_ID, year, month });
+      console.log('[SalaryDistribution] effect triggered', { year, month });
 
-      this.service.fetchSnapshotFromBackend(this.SALARY_ACCOUNT_ID, year, month)
+      this.service.fetchNominaFromBackend(year, month)
         .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(snapshot => {
-          console.log('[SalaryDistribution] backend response', snapshot);
-          this.monthlySalary.set(snapshot?.income ?? 0);
+        .subscribe(nomina => {
+          console.log('[SalaryDistribution] backend response', nomina);
+          this.monthlySalary.set(nomina?.value ?? 0);
         });
     });
   }
