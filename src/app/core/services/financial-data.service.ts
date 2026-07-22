@@ -1,5 +1,10 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-// import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
+import { HttpErrorResponse } from '@angular/common/http';
+
+import { SnapshotsService } from '../../api/generated/api/snapshots.service';
+import { SnapshotResponse } from '../../api/generated/model/snapshotResponse';
 
 import { Platform } from '../../models/platform';
 import { Account } from '../../models/account';
@@ -20,7 +25,7 @@ import { Commitment } from '../../models/commitment';
 
 @Injectable({ providedIn: 'root' })
 export class FinancialDataService {
-  // private readonly http = inject(HttpClient);
+  private readonly snapshotsService = inject(SnapshotsService);
 
   readonly platforms = signal<Platform[]>([]);
   readonly accounts = signal<Account[]>([]);
@@ -37,49 +42,6 @@ export class FinancialDataService {
 
   readonly currentYear = signal(new Date().getFullYear());
   readonly currentMonth = signal(new Date().getMonth() + 1);
-
-  // TODO: descomentar llamadas al backend una a una
-  // ngOnInit(): void {
-  //   this.http.get<Platform[]>(`${API_URL}/plataformas`)
-  //     .subscribe(data => this.platforms.set(data));
-  //
-  //   this.http.get<Account[]>(`${API_URL}/cuentas`)
-  //     .subscribe(accounts => {
-  //       this.accounts.set(accounts);
-  //       for (const account of accounts) {
-  //         this.http.get<InvestmentTransaction[]>(`${API_URL}/operaciones`, { params: { cuentaId: account.id } })
-  //           .subscribe(trades => this.trades.update(arr => [...arr, ...trades]));
-  //       }
-  //     });
-  //
-  //   this.http.get<MonthlySnapshot[]>(`${API_URL}/instantaneas`)
-  //     .subscribe(data => {
-  //       this.snapshots.set(data);
-  //       for (const snapshot of data) {
-  //         this.http.get<Expense[]>(`${API_URL}/gastos`, { params: { instantaneaId: snapshot.id } })
-  //           .subscribe(expenses => this.expenses.update(arr => [...arr, ...expenses]));
-  //         this.http.get<IncomeSource[]>(`${API_URL}/ingresos`, { params: { instantaneaId: snapshot.id } })
-  //           .subscribe(incomes => this.incomes.update(arr => [...arr, ...incomes]));
-  //         this.http.get<InvestmentHolding[]>(`${API_URL}/posiciones`, { params: { instantaneaId: snapshot.id } })
-  //           .subscribe(holdings => this.holdings.update(arr => [...arr, ...holdings]));
-  //       }
-  //     });
-  //
-  //   this.http.get<CrowdlendingInvestment[]>(`${API_URL}/crowdlending`)
-  //     .subscribe(data => this.crowdlending.set(data));
-  //
-  //   this.http.get<MyInvestorFund[]>(`${API_URL}/fondos-myinvestor`)
-  //     .subscribe(data => this.myInvestorFunds.set(data));
-  //
-  //   this.http.get<FundBalance[]>(`${API_URL}/balances-fondo`)
-  //     .subscribe(data => this.fundBalances.set(data));
-  //
-  //   this.http.get<SalaryAllocation[]>(`${API_URL}/asignaciones-salario`)
-  //     .subscribe(data => this.salaryAllocations.set(data));
-  //
-  //   this.http.get<Commitment[]>(`${API_URL}/compromisos`)
-  //     .subscribe(data => this.commitments.set(data));
-  // }
 
   getAccountsByPlatform(platformId: string): Account[] {
     return this.accounts().filter(a => a.platformId === platformId);
@@ -107,6 +69,20 @@ export class FinancialDataService {
 
   getSnapshot(accountId: string, year: number, month: number): MonthlySnapshot | undefined {
     return this.snapshots().find(s => s.accountId === accountId && s.year === year && s.month === month);
+  }
+
+  fetchSnapshotFromBackend(accountId: string, year: number, month: number): Observable<SnapshotResponse | null> {
+    console.log('[FinancialData] fetchSnapshotFromBackend called', { accountId, year, month });
+    return this.snapshotsService.getSnapshotByAccountAndDate(accountId, year, month).pipe(
+      map(response => {
+        console.log('[FinancialData] fetchSnapshotFromBackend response', response);
+        return response as SnapshotResponse;
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.log('[FinancialData] fetchSnapshotFromBackend error', error.status);
+        return error.status === 404 ? of(null) : of(null);
+      }),
+    );
   }
 
   getHoldingsBySnapshot(snapshotId: string): InvestmentHolding[] {

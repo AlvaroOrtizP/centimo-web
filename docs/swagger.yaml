@@ -513,12 +513,18 @@ paths:
   # ════════════════════════════════════════════
 
   # ── Snapshots ──
-  /snapshots/accounts/{year}/{month}:
+  /snapshots/accounts/{accountId}/{year}/{month}:
     get:
       tags: [ Snapshots ]
       operationId: getSnapshotByAccountAndDate
       summary: Obtener la instantánea única de una cuenta en un mes concreto
       parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "acc_bbva_1"
         - name: year
           in: path
           required: true

@@ -1,5 +1,6 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { SalaryAllocation } from '../../../../models/salary-allocation';
@@ -38,9 +39,9 @@ import { SalaryAllocation } from '../../../../models/salary-allocation';
         <label class="mb-1 block text-xs font-medium text-gray-600">Sueldo neto del mes (€)</label>
         <input
           type="number"
-          placeholder="Ej: 1500"
-          class="w-40 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
-          [(ngModel)]="monthlySalary"
+          class="w-40 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700"
+          [value]="monthlySalary()"
+          readonly
         />
       </div>
 
@@ -144,6 +145,7 @@ import { SalaryAllocation } from '../../../../models/salary-allocation';
 })
 export class SalaryDistributionComponent {
   private readonly service = inject(FinancialDataService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly month = input.required<number>();
   readonly year = input.required<number>();
@@ -161,6 +163,23 @@ export class SalaryDistributionComponent {
   protected readonly saved = signal(false);
 
   protected readonly monthlySalary = signal(0);
+
+  private readonly SALARY_ACCOUNT_ID = 'bbva-checking';
+
+  constructor() {
+    effect(() => {
+      const year = this.year();
+      const month = this.month();
+      console.log('[SalaryDistribution] effect triggered', { accountId: this.SALARY_ACCOUNT_ID, year, month });
+
+      this.service.fetchSnapshotFromBackend(this.SALARY_ACCOUNT_ID, year, month)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(snapshot => {
+          console.log('[SalaryDistribution] backend response', snapshot);
+          this.monthlySalary.set(snapshot?.income ?? 0);
+        });
+    });
+  }
 
   protected readonly assignedAmount = computed(() => {
     const salary = this.monthlySalary();
