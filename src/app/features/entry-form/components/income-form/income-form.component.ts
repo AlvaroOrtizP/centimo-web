@@ -1,5 +1,6 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { Account } from '../../../../models/account';
@@ -30,7 +31,7 @@ import { IncomeSource } from '../../../../models/income-source';
           class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
           [disabled]="!amount()"
           (click)="save()"
-        >Añadir Nomina</button>
+        >{{ existingNomina() ? 'Modificar Nomina' : 'Añadir Nomina' }}</button>
       </div>
 
       @if (saved()) {
@@ -65,6 +66,7 @@ import { IncomeSource } from '../../../../models/income-source';
 })
 export class IncomeFormComponent {
   private readonly service = inject(FinancialDataService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly accounts = input.required<Account[]>();
   readonly month = input.required<number>();
@@ -85,11 +87,29 @@ export class IncomeFormComponent {
   protected readonly amount = signal(0);
   protected readonly note = signal('');
   protected readonly saved = signal(false);
+  protected readonly existingNomina = signal(false);
+
+  constructor() {
+    effect(() => {
+      const year = this.year();
+      const month = this.month();
+
+      this.service.fetchNominaFromBackend(year, month)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(nomina => {
+          this.existingNomina.set(nomina !== null);
+        });
+    });
+  }
 
   protected save(): void {
+    if (this.existingNomina()) {
+      alert('PUT /nomina no implementado aún');
+      return;
+    }
+
     const y = this.year();
     const m = this.month();
-    const snapshotId = this.snapshotId();
 
     this.service.createNomina({
       year: y,
@@ -97,6 +117,7 @@ export class IncomeFormComponent {
       value: this.amount(),
       note: this.note(),
     }).subscribe(() => {
+      this.existingNomina.set(true);
       this.amount.set(0);
       this.note.set('');
       this.saved.set(true);
