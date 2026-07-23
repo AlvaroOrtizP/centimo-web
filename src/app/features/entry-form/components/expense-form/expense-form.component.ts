@@ -141,7 +141,7 @@ export class ExpenseFormComponent {
   protected readonly ExpenseCategory = ExpenseCategory;
   protected readonly category = signal<ExpenseCategory | ''>('');
   protected readonly amount = signal(0);
-  protected readonly date = signal('');
+  protected readonly date = signal(new Date().toISOString().slice(0, 10));
   protected readonly description = signal('');
   protected readonly saved = signal(false);
   protected readonly editingExpense = signal<Expense | null>(null);
@@ -151,15 +151,16 @@ export class ExpenseFormComponent {
     const snapId = this.snapshotId();
 
     if (editing) {
-      this.service.updateExpense(editing.id, {
+      this.service.updateExpense(editing.id, snapId, {
         category: this.category() as ExpenseCategory,
         amount: this.amount(),
         date: this.date(),
         description: this.description() || undefined,
+      }).subscribe(() => {
+        this.cancelEdit();
+        this.saved.set(true);
+        setTimeout(() => this.saved.set(false), 2000);
       });
-      this.cancelEdit();
-      this.saved.set(true);
-      setTimeout(() => this.saved.set(false), 2000);
       return;
     }
 

@@ -14,6 +14,7 @@ import { NominaResponse } from '../../api/generated/model/nominaResponse';
 import { MonthlySnapshotCreate } from '../../api/generated/model/monthlySnapshotCreate';
 import { IncomeSourceCreate } from '../../api/generated/model/incomeSourceCreate';
 import { ExpenseCreate } from '../../api/generated/model/expenseCreate';
+import { ExpenseUpdate } from '../../api/generated/model/expenseUpdate';
 
 import { Platform } from '../../models/platform';
 import { Account } from '../../models/account';
@@ -347,8 +348,25 @@ export class FinancialDataService {
     );
   }
 
-  updateExpense(id: string, data: Partial<Expense>): void {
-    this.expenses.update(arr => arr.map(e => e.id === id ? { ...e, ...data } : e));
+  updateExpense(id: string, snapshotId: string, data: ExpenseUpdate): Observable<Expense> {
+    return this.expensesService.updateExpense(id, snapshotId, data).pipe(
+      map(updated => {
+        const expense: Expense = {
+          id: updated.id,
+          snapshotId: updated.snapshotId,
+          category: updated.category,
+          amount: updated.amount,
+          date: updated.date,
+          description: updated.description ?? undefined,
+        };
+        this.expenses.update(arr => arr.map(e => e.id === id ? expense : e));
+        return expense;
+      }),
+      catchError((err) => {
+        console.error('[FinancialData] updateExpense error', err);
+        return of(null as unknown as Expense);
+      }),
+    );
   }
 
   deleteExpense(id: string, snapshotId: string): void {
