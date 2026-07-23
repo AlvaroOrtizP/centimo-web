@@ -161,6 +161,28 @@ export class FinancialDataService {
     return this.crowdlending().filter(c => c.platformId === platformId);
   }
 
+  loadExpenses(snapshotId: string): void {
+    this.expensesService.listExpenses(snapshotId).pipe(
+      map(list => list.map(e => ({
+        id: e.id,
+        snapshotId: e.snapshotId,
+        category: e.category,
+        amount: e.amount,
+        date: e.date,
+        description: e.description ?? undefined,
+      }))),
+      catchError((err) => {
+        console.error('[FinancialData] loadExpenses error', err);
+        return of([]);
+      }),
+    ).subscribe(expenses => {
+      this.expenses.update(arr => {
+        const others = arr.filter(e => e.snapshotId !== snapshotId);
+        return [...others, ...expenses];
+      });
+    });
+  }
+
   getExpensesBySnapshot(snapshotId: string): Expense[] {
     return this.expenses().filter(e => e.snapshotId === snapshotId);
   }
@@ -323,6 +345,10 @@ export class FinancialDataService {
         return result;
       }),
     );
+  }
+
+  updateExpense(id: string, data: Partial<Expense>): void {
+    this.expenses.update(arr => arr.map(e => e.id === id ? { ...e, ...data } : e));
   }
 
   deleteExpense(id: string, snapshotId: string): void {
