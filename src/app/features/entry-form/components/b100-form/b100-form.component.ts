@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
+import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.helper';
 
 @Component({
   selector: 'app-b100-form',
@@ -50,7 +51,8 @@ import { Account } from '../../../../models/account';
               step="any"
               placeholder="ej: 3000"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [(ngModel)]="savingsBalance"
+              [ngModel]="savingsBalance.display()"
+              (ngModelChange)="savingsBalance.userValue.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Valor total en Cuenta Ahorro</p>
           </div>
@@ -61,7 +63,8 @@ import { Account } from '../../../../models/account';
               step="any"
               placeholder="ej: 12"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [(ngModel)]="savingsInterest"
+              [ngModel]="savingsInterest.display()"
+              (ngModelChange)="savingsInterest.userValue.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Intereses obtenidos este mes</p>
           </div>
@@ -81,9 +84,9 @@ import { Account } from '../../../../models/account';
         <div class="mt-4 flex items-center gap-3">
           <button
             class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
-            [disabled]="!savingsBalance()"
+            [disabled]="!savingsBalance.display()"
             (click)="saveSavings()"
-          >Guardar</button>
+          >{{ hasExistingSavingsSnapshot() ? 'Editar balance' : 'Guardar' }}</button>
           @if (savedSavings()) {
             <span class="text-sm text-emerald-600">✓ Guardado</span>
           }
@@ -108,7 +111,8 @@ import { Account } from '../../../../models/account';
               step="any"
               placeholder="ej: 5000"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [(ngModel)]="investmentBalance"
+              [ngModel]="investmentBalance.display()"
+              (ngModelChange)="investmentBalance.userValue.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Valor total en Bolsillo Inversión</p>
           </div>
@@ -119,7 +123,8 @@ import { Account } from '../../../../models/account';
               step="any"
               placeholder="ej: 20"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [(ngModel)]="investmentInterest"
+              [ngModel]="investmentInterest.display()"
+              (ngModelChange)="investmentInterest.userValue.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Intereses obtenidos este mes</p>
           </div>
@@ -139,9 +144,9 @@ import { Account } from '../../../../models/account';
         <div class="mt-4 flex items-center gap-3">
           <button
             class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
-            [disabled]="!investmentBalance()"
+            [disabled]="!investmentBalance.display()"
             (click)="saveInvestment()"
-          >Guardar</button>
+          >{{ hasExistingInvestmentSnapshot() ? 'Editar balance' : 'Guardar' }}</button>
           @if (savedInvestment()) {
             <span class="text-sm text-emerald-600">✓ Guardado</span>
           }
@@ -183,33 +188,43 @@ export class B100FormComponent {
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = signal(this.service.currentYear());
 
-  // Cuenta Ahorro
-  protected readonly savingsBalance = signal<number | null>(null);
-  protected readonly savingsInterest = signal<number | null>(null);
+  protected readonly savingsBalance = createSnapshotField(this.service, this.SAVINGS_ID, () => this.localYear(), () => this.localMonth());
+  protected readonly savingsInterest = createSnapshotField(this.service, this.SAVINGS_ID, () => this.localYear(), () => this.localMonth(), 'income');
   protected readonly savingsTae = signal<number | null>(null);
   protected readonly savedSavings = signal(false);
 
-  // Bolsillo Inversión
-  protected readonly investmentBalance = signal<number | null>(null);
-  protected readonly investmentInterest = signal<number | null>(null);
+  protected readonly investmentBalance = createSnapshotField(this.service, this.INVESTMENT_ID, () => this.localYear(), () => this.localMonth());
+  protected readonly investmentInterest = createSnapshotField(this.service, this.INVESTMENT_ID, () => this.localYear(), () => this.localMonth(), 'income');
   protected readonly investmentTae = signal<number | null>(null);
   protected readonly savedInvestment = signal(false);
 
-  protected readonly snapshotId = computed(() =>
-    `${this.SAVINGS_ID}-${this.localYear()}-${String(this.localMonth()).padStart(2, '0')}`
-  );
-
   protected readonly previousSavingsBalance = computed(() => {
     const snapshots = this.service.getSnapshotsByAccount(this.SAVINGS_ID);
-    const current = snapshots.find(s => s.year === this.localYear() && s.month === this.localMonth());
-    return current?.balance ?? null;
+    let prevMonth = this.localMonth() - 1;
+    let prevYear = this.localYear();
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+    const prev = snapshots.find(s => s.year === prevYear && s.month === prevMonth);
+    return prev?.balance ?? null;
   });
 
   protected readonly previousInvestmentBalance = computed(() => {
     const snapshots = this.service.getSnapshotsByAccount(this.INVESTMENT_ID);
-    const current = snapshots.find(s => s.year === this.localYear() && s.month === this.localMonth());
-    return current?.balance ?? null;
+    let prevMonth = this.localMonth() - 1;
+    let prevYear = this.localYear();
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+    const prev = snapshots.find(s => s.year === prevYear && s.month === prevMonth);
+    return prev?.balance ?? null;
   });
+
+  protected readonly hasExistingSavingsSnapshot = computed(() =>
+    this.service.getSnapshotsByAccount(this.SAVINGS_ID)
+      .some(s => s.year === this.localYear() && s.month === this.localMonth())
+  );
+
+  protected readonly hasExistingInvestmentSnapshot = computed(() =>
+    this.service.getSnapshotsByAccount(this.INVESTMENT_ID)
+      .some(s => s.year === this.localYear() && s.month === this.localMonth())
+  );
 
   protected readonly history = computed(() => {
     const savingsSnaps = this.service.getSnapshotsByAccount(this.SAVINGS_ID);
@@ -237,44 +252,34 @@ export class B100FormComponent {
 
   constructor() {
     effect(() => {
-      const snapshots = this.service.snapshots();
-      const y = this.localYear();
-      const m = this.localMonth();
-      this.savingsBalance.set(
-        snapshots.find(s => s.accountId === this.SAVINGS_ID && s.year === y && s.month === m)?.balance ?? null
-      );
-    });
-
-    effect(() => {
-      const snapshots = this.service.snapshots();
-      const y = this.localYear();
-      const m = this.localMonth();
-      this.investmentBalance.set(
-        snapshots.find(s => s.accountId === this.INVESTMENT_ID && s.year === y && s.month === m)?.balance ?? null
-      );
+      this.localYear();
+      this.localMonth();
+      resetSnapshotFields(this.savingsBalance, this.savingsInterest, this.investmentBalance, this.investmentInterest);
     });
   }
 
   protected saveSavings(): void {
-    const bal = this.savingsBalance();
+    const bal = this.savingsBalance.display();
     if (bal === null) { return; }
 
-    const inter = this.savingsInterest() ?? 0;
+    const inter = this.savingsInterest.display() ?? 0;
     this.service.upsertSnapshot(this.SAVINGS_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
 
-    this.savingsInterest.set(null);
+    this.savingsInterest.userValue.set(null);
+    this.savingsInterest.hasUserValue.set(false);
     this.savedSavings.set(true);
     setTimeout(() => this.savedSavings.set(false), 2000);
   }
 
   protected saveInvestment(): void {
-    const bal = this.investmentBalance();
+    const bal = this.investmentBalance.display();
     if (bal === null) { return; }
 
-    const inter = this.investmentInterest() ?? 0;
+    const inter = this.investmentInterest.display() ?? 0;
     this.service.upsertSnapshot(this.INVESTMENT_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
 
-    this.investmentInterest.set(null);
+    this.investmentInterest.userValue.set(null);
+    this.investmentInterest.hasUserValue.set(false);
     this.savedInvestment.set(true);
     setTimeout(() => this.savedInvestment.set(false), 2000);
   }
