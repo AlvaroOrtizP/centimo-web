@@ -151,7 +151,8 @@ export class ExpenseFormComponent {
     const snapId = this.snapshotId();
 
     if (editing) {
-      this.service.updateExpense(editing.id, snapId, {
+      this.service.updateExpense(editing.id, {
+        snapshotId: snapId,
         category: this.category() as ExpenseCategory,
         amount: this.amount(),
         date: this.date(),

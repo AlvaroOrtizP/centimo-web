@@ -85,8 +85,8 @@ import { Account } from '../../../../models/account';
             <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
               <span class="w-20 text-gray-500">{{ getMonthLabel(h.year, h.month) }}</span>
               <span class="font-semibold text-gray-900">{{ h.balance.toLocaleString('es-ES') }} €</span>
-              @if (h.income > 0) {
-                <span class="text-xs text-teal-600">+{{ h.income.toLocaleString('es-ES') }} € aportación</span>
+              @if (h.contribution) {
+                <span class="text-xs text-teal-600">+{{ h.contribution.toLocaleString('es-ES') }} € aportación</span>
               }
             </div>
           }
@@ -144,7 +144,7 @@ export class MintosFormComponent {
     if (bal === null) { return; }
 
     const contrib = this.contribution() ?? 0;
-    this.service.upsertSnapshot(this.MINTOS_ACCOUNT_ID, this.localYear(), this.localMonth(), bal, contrib).subscribe();
+    this.service.upsertSnapshot(this.MINTOS_ACCOUNT_ID, this.localYear(), this.localMonth(), bal, 0, undefined, contrib).subscribe();
 
     this.contribution.set(null);
     this.saved.set(true);

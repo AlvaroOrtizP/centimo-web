@@ -354,7 +354,7 @@ export class FinancialDataService {
     this.snapshots.update(arr => arr.map(s => s.id === id ? { ...s, ...data } : s));
   }
 
-  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number): Observable<SnapshotResponse> {
+  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number): Observable<SnapshotResponse> {
     const body: SnapshotUpsert = {
       accountId,
       year,
@@ -362,6 +362,7 @@ export class FinancialDataService {
       balance,
       incomeDelta,
       expenses,
+      contribution,
     };
     return this.snapshotsService.upsertSnapshot(body).pipe(
       map(result => {
@@ -432,8 +433,8 @@ export class FinancialDataService {
     );
   }
 
-  updateExpense(id: string, snapshotId: string, data: ExpenseUpdate): Observable<Expense> {
-    return this.expensesService.updateExpense(id, snapshotId, data).pipe(
+  updateExpense(id: string, data: ExpenseUpdate): Observable<Expense> {
+    return this.expensesService.updateExpense(id, data).pipe(
       map(updated => {
         const expense: Expense = {
           id: updated.id,

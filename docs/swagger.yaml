@@ -768,12 +768,6 @@ paths:
       tags: [Expenses]
       operationId: updateExpense
       summary: Actualizar gasto
-      parameters:
-        - name: snapshotId
-          in: query
-          required: true
-          schema:
-            type: string
       requestBody:
         required: true
         content:
@@ -1891,6 +1885,11 @@ components:
           type: number
           format: float
           description: Gastos del mes (opcional)
+        contribution:
+          type: number
+          format: float
+          description: Aportación del mes (opcional)
+          nullable: true
 
     ChecklistItem:
       type: object
