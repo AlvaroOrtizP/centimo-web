@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
+import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.helper';
 
 @Component({
   selector: 'app-banks-form',
@@ -51,7 +52,8 @@ import { Account } from '../../../../models/account';
               step="any"
               placeholder="ej: 4000"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-800 focus:outline-none focus:ring-1 focus:ring-blue-800"
-              [(ngModel)]="bbvaBalance"
+              [ngModel]="bbvaBalance.display()"
+              (ngModelChange)="bbvaBalance.userValue.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Valor total en BBVA a 31 del mes</p>
           </div>
@@ -60,9 +62,9 @@ import { Account } from '../../../../models/account';
         <div class="mt-4 flex items-center gap-3">
           <button
             class="rounded-lg bg-[#004481] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#003366] disabled:opacity-50"
-            [disabled]="!bbvaBalance()"
+            [disabled]="!bbvaBalance.display()"
             (click)="saveBBVA()"
-          >Guardar</button>
+          >{{ hasExistingBBVA() ? 'Editar balance' : 'Guardar' }}</button>
           @if (savedBBVA()) {
             <span class="text-sm text-emerald-600">✓ Guardado</span>
           }
@@ -87,7 +89,8 @@ import { Account } from '../../../../models/account';
               step="any"
               placeholder="ej: 3000"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-600 focus:outline-none focus:ring-1 focus:ring-orange-600"
-              [(ngModel)]="caixaBalance"
+              [ngModel]="caixaBalance.display()"
+              (ngModelChange)="caixaBalance.userValue.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Valor total en CaixaBank a 31 del mes</p>
           </div>
@@ -96,9 +99,9 @@ import { Account } from '../../../../models/account';
         <div class="mt-4 flex items-center gap-3">
           <button
             class="rounded-lg bg-[#E65100] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#BF360C] disabled:opacity-50"
-            [disabled]="!caixaBalance()"
+            [disabled]="!caixaBalance.display()"
             (click)="saveCaixa()"
-          >Guardar</button>
+          >{{ hasExistingCaixa() ? 'Editar balance' : 'Guardar' }}</button>
           @if (savedCaixa()) {
             <span class="text-sm text-emerald-600">✓ Guardado</span>
           }
@@ -140,23 +143,39 @@ export class BanksFormComponent {
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = signal(this.service.currentYear());
 
-  protected readonly bbvaBalance = signal<number | null>(null);
+  protected readonly bbvaBalance = createSnapshotField(this.service, this.BBVA_ID, () => this.localYear(), () => this.localMonth());
   protected readonly savedBBVA = signal(false);
 
-  protected readonly caixaBalance = signal<number | null>(null);
+  protected readonly caixaBalance = createSnapshotField(this.service, this.CAIXA_ID, () => this.localYear(), () => this.localMonth());
   protected readonly savedCaixa = signal(false);
 
   protected readonly previousBBVABalance = computed(() => {
     const snapshots = this.service.getSnapshotsByAccount(this.BBVA_ID);
-    const current = snapshots.find(s => s.year === this.localYear() && s.month === this.localMonth());
-    return current?.balance ?? null;
+    let prevMonth = this.localMonth() - 1;
+    let prevYear = this.localYear();
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+    const prev = snapshots.find(s => s.year === prevYear && s.month === prevMonth);
+    return prev?.balance ?? null;
   });
 
   protected readonly previousCaixaBalance = computed(() => {
     const snapshots = this.service.getSnapshotsByAccount(this.CAIXA_ID);
-    const current = snapshots.find(s => s.year === this.localYear() && s.month === this.localMonth());
-    return current?.balance ?? null;
+    let prevMonth = this.localMonth() - 1;
+    let prevYear = this.localYear();
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+    const prev = snapshots.find(s => s.year === prevYear && s.month === prevMonth);
+    return prev?.balance ?? null;
   });
+
+  protected readonly hasExistingBBVA = computed(() =>
+    this.service.getSnapshotsByAccount(this.BBVA_ID)
+      .some(s => s.year === this.localYear() && s.month === this.localMonth())
+  );
+
+  protected readonly hasExistingCaixa = computed(() =>
+    this.service.getSnapshotsByAccount(this.CAIXA_ID)
+      .some(s => s.year === this.localYear() && s.month === this.localMonth())
+  );
 
   protected readonly history = computed(() => {
     const bbvaSnaps = this.service.getSnapshotsByAccount(this.BBVA_ID);
@@ -184,26 +203,14 @@ export class BanksFormComponent {
 
   constructor() {
     effect(() => {
-      const snapshots = this.service.snapshots();
-      const y = this.localYear();
-      const m = this.localMonth();
-      this.bbvaBalance.set(
-        snapshots.find(s => s.accountId === this.BBVA_ID && s.year === y && s.month === m)?.balance ?? null
-      );
-    });
-
-    effect(() => {
-      const snapshots = this.service.snapshots();
-      const y = this.localYear();
-      const m = this.localMonth();
-      this.caixaBalance.set(
-        snapshots.find(s => s.accountId === this.CAIXA_ID && s.year === y && s.month === m)?.balance ?? null
-      );
+      this.localYear();
+      this.localMonth();
+      resetSnapshotFields(this.bbvaBalance, this.caixaBalance);
     });
   }
 
   protected saveBBVA(): void {
-    const bal = this.bbvaBalance();
+    const bal = this.bbvaBalance.display();
     if (bal === null) { return; }
 
     this.service.upsertSnapshot(this.BBVA_ID, this.localYear(), this.localMonth(), bal, 0).subscribe();
@@ -213,7 +220,7 @@ export class BanksFormComponent {
   }
 
   protected saveCaixa(): void {
-    const bal = this.caixaBalance();
+    const bal = this.caixaBalance.display();
     if (bal === null) { return; }
 
     this.service.upsertSnapshot(this.CAIXA_ID, this.localYear(), this.localMonth(), bal, 0).subscribe();

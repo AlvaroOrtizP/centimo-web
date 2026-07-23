@@ -162,9 +162,9 @@ import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.h
               <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
                 <span class="w-20 text-gray-500">{{ getMonthLabel(h.year, h.month) }}</span>
                 <span class="font-semibold text-gray-900">{{ h.savings.toLocaleString('es-ES') }} €</span>
-                <span class="text-xs text-gray-400">ahorro</span>
+                <span class="text-xs text-gray-400">save</span>
                 <span class="font-semibold text-gray-900">{{ h.investment.toLocaleString('es-ES') }} €</span>
-                <span class="text-xs text-gray-400">inversión</span>
+                <span class="text-xs text-gray-400">health</span>
               </div>
             }
           </div>
