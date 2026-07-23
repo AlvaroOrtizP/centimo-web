@@ -43,7 +43,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
         </div>
       }
 
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
           <input
@@ -57,7 +57,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
           <p class="mt-0.5 text-xs text-gray-400">Valor total en Revolut a 31 del mes</p>
         </div>
         <div>
-          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses cuenta remunerada (€)</label>
+          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses C. remunerada (€)</label>
           <input
             type="number"
             step="any"
@@ -69,15 +69,26 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
           <p class="mt-0.5 text-xs text-gray-400">Intereses obtenidos este mes</p>
         </div>
         <div>
-          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">TAE (%)</label>
+          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
           <input
             type="number"
             step="any"
-            placeholder="ej: 2.5"
+            placeholder="ej: 100"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-            [(ngModel)]="tae"
+            [(ngModel)]="contribution"
           />
-          <p class="mt-0.5 text-xs text-gray-400">Opcional — referencia</p>
+          <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Retirada este mes (€)</label>
+          <input
+            type="number"
+            step="any"
+            placeholder="ej: 50"
+            class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
+            [(ngModel)]="withdrawal"
+          />
+          <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
         </div>
       </div>
 
@@ -120,6 +131,8 @@ export class RevolutFormComponent {
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = signal(this.service.currentYear());
   protected readonly tae = signal<number | null>(null);
+  protected readonly contribution = signal<number | null>(null);
+  protected readonly withdrawal = signal<number | null>(null);
   protected readonly saved = signal(false);
   protected readonly editingSnapshot = signal<MonthlySnapshot | null>(null);
 
@@ -151,6 +164,8 @@ export class RevolutFormComponent {
       this.localMonth();
       this.editingSnapshot.set(null);
       resetSnapshotFields(this.balance, this.interest);
+      this.contribution.set(null);
+      this.withdrawal.set(null);
     });
   }
 
@@ -167,11 +182,15 @@ export class RevolutFormComponent {
     this.balance.hasUserValue.set(true);
     this.interest.userValue.set(snap.income);
     this.interest.hasUserValue.set(true);
+    this.contribution.set(snap.contribution ?? null);
+    this.withdrawal.set(snap.expenses > 0 ? snap.expenses : null);
   }
 
   protected cancelEdit(): void {
     this.editingSnapshot.set(null);
     resetSnapshotFields(this.balance, this.interest);
+    this.contribution.set(null);
+    this.withdrawal.set(null);
   }
 
   protected onDelete(id: string): void {
@@ -183,20 +202,24 @@ export class RevolutFormComponent {
     if (bal === null) { return; }
 
     const inter = this.interest.display() ?? 0;
+    const contrib = this.contribution() ?? 0;
+    const withdrawal = this.withdrawal() ?? 0;
 
     const existing = this.editingSnapshot();
     if (existing) {
       this.service.updateSnapshot(existing.id, {
         balance: bal,
         income: inter,
+        contribution: contrib,
+        expenses: withdrawal,
       });
       this.cancelEdit();
     } else {
-      this.service.upsertSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
+      this.service.upsertSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth(), bal, inter, withdrawal, contrib).subscribe();
     }
 
-    this.interest.userValue.set(null);
-    this.interest.hasUserValue.set(false);
+    this.contribution.set(null);
+    this.withdrawal.set(null);
     this.saved.set(true);
     setTimeout(() => this.saved.set(false), 2000);
   }

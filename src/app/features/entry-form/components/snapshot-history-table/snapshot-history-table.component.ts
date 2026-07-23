@@ -20,7 +20,7 @@ import { MONTHS } from '../../../../core/constants/date.constants';
                 <th class="px-4 py-3">Mes</th>
                 <th class="px-4 py-3 text-right">Balance</th>
                 <th class="px-4 py-3 text-right">Ingresos</th>
-                <th class="px-4 py-3 text-right">Gastos</th>
+                <th class="px-4 py-3 text-right">Retiradas</th>
                 <th class="px-4 py-3 text-right">Aportación</th>
                 <th class="px-4 py-3 text-center">Acciones</th>
               </tr>

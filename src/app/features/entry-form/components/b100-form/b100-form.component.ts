@@ -46,7 +46,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
           </div>
         }
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
             <input
@@ -72,15 +72,26 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             <p class="mt-0.5 text-xs text-gray-400">Intereses obtenidos este mes</p>
           </div>
           <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">TAE (%)</label>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
             <input
               type="number"
               step="any"
-              placeholder="ej: 2.5"
+              placeholder="ej: 100"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [(ngModel)]="savingsTae"
+              [(ngModel)]="savingsContribution"
             />
-            <p class="mt-0.5 text-xs text-gray-400">Opcional — referencia</p>
+            <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Retirada este mes (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 50"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              [(ngModel)]="savingsWithdrawal"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
           </div>
         </div>
 
@@ -112,7 +123,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
           </div>
         }
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
             <input
@@ -138,15 +149,26 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             <p class="mt-0.5 text-xs text-gray-400">Intereses obtenidos este mes</p>
           </div>
           <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">TAE (%)</label>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
             <input
               type="number"
               step="any"
-              placeholder="ej: 3.5"
+              placeholder="ej: 200"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [(ngModel)]="investmentTae"
+              [(ngModel)]="investmentContribution"
             />
-            <p class="mt-0.5 text-xs text-gray-400">Opcional — referencia</p>
+            <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Retirada este mes (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 100"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              [(ngModel)]="investmentWithdrawal"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
           </div>
         </div>
 
@@ -214,11 +236,15 @@ export class B100FormComponent {
 
   protected readonly savingsBalance = createSnapshotField(this.service, this.SAVINGS_ID, () => this.localYear(), () => this.localMonth());
   protected readonly savingsInterest = createSnapshotField(this.service, this.SAVINGS_ID, () => this.localYear(), () => this.localMonth(), 'income');
+  protected readonly savingsContribution = signal<number | null>(null);
+  protected readonly savingsWithdrawal = signal<number | null>(null);
   protected readonly savingsTae = signal<number | null>(null);
   protected readonly savedSavings = signal(false);
 
   protected readonly investmentBalance = createSnapshotField(this.service, this.INVESTMENT_ID, () => this.localYear(), () => this.localMonth());
   protected readonly investmentInterest = createSnapshotField(this.service, this.INVESTMENT_ID, () => this.localYear(), () => this.localMonth(), 'income');
+  protected readonly investmentContribution = signal<number | null>(null);
+  protected readonly investmentWithdrawal = signal<number | null>(null);
   protected readonly investmentTae = signal<number | null>(null);
   protected readonly savedInvestment = signal(false);
 
@@ -267,6 +293,10 @@ export class B100FormComponent {
       this.editingSavings.set(null);
       this.editingInvestment.set(null);
       resetSnapshotFields(this.savingsBalance, this.savingsInterest, this.investmentBalance, this.investmentInterest);
+      this.savingsContribution.set(null);
+      this.savingsWithdrawal.set(null);
+      this.investmentContribution.set(null);
+      this.investmentWithdrawal.set(null);
     });
   }
 
@@ -278,6 +308,8 @@ export class B100FormComponent {
     this.savingsBalance.hasUserValue.set(true);
     this.savingsInterest.userValue.set(snap.income);
     this.savingsInterest.hasUserValue.set(true);
+    this.savingsContribution.set(snap.contribution ?? null);
+    this.savingsWithdrawal.set(snap.expenses > 0 ? snap.expenses : null);
   }
 
   protected cancelEditSavings(): void {
@@ -286,6 +318,8 @@ export class B100FormComponent {
     this.savingsBalance.hasUserValue.set(false);
     this.savingsInterest.userValue.set(null);
     this.savingsInterest.hasUserValue.set(false);
+    this.savingsContribution.set(null);
+    this.savingsWithdrawal.set(null);
   }
 
   protected onDeleteSavings(id: string): void {
@@ -300,6 +334,8 @@ export class B100FormComponent {
     this.investmentBalance.hasUserValue.set(true);
     this.investmentInterest.userValue.set(snap.income);
     this.investmentInterest.hasUserValue.set(true);
+    this.investmentContribution.set(snap.contribution ?? null);
+    this.investmentWithdrawal.set(snap.expenses > 0 ? snap.expenses : null);
   }
 
   protected cancelEditInvestment(): void {
@@ -308,6 +344,8 @@ export class B100FormComponent {
     this.investmentBalance.hasUserValue.set(false);
     this.investmentInterest.userValue.set(null);
     this.investmentInterest.hasUserValue.set(false);
+    this.investmentContribution.set(null);
+    this.investmentWithdrawal.set(null);
   }
 
   protected onDeleteInvestment(id: string): void {
@@ -319,16 +357,20 @@ export class B100FormComponent {
     if (bal === null) { return; }
 
     const inter = this.savingsInterest.display() ?? 0;
+    const contrib = this.savingsContribution() ?? 0;
+    const withdrawal = this.savingsWithdrawal() ?? 0;
 
     const existing = this.editingSavings();
     if (existing) {
       this.service.updateSnapshot(existing.id, {
         balance: bal,
         income: inter,
+        contribution: contrib,
+        expenses: withdrawal,
       });
       this.cancelEditSavings();
     } else {
-      this.service.upsertSnapshot(this.SAVINGS_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
+      this.service.upsertSnapshot(this.SAVINGS_ID, this.localYear(), this.localMonth(), bal, inter, withdrawal, contrib).subscribe();
     }
 
     this.savedSavings.set(true);
@@ -340,16 +382,20 @@ export class B100FormComponent {
     if (bal === null) { return; }
 
     const inter = this.investmentInterest.display() ?? 0;
+    const contrib = this.investmentContribution() ?? 0;
+    const withdrawal = this.investmentWithdrawal() ?? 0;
 
     const existing = this.editingInvestment();
     if (existing) {
       this.service.updateSnapshot(existing.id, {
         balance: bal,
         income: inter,
+        contribution: contrib,
+        expenses: withdrawal,
       });
       this.cancelEditInvestment();
     } else {
-      this.service.upsertSnapshot(this.INVESTMENT_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
+      this.service.upsertSnapshot(this.INVESTMENT_ID, this.localYear(), this.localMonth(), bal, inter, withdrawal, contrib).subscribe();
     }
 
     this.savedInvestment.set(true);

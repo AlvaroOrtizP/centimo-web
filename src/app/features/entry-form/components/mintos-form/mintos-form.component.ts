@@ -42,7 +42,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
         </div>
       }
 
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
           <input
@@ -55,6 +55,17 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
           <p class="mt-0.5 text-xs text-gray-400">Valor total en Mintos a 31 del mes</p>
         </div>
         <div>
+          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Ingresos este mes (€)</label>
+          <input
+            type="number"
+            step="any"
+            placeholder="ej: 25"
+            class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            [(ngModel)]="income"
+          />
+          <p class="mt-0.5 text-xs text-gray-400">Intereses o rendimientos obtenidos</p>
+        </div>
+        <div>
           <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
           <input
             type="number"
@@ -63,7 +74,18 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
             [(ngModel)]="contribution"
           />
-          <p class="mt-0.5 text-xs text-gray-400">Opcional — cantidad ingresada este mes</p>
+          <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Retirada este mes (€)</label>
+          <input
+            type="number"
+            step="any"
+            placeholder="ej: 100"
+            class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            [(ngModel)]="withdrawal"
+          />
+          <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
         </div>
       </div>
 
@@ -107,7 +129,9 @@ export class MintosFormComponent {
   protected readonly localYear = signal(this.service.currentYear());
 
   protected readonly balance = signal<number | null>(null);
+  protected readonly income = signal<number | null>(null);
   protected readonly contribution = signal<number | null>(null);
+  protected readonly withdrawal = signal<number | null>(null);
   protected readonly saved = signal(false);
   protected readonly editingSnapshot = signal<MonthlySnapshot | null>(null);
 
@@ -137,7 +161,9 @@ export class MintosFormComponent {
       this.editingSnapshot.set(null);
       const snap = this.service.getSnapshot(this.MINTOS_ACCOUNT_ID, this.localYear(), this.localMonth());
       this.balance.set(snap?.balance ?? null);
+      this.income.set(snap?.income ?? null);
       this.contribution.set(snap?.contribution ?? null);
+      this.withdrawal.set(snap?.expenses && snap.expenses > 0 ? snap.expenses : null);
     });
   }
 
@@ -146,13 +172,17 @@ export class MintosFormComponent {
     this.localYear.set(snap.year);
     this.localMonth.set(snap.month);
     this.balance.set(snap.balance);
+    this.income.set(snap.income > 0 ? snap.income : null);
     this.contribution.set(snap.contribution ?? null);
+    this.withdrawal.set(snap.expenses > 0 ? snap.expenses : null);
   }
 
   protected cancelEdit(): void {
     this.editingSnapshot.set(null);
     this.balance.set(null);
+    this.income.set(null);
     this.contribution.set(null);
+    this.withdrawal.set(null);
   }
 
   protected onDelete(id: string): void {
@@ -163,20 +193,26 @@ export class MintosFormComponent {
     const bal = this.balance();
     if (bal === null) { return; }
 
+    const inc = this.income() ?? 0;
     const contrib = this.contribution() ?? 0;
+    const withdrawal = this.withdrawal() ?? 0;
 
     const existing = this.editingSnapshot();
     if (existing) {
       this.service.updateSnapshot(existing.id, {
         balance: bal,
+        income: inc,
         contribution: contrib,
+        expenses: withdrawal,
       });
       this.cancelEdit();
     } else {
-      this.service.upsertSnapshot(this.MINTOS_ACCOUNT_ID, this.localYear(), this.localMonth(), bal, 0, undefined, contrib).subscribe();
+      this.service.upsertSnapshot(this.MINTOS_ACCOUNT_ID, this.localYear(), this.localMonth(), bal, inc, withdrawal, contrib).subscribe();
     }
 
+    this.income.set(null);
     this.contribution.set(null);
+    this.withdrawal.set(null);
     this.saved.set(true);
     setTimeout(() => this.saved.set(false), 2000);
   }
