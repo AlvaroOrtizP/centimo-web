@@ -1,8 +1,7 @@
 import { Component, input } from '@angular/core';
 
 import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
-
-const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+import { MONTHS } from '../../../../core/constants/date.constants';
 
 @Component({
   selector: 'app-monthly-table',

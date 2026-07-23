@@ -1,7 +1,7 @@
-import { Component, computed, inject, input, signal, effect } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { switchMap } from 'rxjs/operators';
 
-import { AccountType } from '../../../../models/account-type';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { Account } from '../../../../models/account';
 import { ExpenseCategory } from '../../../../models/expense-category';
@@ -13,10 +13,10 @@ import { Expense } from '../../../../models/expense';
   imports: [FormsModule],
   template: `
     <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <h3 class="mb-4 text-sm font-semibold text-gray-900">Añadir Gasto</h3>
+      <h3 class="mb-4 text-sm font-semibold text-gray-900">{{ editingExpense() ? 'Editar Gasto' : 'Añadir Gasto' }}</h3>
 
       <div class="flex flex-wrap gap-2">
-        <select class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" [(ngModel)]="category">
+        <select aria-label="Categoría" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1" [(ngModel)]="category">
           <option value="">Categoría</option>
           <option [value]="ExpenseCategory.Comida">Comida</option>
           <option [value]="ExpenseCategory.Ocio">Ocio</option>
@@ -31,26 +31,39 @@ import { Expense } from '../../../../models/expense';
         </select>
 
         <input
-          type="number" placeholder="Cantidad (€)"
-          class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          type="date" aria-label="Fecha"
+          class="w-56 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
+          [(ngModel)]="date"
+        />
+
+        <input
+          type="number" placeholder="Cantidad (€)" aria-label="Cantidad"
+          class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
           [(ngModel)]="amount"
         />
 
         <input
-          type="text" placeholder="Descripción"
-          class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          type="text" placeholder="Descripción" aria-label="Descripción"
+          class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
           [(ngModel)]="description"
         />
 
         <button
           class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-          [disabled]="!accountId() || !category() || !amount()"
+          [disabled]="!snapshotId() || !category() || !amount() || !date()"
           (click)="save()"
-        >Añadir Gasto</button>
+        >{{ editingExpense() ? 'Guardar cambios' : 'Añadir Gasto' }}</button>
+
+        @if (editingExpense()) {
+          <button
+            class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            (click)="cancelEdit()"
+          >Cancelar</button>
+        }
       </div>
 
       @if (saved()) {
-        <p class="mt-2 text-sm text-green-600">Gasto añadido correctamente</p>
+        <p class="mt-2 text-sm text-green-600">Gasto guardado correctamente</p>
       }
 
       @if (expenses().length > 0) {
@@ -60,14 +73,26 @@ import { Expense } from '../../../../models/expense';
             @for (exp of expenses(); track exp.id) {
               <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
                 <span class="font-medium text-red-600 w-24">{{ exp.amount.toLocaleString('es-ES') }} €</span>
-                <span class="text-gray-700 w-28">{{ exp.category }}</span>
+                <span class="text-gray-700 w-30">{{ exp.date }}</span>
+                <span class="text-gray-500 w-28">{{ exp.category }}</span>
                 <span class="flex-1 text-gray-500 truncate">{{ exp.description }}</span>
+                <button
+                  class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-500"
+                  (click)="startEdit(exp)"
+                  title="Editar gasto"
+                  aria-label="Editar gasto"
+                >
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
+                  </svg>
+                </button>
                 <button
                   class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                   (click)="deleteExpense(exp)"
                   title="Eliminar gasto"
+                  aria-label="Eliminar gasto"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                   </svg>
                 </button>
@@ -86,13 +111,26 @@ export class ExpenseFormComponent {
   readonly year = input.required<number>();
   readonly month = input.required<number>();
 
-  protected readonly accountId = signal('');
+  private readonly ACCOUNT_ID = 'bbva-gasto';
 
-  protected readonly snapshotId = computed(() => {
-    const accId = this.accountId();
-    if (!accId) { return ''; }
-    return `${accId}-${this.year()}-${String(this.month()).padStart(2, '0')}`;
-  });
+  protected readonly snapshotId = signal('');
+
+  constructor() {
+    effect(() => {
+      const y = this.year();
+      const m = this.month();
+      const existing = this.service.getSnapshot(this.ACCOUNT_ID, y, m);
+      if (existing) {
+        this.snapshotId.set(existing.id);
+        this.service.loadExpenses(existing.id);
+        return;
+      }
+      this.service.upsertSnapshot(this.ACCOUNT_ID, y, m, 0, 0).subscribe(res => {
+        this.snapshotId.set(res.id);
+        this.service.loadExpenses(res.id);
+      });
+    });
+  }
 
   protected readonly expenses = computed<Expense[]>(() => {
     const id = this.snapshotId();
@@ -103,54 +141,65 @@ export class ExpenseFormComponent {
   protected readonly ExpenseCategory = ExpenseCategory;
   protected readonly category = signal<ExpenseCategory | ''>('');
   protected readonly amount = signal(0);
+  protected readonly date = signal(new Date().toISOString().slice(0, 10));
   protected readonly description = signal('');
   protected readonly saved = signal(false);
-
-  constructor() {
-    effect(() => {
-      const accs = this.accounts();
-      const checking = accs.find(a => a.type === AccountType.Checking);
-      this.accountId.set(checking?.id ?? accs[0]?.id ?? '');
-    });
-  }
+  protected readonly editingExpense = signal<Expense | null>(null);
 
   protected save(): void {
-    const accId = this.accountId();
-    const y = this.year();
-    const m = this.month();
-    const snapshotId = this.snapshotId();
+    const editing = this.editingExpense();
+    const snapId = this.snapshotId();
 
-    const existing = this.service.getSnapshot(accId, y, m);
-    if (!existing) {
-      this.service.addSnapshot({
-        id: snapshotId,
-        accountId: accId,
-        year: y,
-        month: m,
-        balance: 0,
-        income: 0,
-        expenses: this.amount(),
+    if (editing) {
+      this.service.updateExpense(editing.id, {
+        snapshotId: snapId,
+        category: this.category() as ExpenseCategory,
+        amount: this.amount(),
+        date: this.date(),
+        description: this.description() || undefined,
+      }).subscribe(() => {
+        this.cancelEdit();
+        this.saved.set(true);
+        setTimeout(() => this.saved.set(false), 2000);
       });
-    } else {
-      this.service.updateSnapshot(existing.id, { expenses: existing.expenses + this.amount() });
+      return;
     }
 
     this.service.addExpense({
-      id: `exp-${snapshotId}-${Date.now()}`,
-      snapshotId,
+      id: `exp-${snapId}-${Date.now()}`,
+      snapshotId: snapId,
       category: this.category() as ExpenseCategory,
       amount: this.amount(),
+      date: this.date(),
       description: this.description() || undefined,
+    }).subscribe(() => {
+      this.resetForm();
+      this.saved.set(true);
+      setTimeout(() => this.saved.set(false), 2000);
     });
+  }
 
-    this.category.set('');
-    this.amount.set(0);
-    this.description.set('');
-    this.saved.set(true);
-    setTimeout(() => this.saved.set(false), 2000);
+  protected startEdit(exp: Expense): void {
+    this.editingExpense.set(exp);
+    this.category.set(exp.category);
+    this.amount.set(exp.amount);
+    this.date.set(exp.date);
+    this.description.set(exp.description ?? '');
+  }
+
+  protected cancelEdit(): void {
+    this.editingExpense.set(null);
+    this.resetForm();
   }
 
   protected deleteExpense(exp: Expense): void {
-    this.service.deleteExpense(exp.id, exp.snapshotId);
+    this.service.deleteExpense(exp.id, this.snapshotId());
+  }
+
+  private resetForm(): void {
+    this.category.set('');
+    this.amount.set(0);
+    this.date.set('');
+    this.description.set('');
   }
 }

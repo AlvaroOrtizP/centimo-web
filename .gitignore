@@ -40,3 +40,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Código autogenerado desde el OpenAPI / Swagger YAML
+src/app/api/generated/

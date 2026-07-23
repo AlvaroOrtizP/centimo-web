@@ -25,7 +25,7 @@ interface ProjectEntry {
               class="flex items-center gap-1 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-100"
               (click)="addProject(acc.id)"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
               Añadir proyecto
@@ -34,7 +34,7 @@ interface ProjectEntry {
 
           @if (getProjects(acc.id).length === 0) {
             <div class="mt-4 flex flex-col items-center gap-2 py-8 text-sm text-gray-400">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300">
+              <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300">
                 <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
               </svg>
               Sin proyectos. Añade uno nuevo.
@@ -45,13 +45,13 @@ interface ProjectEntry {
             @for (proj of getProjects(acc.id); track proj; let idx = $index) {
               <div class="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2 transition-colors hover:bg-gray-100">
                 <input
-                  type="text" placeholder="Nombre del proyecto"
+                  type="text" placeholder="Nombre del proyecto" aria-label="Nombre del proyecto"
                   class="flex-1 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                   [(ngModel)]="proj.name"
                 />
                 <div class="relative">
                   <input
-                    type="number" placeholder="Valor actual"
+                    type="number" placeholder="Valor actual" aria-label="Valor actual"
                     class="w-32 rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-sm text-right font-medium focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                     [(ngModel)]="proj.value"
                   />
@@ -61,8 +61,9 @@ interface ProjectEntry {
                   class="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                   (click)="removeProject(acc.id, idx)"
                   title="Eliminar proyecto"
+                  aria-label="Eliminar proyecto"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                   </svg>
                 </button>

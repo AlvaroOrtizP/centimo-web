@@ -8,35 +8,7 @@ import { AssetType } from '../../../../models/asset-type';
 import { TransactionType } from '../../../../models/transaction-type';
 import { TradeStatus } from '../../../../models/trade-status';
 import { InvestmentTransaction } from '../../../../models/investment-transaction';
-
-interface AssetSuggestion {
-  ticker: string;
-  name: string;
-}
-
-const ASSET_SUGGESTIONS: Record<string, AssetSuggestion[]> = {
-  crypto: [
-    { ticker: 'BTC', name: 'Bitcoin' },
-    { ticker: 'ETH', name: 'Ethereum' },
-    { ticker: 'SOL', name: 'Solana' },
-    { ticker: 'ADA', name: 'Cardano' },
-    { ticker: 'DOT', name: 'Polkadot' },
-  ],
-  stock: [
-    { ticker: 'AAPL', name: 'Apple' },
-    { ticker: 'MSFT', name: 'Microsoft' },
-    { ticker: 'GOOGL', name: 'Alphabet' },
-    { ticker: 'AMZN', name: 'Amazon' },
-    { ticker: 'NVDA', name: 'NVIDIA' },
-  ],
-  etf: [
-    { ticker: 'VWCE', name: 'Vanguard FTSE All-World' },
-    { ticker: 'VUSA', name: 'Vanguard S&P 500' },
-    { ticker: 'CSPX', name: 'iShares S&P 500' },
-    { ticker: 'IUSA', name: 'iShares Euro Stoxx 50' },
-  ],
-  index_fund: [],
-};
+import { ASSET_SUGGESTIONS } from '../../../../core/constants/trade.constants';
 
 @Component({
   selector: 'app-trade-form',
@@ -46,7 +18,21 @@ const ASSET_SUGGESTIONS: Record<string, AssetSuggestion[]> = {
     <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <h3 class="mb-4 text-sm font-semibold text-gray-900">Registrar operación</h3>
 
+      <div class="mb-4 rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-800">
+        Recuerda revisar con Hacienda las obligaciones fiscales de las operaciones de inversión.
+      </div>
+
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div>
+          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Cuenta</label>
+          <select class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500" [(ngModel)]="selectedAccountId">
+            <option value="">Selecciona cuenta</option>
+            @for (acc of accounts(); track acc.id) {
+              <option [value]="acc.id">{{ acc.name }}</option>
+            }
+          </select>
+        </div>
+
         <div>
           <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Tipo</label>
           <div class="mt-1 flex gap-2">
@@ -157,7 +143,7 @@ const ASSET_SUGGESTIONS: Record<string, AssetSuggestion[]> = {
                   [class.bg-emerald-100 text-emerald-800]="t.type === 'buy'"
                   [class.bg-red-100 text-red-800]="t.type === 'sell'"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                     <polyline [attr.points]="t.type === 'buy' ? '18 15 12 9 6 15' : '6 9 12 15 18 9'"/>
                   </svg>
                   {{ t.type === 'buy' ? 'COMPRA' : 'VENTA' }}
@@ -170,8 +156,9 @@ const ASSET_SUGGESTIONS: Record<string, AssetSuggestion[]> = {
                   class="ml-auto flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                   (click)="deleteTrade(t)"
                   title="Eliminar operación"
+                  aria-label="Eliminar operación"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                   </svg>
                 </button>

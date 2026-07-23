@@ -1,0 +1,2317 @@
+openapi: 3.0.3
+info:
+  title: Centimo API
+  description: |
+    API REST de Centimo — dashboard de finanzas personales.
+    Gestiona plataformas, cuentas, snapshots mensuales, gastos, ingresos,
+    inversiones, crowdlending, fondos, distribución de sueldo, compromisos y alertas.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: API v1
+
+tags:
+  # Configuración
+  - name: Platforms
+    description: Plataformas financieras (BBVA, MyInvestor, Revolut...)
+  - name: Accounts
+    description: Cuentas dentro de una plataforma
+  - name: SalaryAllocations
+    description: Distribución del sueldo por mes y plataforma
+  - name: Commitments
+    description: Compromisos de pago recurrentes y puntuales
+  - name: Alerts
+    description: Alertas que se muestran en la pestaña de Nómina para un mes concreto
+  # Seguimiento mensual
+  - name: Snapshots
+    description: Registro mensual del estado de una cuenta
+  - name: Expenses
+    description: Gastos del mes categorizados
+  - name: Incomes
+    description: Ingresos detallados del mes
+  # Inversiones
+  - name: Holdings
+    description: Posiciones abiertas en cuentas de inversión
+  - name: Trades
+    description: Operaciones de compra/venta de activos
+  # Otros
+  - name: Crowdlending
+    description: Inversiones en crowdlending
+  - name: MyInvestorFunds
+    description: Fondos indexados de MyInvestor
+  - name: FundBalances
+    description: Balance mensual de fondos MyInvestor
+  # Resúmenes
+  - name: Summaries
+    description: Resúmenes agregados y consultas calculadas
+
+paths:
+  # ════════════════════════════════════════════
+  #  CONFIGURACIÓN
+  # ════════════════════════════════════════════
+
+  # ── Platforms ──
+  /platforms:
+    get:
+      tags: [Platforms]
+      operationId: listPlatforms
+      summary: Listar plataformas
+      responses:
+        '200':
+          description: Lista de plataformas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Platform'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [Platforms]
+      operationId: createPlatform
+      summary: Crear plataforma
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlatformCreate'
+      responses:
+        '201':
+          description: Creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Platform'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /platforms/{id}:
+    parameters:
+      - $ref: '#/components/parameters/PlatformId'
+    get:
+      tags: [Platforms]
+      operationId: getPlatform
+      summary: Obtener plataforma
+      responses:
+        '200':
+          description: Encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Platform'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Platforms]
+      operationId: updatePlatform
+      summary: Actualizar plataforma
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlatformUpdate'
+      responses:
+        '200':
+          description: Actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Platform'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Platforms]
+      operationId: deletePlatform
+      summary: Eliminar plataforma
+      responses:
+        '204':
+          description: Eliminada
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Accounts ──
+  /accounts:
+    get:
+      tags: [Accounts]
+      operationId: listAccounts
+      summary: Listar cuentas
+      parameters:
+        - name: platformId
+          in: query
+          schema:
+            type: string
+          description: Filtrar por plataforma
+      responses:
+        '200':
+          description: Lista de cuentas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [Accounts]
+      operationId: createAccount
+      summary: Crear cuenta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountCreate'
+      responses:
+        '201':
+          description: Creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /accounts/{id}:
+    parameters:
+      - $ref: '#/components/parameters/AccountId'
+    get:
+      tags: [Accounts]
+      operationId: getAccount
+      summary: Obtener cuenta
+      responses:
+        '200':
+          description: Encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Accounts]
+      operationId: updateAccount
+      summary: Actualizar cuenta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountUpdate'
+      responses:
+        '200':
+          description: Actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Accounts]
+      operationId: deleteAccount
+      summary: Eliminar cuenta
+      responses:
+        '204':
+          description: Eliminada
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── SalaryAllocations ──
+  /salary-allocations:
+    get:
+      tags: [SalaryAllocations]
+      operationId: listSalaryAllocations
+      summary: Listar distribuciones de sueldo
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: Lista de distribuciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SalaryAllocation'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [SalaryAllocations]
+      operationId: createSalaryAllocation
+      summary: Crear distribución
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalaryAllocationCreate'
+      responses:
+        '201':
+          description: Creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalaryAllocation'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /salary-allocations/{id}:
+    parameters:
+      - $ref: '#/components/parameters/SalaryAllocationId'
+    put:
+      tags: [SalaryAllocations]
+      operationId: updateSalaryAllocation
+      summary: Actualizar distribución
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalaryAllocationUpdate'
+      responses:
+        '200':
+          description: Actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalaryAllocation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [SalaryAllocations]
+      operationId: deleteSalaryAllocation
+      summary: Eliminar distribución
+      responses:
+        '204':
+          description: Eliminada
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Commitments ──
+  /commitments:
+    get:
+      tags: [Commitments]
+      operationId: listCommitments
+      summary: Listar compromisos
+      description: |
+        Filtrado por mes: `monthly` siempre aparecen, `annual` solo en su mes,
+        `once` en su mes+año.
+      parameters:
+        - name: month
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: Lista de compromisos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Commitment'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [Commitments]
+      operationId: createCommitment
+      summary: Crear compromiso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommitmentCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commitment'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /commitments/{id}:
+    parameters:
+      - $ref: '#/components/parameters/CommitmentId'
+    get:
+      tags: [Commitments]
+      operationId: getCommitment
+      summary: Obtener compromiso
+      responses:
+        '200':
+          description: Encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commitment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Commitments]
+      operationId: updateCommitment
+      summary: Actualizar compromiso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommitmentUpdate'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commitment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Commitments]
+      operationId: deleteCommitment
+      summary: Eliminar compromiso
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Alerts ──
+  /alerts:
+    get:
+      tags: [Alerts]
+      operationId: listAlerts
+      summary: Listar alertas
+      parameters:
+        - name: year
+          in: query
+          schema:
+            type: integer
+        - name: month
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: Lista de alertas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [Alerts]
+      operationId: createAlert
+      summary: Crear alerta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertCreate'
+      responses:
+        '201':
+          description: Creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /alerts/{id}:
+    parameters:
+      - $ref: '#/components/parameters/AlertId'
+    get:
+      tags: [Alerts]
+      operationId: getAlert
+      summary: Obtener alerta
+      responses:
+        '200':
+          description: Encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Alerts]
+      operationId: updateAlert
+      summary: Actualizar alerta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertUpdate'
+      responses:
+        '200':
+          description: Actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Alerts]
+      operationId: deleteAlert
+      summary: Eliminar alerta
+      responses:
+        '204':
+          description: Eliminada
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ════════════════════════════════════════════
+  #  Nomina
+  # ════════════════════════════════════════════
+
+  # ── Nomina ──
+  /nomina/{year}/{month}:
+    get:
+      tags: [ Nomina ]
+      operationId: getNominaAndDate
+      summary: Obtener la nomina única en un mes concreto
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 2026
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          example: 7
+      responses:
+        '200':
+          description: Nomina encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NominaResponse'
+        '404':
+          description: No existe nomina en el mes indicado
+
+  /nomina:
+    post:
+      tags: [ Nomina ]
+      operationId: createNomina
+      summary: Crear nomina
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NominaCreate'
+      responses:
+        '201':
+          description: Creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NominaResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+
+  # ════════════════════════════════════════════
+  #  SEGUIMIENTO MENSUAL
+  # ════════════════════════════════════════════
+
+  # ── Snapshots ──
+  /snapshots/accounts/{accountId}/{year}/{month}:
+    get:
+      tags: [ Snapshots ]
+      operationId: getSnapshotByAccountAndDate
+      summary: Obtener la instantánea única de una cuenta en un mes concreto
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "acc_bbva_1"
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 2026
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          example: 7
+      responses:
+        '200':
+          description: Instantánea encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotResponse'
+        '404':
+          description: No existe instantánea para esa cuenta en el mes indicado
+  /snapshots:
+    get:
+      tags: [Snapshots]
+      operationId: listSnapshots
+      summary: Listar todas las instantaneas
+      responses:
+        '200':
+          description: Lista de instantaneas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SnapshotResponse'
+    post:
+      tags: [Snapshots]
+      operationId: createSnapshot
+      summary: Crear snapshot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonthlySnapshotCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /snapshots/{id}:
+    parameters:
+      - $ref: '#/components/parameters/SnapshotId'
+    get:
+      tags: [Snapshots]
+      operationId: getSnapshot
+      summary: Obtener snapshot
+      responses:
+        '200':
+          description: Encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Snapshots]
+      operationId: updateSnapshot
+      summary: Actualizar snapshot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonthlySnapshotUpdate'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Snapshots]
+      operationId: deleteSnapshot
+      summary: Eliminar snapshot
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /snapshots/upsert:
+    post:
+      tags: [Snapshots]
+      operationId: upsertSnapshot
+      summary: Crear o actualizar snapshot
+      description: |
+        Busca snapshot por (accountId, year, month). Si existe, actualiza balance
+        y aplica incomeDelta de forma incremental. Si no existe, crea uno nuevo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SnapshotUpsert'
+      responses:
+        '200':
+          description: Snapshot resultante
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  # ── Expenses ──
+  /expenses:
+    get:
+      tags: [Expenses]
+      operationId: listExpenses
+      summary: Listar gastos
+      parameters:
+        - name: snapshotId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de gastos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Expense'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [Expenses]
+      operationId: createExpense
+      summary: Crear gasto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /expenses/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ExpenseId'
+    put:
+      tags: [Expenses]
+      operationId: updateExpense
+      summary: Actualizar gasto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseUpdate'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Expenses]
+      operationId: deleteExpense
+      summary: Eliminar gasto
+      description: |
+        Al eliminar, se decrementa automáticamente el campo `expenses`
+        del snapshot asociado.
+      parameters:
+        - name: snapshotId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Incomes ──
+  /incomes:
+    get:
+      tags: [Incomes]
+      operationId: listIncomes
+      summary: Listar ingresos
+      parameters:
+        - name: snapshotId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de ingresos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IncomeSource'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [Incomes]
+      operationId: createIncome
+      summary: Crear ingreso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncomeSourceCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncomeSource'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /incomes/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IncomeId'
+    delete:
+      tags: [Incomes]
+      operationId: deleteIncome
+      summary: Eliminar ingreso
+      description: |
+        Al eliminar, se decrementa automáticamente el campo `income`
+        del snapshot asociado.
+      parameters:
+        - name: snapshotId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Checklist (embebido en snapshots) ──
+  /snapshots/{snapshotId}/checklist/{itemId}/toggle:
+    parameters:
+      - name: snapshotId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: itemId
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      tags: [Snapshots]
+      operationId: toggleChecklistItem
+      summary: Alternar estado de un item del checklist
+      responses:
+        '200':
+          description: Snapshot actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ════════════════════════════════════════════
+  #  INVERSIONES
+  # ════════════════════════════════════════════
+
+  # ── Holdings ──
+  /holdings:
+    get:
+      tags: [Holdings]
+      operationId: listHoldings
+      summary: Listar holdings
+      parameters:
+        - name: snapshotId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de holdings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InvestmentHolding'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [Holdings]
+      operationId: createHolding
+      summary: Crear holding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvestmentHoldingCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentHolding'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /holdings/{id}:
+    parameters:
+      - $ref: '#/components/parameters/HoldingId'
+    delete:
+      tags: [Holdings]
+      operationId: deleteHolding
+      summary: Eliminar holding
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Trades ──
+  /trades:
+    get:
+      tags: [Trades]
+      operationId: listTrades
+      summary: Listar trades
+      parameters:
+        - name: accountId
+          in: query
+          schema:
+            type: string
+          description: Filtrar por cuenta
+      responses:
+        '200':
+          description: Lista de trades
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InvestmentTransaction'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [Trades]
+      operationId: createTrade
+      summary: Crear trade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvestmentTransactionCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentTransaction'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /trades/{id}:
+    parameters:
+      - $ref: '#/components/parameters/TradeId'
+    delete:
+      tags: [Trades]
+      operationId: deleteTrade
+      summary: Eliminar trade
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ════════════════════════════════════════════
+  #  OTROS
+  # ════════════════════════════════════════════
+
+  # ── Crowdlending ──
+  /crowdlending:
+    get:
+      tags: [Crowdlending]
+      operationId: listCrowdlending
+      summary: Listar inversiones crowdlending
+      parameters:
+        - name: platformId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de inversiones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CrowdlendingInvestment'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [Crowdlending]
+      operationId: createCrowdlending
+      summary: Crear inversión crowdlending
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrowdlendingInvestmentCreate'
+      responses:
+        '201':
+          description: Creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrowdlendingInvestment'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /crowdlending/{id}:
+    parameters:
+      - $ref: '#/components/parameters/CrowdlendingId'
+    delete:
+      tags: [Crowdlending]
+      operationId: deleteCrowdlending
+      summary: Eliminar inversión crowdlending
+      responses:
+        '204':
+          description: Eliminada
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── MyInvestor Funds ──
+  /myinvestor-funds:
+    get:
+      tags: [MyInvestorFunds]
+      operationId: listMyInvestorFunds
+      summary: Listar fondos MyInvestor
+      responses:
+        '200':
+          description: Lista de fondos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MyInvestorFund'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [MyInvestorFunds]
+      operationId: createMyInvestorFund
+      summary: Crear fondo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MyInvestorFundCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyInvestorFund'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /myinvestor-funds/{id}:
+    parameters:
+      - $ref: '#/components/parameters/MyInvestorFundId'
+    get:
+      tags: [MyInvestorFunds]
+      operationId: getMyInvestorFund
+      summary: Obtener fondo
+      responses:
+        '200':
+          description: Encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyInvestorFund'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [MyInvestorFunds]
+      operationId: updateMyInvestorFund
+      summary: Actualizar fondo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MyInvestorFundUpdate'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyInvestorFund'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [MyInvestorFunds]
+      operationId: deleteMyInvestorFund
+      summary: Eliminar fondo
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Fund Balances ──
+  /fund-balances:
+    get:
+      tags: [FundBalances]
+      operationId: listFundBalances
+      summary: Listar balances de fondos
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: Lista de balances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FundBalance'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [FundBalances]
+      operationId: createFundBalance
+      summary: Crear balance de fondo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FundBalanceCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundBalance'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /fund-balances/{id}:
+    parameters:
+      - $ref: '#/components/parameters/FundBalanceId'
+    put:
+      tags: [FundBalances]
+      operationId: updateFundBalance
+      summary: Actualizar balance de fondo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FundBalanceUpdate'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundBalance'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [FundBalances]
+      operationId: deleteFundBalance
+      summary: Eliminar balance de fondo
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ════════════════════════════════════════════
+  #  RESÚMENES
+  # ════════════════════════════════════════════
+
+  /summaries/{year}/{month}:
+    parameters:
+      - name: year
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: month
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 12
+    get:
+      tags: [Summaries]
+      operationId: getMonthlySummary
+      summary: Resumen mensual agregado
+      description: |
+        Calcula totales a partir de los snapshots del mes:
+        totalBalance, totalIncome, totalExpenses, netSavings, etc.
+      responses:
+        '200':
+          description: Resumen del mes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonthlySummary'
+        '400':
+          description: Parámetros de fecha inválidos
+        '404':
+          description: Error generico 404
+
+  /summaries/available-months:
+    get:
+      tags: [Summaries]
+      operationId: getAvailableMonths
+      summary: Meses disponibles
+      description: Devuelve los meses (year, month) que tienen al menos un snapshot.
+      responses:
+        '200':
+          description: Lista de meses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/YearMonth'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+# ════════════════════════════════════════════
+#  COMPONENTES REUTILIZABLES
+# ════════════════════════════════════════════
+components:
+  parameters:
+    PlatformId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    AccountId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    SalaryAllocationId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    CommitmentId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    AlertId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    SnapshotId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    ExpenseId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    IncomeId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    HoldingId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    TradeId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    CrowdlendingId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    MyInvestorFundId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    FundBalanceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    # ═══════════ Enums ═══════════
+    PlatformType:
+      type: string
+      enum: [bank, investment, crypto, p2p, crowdlending]
+
+    AccountType:
+      type: string
+      enum: [checking, savings, investment, pocket]
+
+    AssetType:
+      type: string
+      enum: [crypto, stock, etf, index_fund, crowdlending]
+
+    TransactionType:
+      type: string
+      enum: [buy, sell]
+
+    TradeStatus:
+      type: string
+      enum: [open, closed]
+
+    ProjectStatus:
+      type: string
+      enum: [active, completed, defaulted]
+
+    ExpenseCategory:
+      type: string
+      enum: [aseo, coche, comida, discord, ejercicio, hacienda, medicamento, ocio, otros, trabajo]
+
+    AllocationType:
+      type: string
+      enum: [fixed, percentage]
+
+    CommitmentType:
+      type: string
+      enum: [monthly, annual, once]
+
+    CommitmentCategory:
+      type: string
+      enum: [Impuestos, Suscripciones, Seguros, Trámites, Otros]
+
+    # ═══════════ Platform ═══════════
+    Platform:
+      type: object
+      required: [id, name, type, color, icon, order]
+      properties:
+        id:
+          type: string
+          example: bbva
+        name:
+          type: string
+          example: BBVA
+        type:
+          $ref: '#/components/schemas/PlatformType'
+        color:
+          type: string
+          example: "#004481"
+        icon:
+          type: string
+          example: landmark
+        order:
+          type: integer
+        fixedNotes:
+          type: string
+          nullable: true
+
+    PlatformCreate:
+      type: object
+      required: [id, name, type, color, icon, order]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/PlatformType'
+        color:
+          type: string
+        icon:
+          type: string
+        order:
+          type: integer
+        fixedNotes:
+          type: string
+          nullable: true
+
+    PlatformUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/PlatformType'
+        color:
+          type: string
+        icon:
+          type: string
+        order:
+          type: integer
+        fixedNotes:
+          type: string
+          nullable: true
+
+    # ═══════════ Account ═══════════
+    Account:
+      type: object
+      required: [id, platformId, name, type, currency, order]
+      properties:
+        id:
+          type: string
+          example: bbva-checking
+        platformId:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/AccountType'
+        currency:
+          type: string
+          example: EUR
+        order:
+          type: integer
+
+    AccountCreate:
+      type: object
+      required: [id, platformId, name, type, currency, order]
+      properties:
+        id:
+          type: string
+        platformId:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/AccountType'
+        currency:
+          type: string
+        order:
+          type: integer
+
+    AccountUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/AccountType'
+        currency:
+          type: string
+        order:
+          type: integer
+
+    # ═══════════ SalaryAllocation ═══════════
+    SalaryAllocation:
+      type: object
+      required: [id, year, month, platformId, type, value]
+      properties:
+        id:
+          type: string
+        year:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        platformId:
+          type: string
+        type:
+          $ref: '#/components/schemas/AllocationType'
+        value:
+          type: number
+          format: float
+        note:
+          type: string
+          nullable: true
+
+    SalaryAllocationCreate:
+      type: object
+      required: [year, month, platformId, type, value]
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+        platformId:
+          type: string
+        type:
+          $ref: '#/components/schemas/AllocationType'
+        value:
+          type: number
+          format: float
+        note:
+          type: string
+          nullable: true
+
+    SalaryAllocationUpdate:
+      type: object
+      properties:
+        platformId:
+          type: string
+        type:
+          $ref: '#/components/schemas/AllocationType'
+        value:
+          type: number
+          format: float
+        note:
+          type: string
+          nullable: true
+
+    # ═══════════ Commitment ═══════════
+    Commitment:
+      type: object
+      required: [id, description, month, type]
+      properties:
+        id:
+          type: string
+        description:
+          type: string
+        month:
+          type: integer
+          minimum: 0
+          maximum: 12
+          description: "0 para monthly, 1-12 para annual/once"
+        year:
+          type: integer
+          nullable: true
+          description: Solo para type=once
+        type:
+          $ref: '#/components/schemas/CommitmentType'
+        category:
+          $ref: '#/components/schemas/CommitmentCategory'
+        amount:
+          type: number
+          format: float
+          nullable: true
+        isEstimated:
+          type: boolean
+          nullable: true
+
+    CommitmentCreate:
+      type: object
+      required: [description, type]
+      properties:
+        description:
+          type: string
+        month:
+          type: integer
+          minimum: 0
+          maximum: 12
+        year:
+          type: integer
+          nullable: true
+        type:
+          $ref: '#/components/schemas/CommitmentType'
+        category:
+          $ref: '#/components/schemas/CommitmentCategory'
+        amount:
+          type: number
+          format: float
+          nullable: true
+        isEstimated:
+          type: boolean
+          nullable: true
+
+    CommitmentUpdate:
+      type: object
+      properties:
+        description:
+          type: string
+        month:
+          type: integer
+        year:
+          type: integer
+          nullable: true
+        type:
+          $ref: '#/components/schemas/CommitmentType'
+        category:
+          $ref: '#/components/schemas/CommitmentCategory'
+        amount:
+          type: number
+          format: float
+          nullable: true
+        isEstimated:
+          type: boolean
+          nullable: true
+
+    # ═══════════ Alert ═══════════
+    Alert:
+      type: object
+      required: [id, description, month, year]
+      properties:
+        id:
+          type: string
+        description:
+          type: string
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        year:
+          type: integer
+
+    AlertCreate:
+      type: object
+      required: [description, month, year]
+      properties:
+        description:
+          type: string
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        year:
+          type: integer
+
+    AlertUpdate:
+      type: object
+      properties:
+        description:
+          type: string
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        year:
+          type: integer
+
+    NominaResponse:
+      type: object
+      required: [ id, year, month, value ]
+      properties:
+        id:
+          type: string
+        year:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        value:
+          type: number
+          format: decimal
+        note:
+          type: string
+          nullable: true
+
+    NominaCreate:
+      type: object
+      required: [ year, month, value ]
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        value:
+          type: number
+          format: decimal
+        note:
+          type: string
+          nullable: true
+
+    # ═══════════ MonthlySnapshot ═══════════
+    SnapshotResponse:
+      type: object
+      required: [id, accountId, year, month, balance, income, expenses]
+      properties:
+        id:
+          type: string
+        accountId:
+          type: string
+        year:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        balance:
+          type: number
+          format: decimal
+        income:
+          type: number
+          format: decimal
+        expenses:
+          type: number
+          format: decimal
+        contribution:
+          type: number
+          format: decimal
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        checklistItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChecklistItem'
+          nullable: true
+
+    MonthlySnapshotCreate:
+      type: object
+      required: [accountId, year, month, balance, income, expenses]
+      properties:
+        accountId:
+          type: string
+        year:
+          type: integer
+        month:
+          type: integer
+        balance:
+          type: number
+          format: float
+        income:
+          type: number
+          format: float
+        expenses:
+          type: number
+          format: float
+        contribution:
+          type: number
+          format: float
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        checklistItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChecklistItem'
+          nullable: true
+
+    MonthlySnapshotUpdate:
+      type: object
+      properties:
+        balance:
+          type: number
+          format: float
+        income:
+          type: number
+          format: float
+        expenses:
+          type: number
+          format: float
+        contribution:
+          type: number
+          format: float
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        checklistItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChecklistItem'
+          nullable: true
+
+    SnapshotUpsert:
+      type: object
+      required: [accountId, year, month, balance, incomeDelta]
+      properties:
+        accountId:
+          type: string
+        year:
+          type: integer
+        month:
+          type: integer
+        balance:
+          type: number
+          format: float
+        incomeDelta:
+          type: number
+          format: float
+          description: Incremento incremental del income
+        expenses:
+          type: number
+          format: float
+          description: Gastos del mes (opcional)
+        contribution:
+          type: number
+          format: float
+          description: Aportación del mes (opcional)
+          nullable: true
+
+    ChecklistItem:
+      type: object
+      required: [id, text, checked]
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        checked:
+          type: boolean
+
+    # ═══════════ Expense ═══════════
+    Expense:
+      type: object
+      required: [id, snapshotId, category, amount, date]
+      properties:
+        id:
+          type: string
+        snapshotId:
+          type: string
+        category:
+          $ref: '#/components/schemas/ExpenseCategory'
+        amount:
+          type: number
+          format: float
+        date:
+          type: string
+          format: date
+          example: "2026-06-15"
+        description:
+          type: string
+          nullable: true
+
+    ExpenseCreate:
+      type: object
+      required: [snapshotId, category, amount, date]
+      properties:
+        snapshotId:
+          type: string
+        category:
+          $ref: '#/components/schemas/ExpenseCategory'
+        amount:
+          type: number
+          format: float
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+          nullable: true
+
+    ExpenseUpdate:
+      type: object
+      properties:
+        snapshotId:
+          type: string
+        category:
+          $ref: '#/components/schemas/ExpenseCategory'
+        amount:
+          type: number
+          format: float
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+          nullable: true
+
+    # ═══════════ IncomeSource ═══════════
+    IncomeSource:
+      type: object
+      required: [id, snapshotId, source, description, amount]
+      properties:
+        id:
+          type: string
+        snapshotId:
+          type: string
+        source:
+          type: string
+        description:
+          type: string
+        amount:
+          type: number
+          format: float
+
+    IncomeSourceCreate:
+      type: object
+      required: [snapshotId, source, description, amount]
+      properties:
+        snapshotId:
+          type: string
+        source:
+          type: string
+        description:
+          type: string
+        amount:
+          type: number
+          format: float
+
+    # ═══════════ InvestmentHolding ═══════════
+    InvestmentHolding:
+      type: object
+      required: [id, snapshotId, assetName, assetType, quantity, valuePerUnit, totalValue]
+      properties:
+        id:
+          type: string
+        snapshotId:
+          type: string
+        assetName:
+          type: string
+        assetType:
+          $ref: '#/components/schemas/AssetType'
+        quantity:
+          type: number
+          format: float
+        valuePerUnit:
+          type: number
+          format: float
+        totalValue:
+          type: number
+          format: float
+
+    InvestmentHoldingCreate:
+      type: object
+      required: [snapshotId, assetName, assetType, quantity, valuePerUnit, totalValue]
+      properties:
+        snapshotId:
+          type: string
+        assetName:
+          type: string
+        assetType:
+          $ref: '#/components/schemas/AssetType'
+        quantity:
+          type: number
+          format: float
+        valuePerUnit:
+          type: number
+          format: float
+        totalValue:
+          type: number
+          format: float
+
+    # ═══════════ InvestmentTransaction ═══════════
+    InvestmentTransaction:
+      type: object
+      required: [id, accountId, assetName, assetType, type, buyDate, buyQuantity, buyPricePerUnit, buyTotalCost, status]
+      properties:
+        id:
+          type: string
+        accountId:
+          type: string
+        assetName:
+          type: string
+        assetType:
+          $ref: '#/components/schemas/AssetType'
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        buyDate:
+          type: string
+          format: date
+        buyQuantity:
+          type: number
+          format: float
+        buyPricePerUnit:
+          type: number
+          format: float
+        buyTotalCost:
+          type: number
+          format: float
+        sellDate:
+          type: string
+          format: date
+          nullable: true
+        sellPricePerUnit:
+          type: number
+          format: float
+          nullable: true
+        sellTotalReceived:
+          type: number
+          format: float
+          nullable: true
+        sellQuantity:
+          type: number
+          format: float
+          nullable: true
+        pnl:
+          type: number
+          format: float
+          nullable: true
+        status:
+          $ref: '#/components/schemas/TradeStatus'
+
+    InvestmentTransactionCreate:
+      type: object
+      required: [accountId, assetName, assetType, type, buyDate, buyQuantity, buyPricePerUnit, buyTotalCost, status]
+      properties:
+        accountId:
+          type: string
+        assetName:
+          type: string
+        assetType:
+          $ref: '#/components/schemas/AssetType'
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        buyDate:
+          type: string
+          format: date
+        buyQuantity:
+          type: number
+          format: float
+        buyPricePerUnit:
+          type: number
+          format: float
+        buyTotalCost:
+          type: number
+          format: float
+        sellDate:
+          type: string
+          format: date
+          nullable: true
+        sellPricePerUnit:
+          type: number
+          format: float
+          nullable: true
+        sellTotalReceived:
+          type: number
+          format: float
+          nullable: true
+        sellQuantity:
+          type: number
+          format: float
+          nullable: true
+        pnl:
+          type: number
+          format: float
+          nullable: true
+        status:
+          $ref: '#/components/schemas/TradeStatus'
+
+    # ═══════════ CrowdlendingInvestment ═══════════
+    CrowdlendingInvestment:
+      type: object
+      required: [id, platformId, projectName, investedAmount, interestRate, termMonths, startDate, monthlyReturn, totalReturned, status]
+      properties:
+        id:
+          type: string
+        platformId:
+          type: string
+        projectName:
+          type: string
+        investedAmount:
+          type: number
+          format: float
+        interestRate:
+          type: number
+          format: float
+          description: Tipo de interes
+        termMonths:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        monthlyReturn:
+          type: number
+          format: float
+        totalReturned:
+          type: number
+          format: float
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+
+    CrowdlendingInvestmentCreate:
+      type: object
+      required: [platformId, projectName, investedAmount, interestRate, termMonths, startDate, monthlyReturn, totalReturned, status]
+      properties:
+        platformId:
+          type: string
+        projectName:
+          type: string
+        investedAmount:
+          type: number
+          format: float
+        interestRate:
+          type: number
+          format: float
+        termMonths:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        monthlyReturn:
+          type: number
+          format: float
+        totalReturned:
+          type: number
+          format: float
+        status:
+          $ref: '#/components/schemas/ProjectStatus'
+
+    # ═══════════ MyInvestorFund ═══════════
+    MyInvestorFund:
+      type: object
+      required: [id, code, name]
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+          description: ISIN del fondo
+          example: ES0110237023
+        name:
+          type: string
+
+    MyInvestorFundCreate:
+      type: object
+      required: [id, code, name]
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+
+    MyInvestorFundUpdate:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+
+    # ═══════════ FundBalance ═══════════
+    FundBalance:
+      type: object
+      required: [id, fundId, year, month, balance]
+      properties:
+        id:
+          type: string
+        fundId:
+          type: string
+        year:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        balance:
+          type: number
+          format: float
+
+    FundBalanceCreate:
+      type: object
+      required: [fundId, year, month, balance]
+      properties:
+        fundId:
+          type: string
+        year:
+          type: integer
+        month:
+          type: integer
+        balance:
+          type: number
+          format: float
+
+    FundBalanceUpdate:
+      type: object
+      properties:
+        balance:
+          type: number
+          format: float
+
+    # ═══════════ Resúmenes ═══════════
+    MonthlySummary:
+      type: object
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+        totalBalance:
+          type: number
+          format: float
+        totalIncome:
+          type: number
+          format: float
+        totalExpenses:
+          type: number
+          format: float
+        balanceWithoutExpenses:
+          type: number
+          format: float
+        netWorth:
+          type: number
+          format: float
+        netSavings:
+          type: number
+          format: float
+
+    YearMonth:
+      type: object
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+
+    # ═══════════ Error ═══════════
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string

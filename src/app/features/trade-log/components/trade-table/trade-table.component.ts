@@ -37,7 +37,7 @@ import { InvestmentTransaction } from '../../../../models/investment-transaction
                 </td>
                 <td class="whitespace-nowrap px-4 py-3.5">
                   <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold" [class.bg-emerald-100]="trade.type === 'buy'" [class.text-emerald-800]="trade.type === 'buy'" [class.bg-red-100]="trade.type === 'sell'" [class.text-red-800]="trade.type === 'sell'">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                       <polyline [attr.points]="trade.type === 'buy' ? '18 15 12 9 6 15' : '6 9 12 15 18 9'"/>
                     </svg>
                     {{ trade.type === 'buy' ? 'COMPRA' : 'VENTA' }}
@@ -59,7 +59,7 @@ import { InvestmentTransaction } from '../../../../models/investment-transaction
       </div>
       @if (trades().length === 0) {
         <div class="flex flex-col items-center gap-2 py-12 text-sm text-gray-400">
-          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300">
+          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300">
             <line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
           </svg>
           No se encontraron operaciones

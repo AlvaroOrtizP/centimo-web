@@ -1,9 +1,7 @@
 import { Component, input, viewChild, ElementRef, afterNextRender, OnDestroy } from '@angular/core';
-import { Chart, registerables } from 'chart.js';
+import { Chart } from 'chart.js';
 
 import { Expense } from '../../../../models/expense';
-
-Chart.register(...registerables);
 
 const CATEGORY_COLORS: Record<string, string> = {
   aseo: '#FCD34D',
@@ -25,7 +23,7 @@ const CATEGORY_COLORS: Record<string, string> = {
     <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <h2 class="mb-4 text-base font-semibold text-gray-900">Gastos por Categoría</h2>
       <div class="relative h-72">
-        <canvas #canvas></canvas>
+        <canvas #canvas aria-label="Gráfico de gastos por categoría" role="img"></canvas>
       </div>
       <div class="mt-3 flex flex-wrap gap-2">
         @for (item of aggregated(); track item.category) {
@@ -65,6 +63,7 @@ export class ExpenseCategoryChartComponent implements OnDestroy {
   };
 
   private createChart(): void {
+    this.chart?.destroy();
     const canvas = this.canvasRef()?.nativeElement;
     if (!canvas) { return; }
 

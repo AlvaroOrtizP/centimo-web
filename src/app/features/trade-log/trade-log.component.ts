@@ -4,27 +4,26 @@ import { FormsModule } from '@angular/forms';
 import { FinancialDataService } from '../../core/services/financial-data.service';
 import { TradeSummaryComponent, TradeTotals } from './components/trade-summary/trade-summary.component';
 import { TradeTableComponent } from './components/trade-table/trade-table.component';
+import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 
 @Component({
   selector: 'app-trade-log',
   standalone: true,
-  imports: [FormsModule, TradeSummaryComponent, TradeTableComponent],
+  imports: [FormsModule, TradeSummaryComponent, TradeTableComponent, CollapsibleDescriptionComponent],
   template: `
     <div class="space-y-6">
-      <div>
-        <h1 class="text-xl font-bold text-gray-900">Registro de Trades</h1>
-        <p class="text-sm text-gray-500">Seguimiento de operaciones de inversión</p>
-      </div>
+      <app-collapsible-description description="Registro histórico de todas las operaciones de inversión con filtros por activo, estado y plataforma." storageKey="desc-trades" />
 
       <app-trade-summary [totals]="totals()" />
 
       <div class="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm">
         <div class="flex flex-wrap items-center gap-3">
           <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
             </svg>
             <select
+              aria-label="Filtrar por activo"
               class="bg-transparent text-sm text-gray-700 outline-none"
               [(ngModel)]="filterAsset"
             >
@@ -36,10 +35,11 @@ import { TradeTableComponent } from './components/trade-table/trade-table.compon
           </div>
 
           <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
               <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
             </svg>
             <select
+              aria-label="Filtrar por estado"
               class="bg-transparent text-sm text-gray-700 outline-none"
               [(ngModel)]="filterStatus"
             >
@@ -50,10 +50,11 @@ import { TradeTableComponent } from './components/trade-table/trade-table.compon
           </div>
 
           <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
               <rect width="18" height="14" x="3" y="3" rx="2"/><line x1="3" x2="21" y1="10" y2="10"/>
             </svg>
             <select
+              aria-label="Filtrar por plataforma"
               class="bg-transparent text-sm text-gray-700 outline-none"
               [(ngModel)]="filterPlatform"
             >

@@ -1,19 +1,21 @@
 import { Component, inject, input, computed, effect } from '@angular/core';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
+import { MONTHS } from '../../core/constants/date.constants';
 import { AccountBreakdownComponent } from './components/account-breakdown/account-breakdown.component';
 import { ExpenseCategoryChartComponent } from './components/expense-category-chart/expense-category-chart.component';
 import { IncomeBreakdownComponent } from './components/income-breakdown/income-breakdown.component';
 import { MonthPickerComponent } from '../../shared/components/month-picker/month-picker.component';
-
-const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 
 @Component({
   selector: 'app-monthly-view',
   standalone: true,
-  imports: [AccountBreakdownComponent, ExpenseCategoryChartComponent, IncomeBreakdownComponent, MonthPickerComponent],
+  imports: [AccountBreakdownComponent, ExpenseCategoryChartComponent, IncomeBreakdownComponent, MonthPickerComponent, CollapsibleDescriptionComponent],
   template: `
     <div class="space-y-6">
+      <app-collapsible-description description="Desglose de balances, ingresos y gastos por cuenta para el mes seleccionado." storageKey="desc-monthly" />
+
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-xl font-bold text-gray-900">{{ title() }}</h1>
@@ -59,8 +61,8 @@ const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 
   `,
 })
 export class MonthlyViewComponent {
-  readonly year = input<string>('2026');
-  readonly month = input<string>('6');
+  readonly year = input<string>(String(new Date().getFullYear()));
+  readonly month = input<string>(String(new Date().getMonth() + 1));
 
   protected readonly service = inject(FinancialDataService);
 

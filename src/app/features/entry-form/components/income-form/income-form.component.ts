@@ -1,7 +1,7 @@
-import { Component, computed, inject, input, signal, effect } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { AccountType } from '../../../../models/account-type';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { Account } from '../../../../models/account';
 import { IncomeSource } from '../../../../models/income-source';
@@ -16,28 +16,22 @@ import { IncomeSource } from '../../../../models/income-source';
 
       <div class="flex flex-wrap gap-2">
         <input
-          type="text" placeholder="Fuente (nómina, interés...)"
-          class="w-36 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-          [(ngModel)]="source"
-        />
-
-        <input
-          type="number" placeholder="Cantidad (€)"
-          class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+          type="number" placeholder="Cantidad (€)" aria-label="Cantidad"
+          class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
           [(ngModel)]="amount"
         />
 
         <input
-          type="text" placeholder="Descripción"
-          class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-          [(ngModel)]="description"
+          type="text" placeholder="Note" aria-label="Note"
+          class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
+          [(ngModel)]="note"
         />
 
         <button
           class="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
-          [disabled]="!accountId() || !source() || !amount()"
+          [disabled]="!amount()"
           (click)="save()"
-        >Añadir Ingreso</button>
+        >{{ existingNomina() ? 'Modificar Nomina' : 'Añadir Nomina' }}</button>
       </div>
 
       @if (saved()) {
@@ -51,14 +45,14 @@ import { IncomeSource } from '../../../../models/income-source';
             @for (inc of incomes(); track inc.id) {
               <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
                 <span class="font-medium text-green-600 w-24">+{{ inc.amount.toLocaleString('es-ES') }} €</span>
-                <span class="text-gray-700 w-28">{{ inc.source }}</span>
                 <span class="flex-1 text-gray-500 truncate">{{ inc.description }}</span>
                 <button
                   class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                   (click)="deleteIncome(inc)"
                   title="Eliminar ingreso"
+                  aria-label="Eliminar ingreso"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                   </svg>
                 </button>
@@ -72,17 +66,16 @@ import { IncomeSource } from '../../../../models/income-source';
 })
 export class IncomeFormComponent {
   private readonly service = inject(FinancialDataService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly accounts = input.required<Account[]>();
-  readonly year = input.required<number>();
   readonly month = input.required<number>();
+  readonly year = input.required<number>();
 
-  protected readonly accountId = signal('');
+  private readonly ACCOUNT_ID = 'bbva-nomina';
 
   protected readonly snapshotId = computed(() => {
-    const accId = this.accountId();
-    if (!accId) { return ''; }
-    return `${accId}-${this.year()}-${String(this.month()).padStart(2, '0')}`;
+    return `${this.ACCOUNT_ID}-${this.year()}-${String(this.month()).padStart(2, '0')}`;
   });
 
   protected readonly incomes = computed<IncomeSource[]>(() => {
@@ -91,56 +84,48 @@ export class IncomeFormComponent {
     return this.service.getIncomesBySnapshot(id);
   });
 
-  protected readonly source = signal('');
   protected readonly amount = signal(0);
-  protected readonly description = signal('');
+  protected readonly note = signal('');
   protected readonly saved = signal(false);
+  protected readonly existingNomina = signal(false);
 
   constructor() {
     effect(() => {
-      const accs = this.accounts();
-      const checking = accs.find(a => a.type === AccountType.Checking);
-      this.accountId.set(checking?.id ?? accs[0]?.id ?? '');
+      const year = this.year();
+      const month = this.month();
+
+      this.service.fetchNominaFromBackend(year, month)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(nomina => {
+          this.existingNomina.set(nomina !== null);
+        });
     });
   }
 
   protected save(): void {
-    const accId = this.accountId();
-    const y = this.year();
-    const m = this.month();
-    const snapshotId = this.snapshotId();
-
-    const existing = this.service.getSnapshot(accId, y, m);
-    if (!existing) {
-      this.service.addSnapshot({
-        id: snapshotId,
-        accountId: accId,
-        year: y,
-        month: m,
-        balance: 0,
-        income: this.amount(),
-        expenses: 0,
-      });
-    } else {
-      this.service.updateSnapshot(existing.id, { income: existing.income + this.amount() });
+    if (this.existingNomina()) {
+      alert('PUT /nomina no implementado aún');
+      return;
     }
 
-    this.service.addIncome({
-      id: `inc-${snapshotId}-${Date.now()}`,
-      snapshotId,
-      source: this.source(),
-      description: this.description(),
-      amount: this.amount(),
-    });
+    const y = this.year();
+    const m = this.month();
 
-    this.source.set('');
-    this.amount.set(0);
-    this.description.set('');
-    this.saved.set(true);
-    setTimeout(() => this.saved.set(false), 2000);
+    this.service.createNomina({
+      year: y,
+      month: m,
+      value: this.amount(),
+      note: this.note(),
+    }).subscribe(() => {
+      this.existingNomina.set(true);
+      this.amount.set(0);
+      this.note.set('');
+      this.saved.set(true);
+      setTimeout(() => this.saved.set(false), 2000);
+    });
   }
 
   protected deleteIncome(inc: IncomeSource): void {
-    this.service.deleteIncome(inc.id, inc.snapshotId);
+    this.service.deleteIncome(inc.id);
   }
 }

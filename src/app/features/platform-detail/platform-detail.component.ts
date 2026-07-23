@@ -1,18 +1,20 @@
 import { Component, inject, input, computed } from '@angular/core';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
+import { MONTHS } from '../../core/constants/date.constants';
 import { BalanceHistoryChartComponent } from './components/balance-history-chart/balance-history-chart.component';
 import { MonthlyTableComponent } from './components/monthly-table/monthly-table.component';
-
-const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 
 @Component({
   selector: 'app-platform-detail',
   standalone: true,
-  imports: [BalanceHistoryChartComponent, MonthlyTableComponent],
+  imports: [BalanceHistoryChartComponent, MonthlyTableComponent, CollapsibleDescriptionComponent],
   template: `
     @if (platform(); as p) {
       <div class="space-y-6">
+        <app-collapsible-description description="Detalle de cuenta con historial de saldos, posiciones abiertas y operaciones recientes." storageKey="desc-platform" />
+
         <div class="flex items-center gap-4 rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl" [style.background-color]="p.color + '15'">
             <span class="h-4 w-4 rounded-full" [style.background-color]="p.color"></span>
@@ -48,7 +50,7 @@ const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 
               </div>
               @if (holdings().length === 0) {
                 <div class="flex flex-col items-center gap-2 py-10 text-sm text-gray-400">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300">
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300">
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                   </svg>
                   Sin holdings registrados
@@ -78,7 +80,7 @@ const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 
               </div>
               @if (trades().length === 0) {
                 <div class="flex flex-col items-center gap-2 py-10 text-sm text-gray-400">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300">
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300">
                     <line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                   </svg>
                   Sin operaciones registradas
@@ -94,7 +96,7 @@ const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 
                           [class.bg-red-100]="t.type === 'sell'"
                           [class.text-red-800]="t.type === 'sell'"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                             <polyline [attr.points]="t.type === 'buy' ? '18 15 12 9 6 15' : '6 9 12 15 18 9'"/>
                           </svg>
                           {{ t.type === 'buy' ? 'COMPRA' : 'VENTA' }}
@@ -130,7 +132,7 @@ const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 
     } @else {
       <div class="flex h-64 items-center justify-center">
         <div class="text-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-gray-300">
+          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-gray-300">
             <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
           </svg>
           <p class="mt-2 text-gray-400">Plataforma no encontrada</p>
@@ -172,7 +174,6 @@ export class PlatformDetailComponent {
   );
 
   protected readonly holdings = computed(() => {
-    const snapshotIds = new Set(this.snapshots().map(s => s.id));
     const latestSnapshot = this.snapshots()[this.snapshots().length - 1];
     if (!latestSnapshot) { return []; }
     return this.service.holdings().filter(h => h.snapshotId === latestSnapshot.id);

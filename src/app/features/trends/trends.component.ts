@@ -1,20 +1,20 @@
 import { Component, inject, computed } from '@angular/core';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
+import { MONTHS } from '../../core/constants/date.constants';
 import { NetWorthTrendComponent } from './components/net-worth-trend/net-worth-trend.component';
 import { IncomeVsExpensesComponent } from './components/income-vs-expenses/income-vs-expenses.component';
 import { PlatformDistributionComponent } from './components/platform-distribution/platform-distribution.component';
 import { SavingsRateTrendComponent } from './components/savings-rate-trend/savings-rate-trend.component';
-
-const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 
 @Component({
   selector: 'app-trends',
   standalone: true,
-  imports: [NetWorthTrendComponent, IncomeVsExpensesComponent, PlatformDistributionComponent, SavingsRateTrendComponent],
+  imports: [NetWorthTrendComponent, IncomeVsExpensesComponent, PlatformDistributionComponent, SavingsRateTrendComponent, CollapsibleDescriptionComponent],
   template: `
     <div class="space-y-6">
-      <h1 class="text-xl font-bold text-gray-900">Tendencias Globales</h1>
+      <app-collapsible-description description="Análisis de tendencias a largo plazo: evolución patrimonial, ingresos vs gastos, distribución por plataforma y tasa de ahorro." storageKey="desc-trends" />
 
       <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <app-net-worth-trend [labels]="monthsLabels()" [data]="netWorthData()" />

@@ -1,7 +1,5 @@
 import { Component, input, viewChild, ElementRef, afterNextRender, OnDestroy } from '@angular/core';
-import { Chart, registerables } from 'chart.js';
-
-Chart.register(...registerables);
+import { Chart } from 'chart.js';
 
 @Component({
   selector: 'app-net-worth-trend',
@@ -10,7 +8,7 @@ Chart.register(...registerables);
     <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <h2 class="mb-4 text-base font-semibold text-gray-900">Evolución del Patrimonio Neto</h2>
       <div class="relative h-80">
-        <canvas #canvas></canvas>
+        <canvas #canvas aria-label="Gráfico de evolución del patrimonio neto" role="img"></canvas>
       </div>
     </div>
   `,
@@ -31,6 +29,7 @@ export class NetWorthTrendComponent implements OnDestroy {
   }
 
   private createChart(): void {
+    this.chart?.destroy();
     const canvas = this.canvasRef()?.nativeElement;
     if (!canvas) { return; }
 
