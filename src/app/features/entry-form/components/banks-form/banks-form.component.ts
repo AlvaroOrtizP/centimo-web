@@ -184,13 +184,21 @@ export class BanksFormComponent {
 
   constructor() {
     effect(() => {
-      const snap = this.service.getSnapshot(this.BBVA_ID, this.localYear(), this.localMonth());
-      this.bbvaBalance.set(snap?.balance ?? null);
+      const snapshots = this.service.snapshots();
+      const y = this.localYear();
+      const m = this.localMonth();
+      this.bbvaBalance.set(
+        snapshots.find(s => s.accountId === this.BBVA_ID && s.year === y && s.month === m)?.balance ?? null
+      );
     });
 
     effect(() => {
-      const snap = this.service.getSnapshot(this.CAIXA_ID, this.localYear(), this.localMonth());
-      this.caixaBalance.set(snap?.balance ?? null);
+      const snapshots = this.service.snapshots();
+      const y = this.localYear();
+      const m = this.localMonth();
+      this.caixaBalance.set(
+        snapshots.find(s => s.accountId === this.CAIXA_ID && s.year === y && s.month === m)?.balance ?? null
+      );
     });
   }
 

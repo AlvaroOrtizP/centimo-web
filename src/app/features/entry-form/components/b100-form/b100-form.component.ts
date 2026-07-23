@@ -237,13 +237,21 @@ export class B100FormComponent {
 
   constructor() {
     effect(() => {
-      const snap = this.service.getSnapshot(this.SAVINGS_ID, this.localYear(), this.localMonth());
-      this.savingsBalance.set(snap?.balance ?? null);
+      const snapshots = this.service.snapshots();
+      const y = this.localYear();
+      const m = this.localMonth();
+      this.savingsBalance.set(
+        snapshots.find(s => s.accountId === this.SAVINGS_ID && s.year === y && s.month === m)?.balance ?? null
+      );
     });
 
     effect(() => {
-      const snap = this.service.getSnapshot(this.INVESTMENT_ID, this.localYear(), this.localMonth());
-      this.investmentBalance.set(snap?.balance ?? null);
+      const snapshots = this.service.snapshots();
+      const y = this.localYear();
+      const m = this.localMonth();
+      this.investmentBalance.set(
+        snapshots.find(s => s.accountId === this.INVESTMENT_ID && s.year === y && s.month === m)?.balance ?? null
+      );
     });
   }
 

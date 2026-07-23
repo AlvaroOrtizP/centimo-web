@@ -352,16 +352,21 @@ export class MyInvestorFormComponent {
 
   constructor() {
     effect(() => {
-      const snap = this.service.getSnapshot(this.METAL_ID, this.localYear(), this.localMonth());
-      this.metalBalance.set(snap?.balance ?? null);
+      const snapshots = this.service.snapshots();
+      const y = this.localYear();
+      const m = this.localMonth();
+      this.metalBalance.set(
+        snapshots.find(s => s.accountId === this.METAL_ID && s.year === y && s.month === m)?.balance ?? null
+      );
     });
 
     effect(() => {
+      const snapshots = this.service.snapshots();
       const total = this.totalFundBalanceForMonth();
       const y = this.fundsLocalYear();
       const m = this.fundsLocalMonth();
       const snapId = `${this.INVESTMENT_ID}-${y}-${String(m).padStart(2, '0')}`;
-      const existing = this.service.getSnapshot(this.INVESTMENT_ID, y, m);
+      const existing = snapshots.find(s => s.accountId === this.INVESTMENT_ID && s.year === y && s.month === m);
 
       if (existing) {
         this.service.updateSnapshot(existing.id, { balance: total });

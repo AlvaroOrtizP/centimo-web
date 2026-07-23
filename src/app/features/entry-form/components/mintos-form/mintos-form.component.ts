@@ -119,8 +119,11 @@ export class MintosFormComponent {
 
   protected readonly previousBalance = computed(() => {
     const snapshots = this.service.getSnapshotsByAccount(this.MINTOS_ACCOUNT_ID);
-    const current = snapshots.find(s => s.year === this.localYear() && s.month === this.localMonth());
-    return current?.balance ?? null;
+    let prevMonth = this.localMonth() - 1;
+    let prevYear = this.localYear();
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+    const prev = snapshots.find(s => s.year === prevYear && s.month === prevMonth);
+    return prev?.balance ?? null;
   });
 
   protected readonly history = computed(() =>
@@ -130,12 +133,9 @@ export class MintosFormComponent {
 
   constructor() {
     effect(() => {
+      this.service.snapshots();
       const snap = this.service.getSnapshot(this.MINTOS_ACCOUNT_ID, this.localYear(), this.localMonth());
-      if (snap) {
-        this.balance.set(snap.balance);
-      } else {
-        this.balance.set(null);
-      }
+      this.balance.set(snap?.balance ?? null);
     });
   }
 

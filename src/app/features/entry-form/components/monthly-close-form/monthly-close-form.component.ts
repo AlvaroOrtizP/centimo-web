@@ -91,11 +91,12 @@ export class MonthlyCloseFormComponent {
 
   constructor() {
     effect(() => {
+      const snapshots = this.service.snapshots();
       const accs = this.accounts();
       const y = this.year();
       const m = this.month();
       this.forms.set(accs.map(acc => {
-        const snap = this.service.getSnapshot(acc.id, y, m);
+        const snap = snapshots.find(s => s.accountId === acc.id && s.year === y && s.month === m);
         return {
           accountId: acc.id,
           accountName: acc.name,

@@ -1,9 +1,10 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
+import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
 
 @Component({
   selector: 'app-revolut-form',
@@ -48,7 +49,8 @@ import { Account } from '../../../../models/account';
             step="any"
             placeholder="ej: 5000"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-            [(ngModel)]="balance"
+            [ngModel]="displayBalance()"
+            (ngModelChange)="userBalance.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Valor total en Revolut a 31 del mes</p>
         </div>
@@ -59,7 +61,8 @@ import { Account } from '../../../../models/account';
             step="any"
             placeholder="ej: 15"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-            [(ngModel)]="interest"
+            [ngModel]="displayInterest()"
+            (ngModelChange)="userInterest.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Intereses obtenidos este mes</p>
         </div>
@@ -79,9 +82,9 @@ import { Account } from '../../../../models/account';
       <div class="mt-4 flex items-center gap-3">
         <button
           class="rounded-lg bg-pink-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-pink-700 disabled:opacity-50"
-          [disabled]="!balance()"
+          [disabled]="!displayBalance()"
           (click)="save()"
-        >Guardar balance</button>
+        >{{ hasExistingSnapshot() ? 'Editar balance' : 'Guardar balance' }}</button>
         @if (saved()) {
           <span class="text-sm text-emerald-600">✓ Guardado</span>
         }
@@ -112,6 +115,7 @@ export class RevolutFormComponent {
   readonly accounts = input.required<Account[]>();
 
   private readonly ACCOUNT_ID = 'revolut-main';
+  private readonly B100_SAVINGS_ID = 'b100-save';
 
   protected readonly months = MONTH_OPTIONS;
   protected readonly years = YEARS;
@@ -119,10 +123,29 @@ export class RevolutFormComponent {
 
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = signal(this.service.currentYear());
-  protected readonly balance = signal<number | null>(null);
-  protected readonly interest = signal<number | null>(null);
   protected readonly tae = signal<number | null>(null);
   protected readonly saved = signal(false);
+
+  protected readonly userBalance = signal<number | null>(null);
+  protected readonly userInterest = signal<number | null>(null);
+
+  private readonly currentSnapshot = computed<MonthlySnapshot | undefined>(() => {
+    const snapshots = this.service.getSnapshotsByAccount(this.ACCOUNT_ID);
+    return snapshots.find(s => s.year === this.localYear() && s.month === this.localMonth());
+  });
+
+  private readonly currentB100Snapshot = computed(() => {
+    const snapshots = this.service.getSnapshotsByAccount(this.B100_SAVINGS_ID);
+    return snapshots.find(s => s.year === this.localYear() && s.month === this.localMonth());
+  });
+
+  protected readonly displayBalance = computed(() =>
+    this.userBalance() ?? this.currentSnapshot()?.balance ?? this.currentB100Snapshot()?.balance ?? null
+  );
+
+  protected readonly displayInterest = computed(() =>
+    this.userInterest() ?? this.currentSnapshot()?.income ?? null
+  );
 
   protected readonly snapshotId = computed(() =>
     `${this.ACCOUNT_ID}-${this.localYear()}-${String(this.localMonth()).padStart(2, '0')}`
@@ -130,9 +153,17 @@ export class RevolutFormComponent {
 
   protected readonly previousBalance = computed(() => {
     const snapshots = this.service.getSnapshotsByAccount(this.ACCOUNT_ID);
-    const current = snapshots.find(s => s.year === this.localYear() && s.month === this.localMonth());
-    return current?.balance ?? null;
+    let prevMonth = this.localMonth() - 1;
+    let prevYear = this.localYear();
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+    const prev = snapshots.find(s => s.year === prevYear && s.month === prevMonth);
+    return prev?.balance ?? null;
   });
+
+  protected readonly hasExistingSnapshot = computed(() =>
+    this.service.getSnapshotsByAccount(this.ACCOUNT_ID)
+      .some(s => s.year === this.localYear() && s.month === this.localMonth())
+  );
 
   protected readonly history = computed(() =>
     this.service.getSnapshotsByAccount(this.ACCOUNT_ID)
@@ -141,23 +172,23 @@ export class RevolutFormComponent {
 
   constructor() {
     effect(() => {
-      const snap = this.service.getSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth());
-      if (snap) {
-        this.balance.set(snap.balance);
-      } else {
-        this.balance.set(null);
-      }
+      this.localYear();
+      this.localMonth();
+      untracked(() => {
+        this.userBalance.set(null);
+        this.userInterest.set(null);
+      });
     });
   }
 
   protected save(): void {
-    const bal = this.balance();
+    const bal = this.displayBalance();
     if (bal === null) { return; }
 
-    const inter = this.interest() ?? 0;
+    const inter = this.displayInterest() ?? 0;
     this.service.upsertSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
 
-    this.interest.set(null);
+    this.userInterest.set(null);
     this.saved.set(true);
     setTimeout(() => this.saved.set(false), 2000);
   }

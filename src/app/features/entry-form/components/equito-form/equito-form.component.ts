@@ -222,8 +222,11 @@ export class EquitoFormComponent {
     const accId = this.accountId();
     if (!accId) { return null; }
     const snapshots = this.service.getSnapshotsByAccount(accId);
-    const current = snapshots.find(s => s.year === this.localYear() && s.month === this.localMonth());
-    return current?.balance ?? null;
+    let prevMonth = this.localMonth() - 1;
+    let prevYear = this.localYear();
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+    const prev = snapshots.find(s => s.year === prevYear && s.month === prevMonth);
+    return prev?.balance ?? null;
   });
 
   protected readonly balanceHistory = computed(() => {
@@ -235,14 +238,11 @@ export class EquitoFormComponent {
 
   constructor() {
     effect(() => {
+      this.service.snapshots();
       const accId = this.accountId();
       if (!accId) { return; }
       const snap = this.service.getSnapshot(accId, this.localYear(), this.localMonth());
-      if (snap) {
-        this.balance.set(snap.balance);
-      } else {
-        this.balance.set(null);
-      }
+      this.balance.set(snap?.balance ?? null);
     });
   }
 

@@ -97,6 +97,30 @@ export class FinancialDataService {
     );
   }
 
+  loadAllSnapshots(): void {
+    this.snapshotsService.listSnapshots().pipe(
+      map(list => list.map(s => ({
+        id: s.id,
+        accountId: s.accountId,
+        year: s.year,
+        month: s.month,
+        balance: s.balance,
+        income: s.income,
+        expenses: s.expenses,
+        contribution: s.contribution ?? undefined,
+        notes: s.notes ?? undefined,
+        checklistItems: s.checklistItems ?? undefined,
+      }))),
+      catchError((err) => {
+        console.error('[FinancialData] loadAllSnapshots error', err);
+        return of([]);
+      }),
+    ).subscribe(snapshots => {
+      console.log('[FinancialData] loadAllSnapshots loaded', snapshots.length, 'snapshots');
+      this.snapshots.set(snapshots);
+    });
+  }
+
   fetchNominaFromBackend(year: number, month: number): Observable<NominaResponse | null> {
     console.log('[FinancialData] fetchNominaFromBackend called', { year, month });
     return this.nominaService.getNominaAndDate(year, month).pipe(
