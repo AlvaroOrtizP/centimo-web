@@ -4,6 +4,9 @@ import { map, catchError } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { SnapshotsService } from '../../api/generated/api/snapshots.service';
+import { PlatformsService } from '../../api/generated/api/platforms.service';
+import { AccountsService } from '../../api/generated/api/accounts.service';
+import { SummariesService } from '../../api/generated/api/summaries.service';
 import { IncomesService } from '../../api/generated/api/incomes.service';
 import { ExpensesService } from '../../api/generated/api/expenses.service';
 import { NominaService } from '../../api/generated/api/nomina.service';
@@ -17,6 +20,7 @@ import { ExpenseCreate } from '../../api/generated/model/expenseCreate';
 import { ExpenseUpdate } from '../../api/generated/model/expenseUpdate';
 
 import { Platform } from '../../models/platform';
+import { PlatformType } from '../../models/platform-type';
 import { Account } from '../../models/account';
 import { MonthlySnapshot } from '../../models/monthly-snapshot';
 import { EXPENSES_PLATFORM_ID } from '../constants/platform.constants';
@@ -36,6 +40,9 @@ import { Commitment } from '../../models/commitment';
 @Injectable({ providedIn: 'root' })
 export class FinancialDataService {
   private readonly snapshotsService = inject(SnapshotsService);
+  private readonly platformsService = inject(PlatformsService);
+  private readonly accountsService = inject(AccountsService);
+  private readonly summariesService = inject(SummariesService);
   private readonly incomesService = inject(IncomesService);
   private readonly expensesService = inject(ExpensesService);
   private readonly nominaService = inject(NominaService);
@@ -52,6 +59,8 @@ export class FinancialDataService {
   readonly incomes = signal<IncomeSource[]>([]);
   readonly salaryAllocations = signal<SalaryAllocation[]>([]);
   readonly commitments = signal<Commitment[]>([]);
+
+  private readonly summariesCache = signal<Map<string, MonthlySummary>>(new Map());
 
   readonly currentYear = signal(new Date().getFullYear());
   readonly currentMonth = signal(new Date().getMonth() + 1);
@@ -119,6 +128,77 @@ export class FinancialDataService {
     ).subscribe(snapshots => {
       console.log('[FinancialData] loadAllSnapshots loaded', snapshots.length, 'snapshots');
       this.snapshots.set(snapshots);
+    });
+  }
+
+  loadAllPlatforms(): void {
+    this.platformsService.listPlatforms().pipe(
+      map(list => list.map(p => ({
+        id: p.id,
+        name: p.name,
+        type: p.type as unknown as PlatformType,
+        color: p.color,
+        icon: p.icon,
+        order: p.order,
+        fixedNotes: p.fixedNotes ?? undefined,
+      }))),
+      catchError((err) => {
+        console.error('[FinancialData] loadAllPlatforms error', err);
+        return of([]);
+      }),
+    ).subscribe(platforms => {
+      console.log('[FinancialData] loadAllPlatforms loaded', platforms.length, 'platforms');
+      this.platforms.set(platforms);
+    });
+  }
+
+  loadAllAccounts(): void {
+    this.accountsService.listAccounts().pipe(
+      map(list => list.map(a => ({
+        id: a.id,
+        platformId: a.platformId,
+        name: a.name,
+        type: a.type,
+        currency: a.currency,
+        order: a.order,
+      }))),
+      catchError((err) => {
+        console.error('[FinancialData] loadAllAccounts error', err);
+        return of([]);
+      }),
+    ).subscribe(accounts => {
+      console.log('[FinancialData] loadAllAccounts loaded', accounts.length, 'accounts');
+      this.accounts.set(accounts);
+    });
+  }
+
+  loadMonthlySummary(year: number, month: number): void {
+    const key = `${year}-${month}`;
+    if (this.summariesCache().has(key)) { return; }
+
+    this.summariesService.getMonthlySummary(year, month).pipe(
+      map(s => ({
+        year: s.year ?? year,
+        month: s.month ?? month,
+        totalBalance: s.totalBalance ?? 0,
+        totalIncome: s.totalIncome ?? 0,
+        totalExpenses: s.totalExpenses ?? 0,
+        balanceWithoutExpenses: s.balanceWithoutExpenses ?? 0,
+        netWorth: s.netWorth ?? 0,
+        netSavings: s.netSavings ?? 0,
+      })),
+      catchError((err) => {
+        console.error('[FinancialData] loadMonthlySummary error', { year, month }, err);
+        return of(null);
+      }),
+    ).subscribe(summary => {
+      if (!summary) { return; }
+      console.log('[FinancialData] loadMonthlySummary loaded', key);
+      this.summariesCache.update(cache => {
+        const next = new Map(cache);
+        next.set(key, summary);
+        return next;
+      });
     });
   }
 
@@ -197,6 +277,10 @@ export class FinancialDataService {
   );
 
   getMonthlySummary(year: number, month: number): MonthlySummary {
+    const key = `${year}-${month}`;
+    const cached = this.summariesCache().get(key);
+    if (cached) { return cached; }
+
     const snapshots = this.getSnapshotsByMonth(year, month);
     const totalBalance = snapshots.reduce((sum, s) => sum + s.balance, 0);
     const totalIncome = snapshots.reduce((sum, s) => sum + s.income, 0);
