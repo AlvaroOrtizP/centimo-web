@@ -4,12 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
+import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
 import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.helper';
+import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
 
 @Component({
   selector: 'app-banks-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, SnapshotHistoryTableComponent],
   template: `
     <div class="space-y-4">
       <!-- Selector mes/año -->
@@ -64,7 +66,13 @@ import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.h
             class="rounded-lg bg-[#004481] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#003366] disabled:opacity-50"
             [disabled]="!bbvaBalance.display()"
             (click)="saveBBVA()"
-          >{{ hasExistingBBVA() ? 'Editar balance' : 'Guardar' }}</button>
+          >{{ editingBBVA() ? 'Actualizar balance' : (hasExistingBBVA() ? 'Editar balance' : 'Guardar') }}</button>
+          @if (editingBBVA()) {
+            <button
+              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              (click)="cancelEditBBVA()"
+            >Cancelar</button>
+          }
           @if (savedBBVA()) {
             <span class="text-sm text-emerald-600">✓ Guardado</span>
           }
@@ -101,28 +109,40 @@ import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.h
             class="rounded-lg bg-[#E65100] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#BF360C] disabled:opacity-50"
             [disabled]="!caixaBalance.display()"
             (click)="saveCaixa()"
-          >{{ hasExistingCaixa() ? 'Editar balance' : 'Guardar' }}</button>
+          >{{ editingCaixa() ? 'Actualizar balance' : (hasExistingCaixa() ? 'Editar balance' : 'Guardar') }}</button>
+          @if (editingCaixa()) {
+            <button
+              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              (click)="cancelEditCaixa()"
+            >Cancelar</button>
+          }
           @if (savedCaixa()) {
             <span class="text-sm text-emerald-600">✓ Guardado</span>
           }
         </div>
       </div>
 
-      <!-- Historial -->
-      @if (history().length > 0) {
-        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p class="mb-3 text-xs font-medium uppercase tracking-wider text-gray-500">Historial</p>
-          <div class="space-y-1">
-            @for (h of history(); track h.id) {
-              <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
-                <span class="w-20 text-gray-500">{{ getMonthLabel(h.year, h.month) }}</span>
-                <span class="font-semibold text-gray-900">{{ h.bbva.toLocaleString('es-ES') }} €</span>
-                <span class="text-xs text-gray-400">BBVA</span>
-                <span class="font-semibold text-gray-900">{{ h.caixa.toLocaleString('es-ES') }} €</span>
-                <span class="text-xs text-gray-400">Caixa</span>
-              </div>
-            }
-          </div>
+      <!-- Historial BBVA -->
+      @if (historyBBVA().length > 0) {
+        <div>
+          <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Historial BBVA</p>
+          <app-snapshot-history-table
+            [snapshots]="historyBBVA()"
+            (edit)="onEditBBVA($event)"
+            (delete)="onDeleteBBVA($event)"
+          />
+        </div>
+      }
+
+      <!-- Historial CaixaBank -->
+      @if (historyCaixa().length > 0) {
+        <div>
+          <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Historial CaixaBank</p>
+          <app-snapshot-history-table
+            [snapshots]="historyCaixa()"
+            (edit)="onEditCaixa($event)"
+            (delete)="onDeleteCaixa($event)"
+          />
         </div>
       }
     </div>
@@ -142,6 +162,9 @@ export class BanksFormComponent {
 
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = signal(this.service.currentYear());
+
+  protected readonly editingBBVA = signal<MonthlySnapshot | null>(null);
+  protected readonly editingCaixa = signal<MonthlySnapshot | null>(null);
 
   protected readonly bbvaBalance = createSnapshotField(this.service, this.BBVA_ID, () => this.localYear(), () => this.localMonth());
   protected readonly savedBBVA = signal(false);
@@ -177,43 +200,73 @@ export class BanksFormComponent {
       .some(s => s.year === this.localYear() && s.month === this.localMonth())
   );
 
-  protected readonly history = computed(() => {
-    const bbvaSnaps = this.service.getSnapshotsByAccount(this.BBVA_ID);
-    const caixaSnaps = this.service.getSnapshotsByAccount(this.CAIXA_ID);
+  protected readonly historyBBVA = computed(() =>
+    this.service.getSnapshotsByAccount(this.BBVA_ID)
+      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+  );
 
-    const allMonths = new Set<string>();
-    bbvaSnaps.forEach(s => allMonths.add(`${s.year}-${s.month}`));
-    caixaSnaps.forEach(s => allMonths.add(`${s.year}-${s.month}`));
-
-    return Array.from(allMonths)
-      .map(key => {
-        const [y, m] = key.split('-').map(Number);
-        const bbva = bbvaSnaps.find(s => s.year === y && s.month === m);
-        const caixa = caixaSnaps.find(s => s.year === y && s.month === m);
-        return {
-          id: key,
-          year: y,
-          month: m,
-          bbva: bbva?.balance ?? 0,
-          caixa: caixa?.balance ?? 0,
-        };
-      })
-      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month));
-  });
+  protected readonly historyCaixa = computed(() =>
+    this.service.getSnapshotsByAccount(this.CAIXA_ID)
+      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+  );
 
   constructor() {
     effect(() => {
       this.localYear();
       this.localMonth();
+      this.editingBBVA.set(null);
+      this.editingCaixa.set(null);
       resetSnapshotFields(this.bbvaBalance, this.caixaBalance);
     });
+  }
+
+  protected onEditBBVA(snap: MonthlySnapshot): void {
+    this.editingBBVA.set(snap);
+    this.localYear.set(snap.year);
+    this.localMonth.set(snap.month);
+    this.bbvaBalance.userValue.set(snap.balance);
+    this.bbvaBalance.hasUserValue.set(true);
+  }
+
+  protected cancelEditBBVA(): void {
+    this.editingBBVA.set(null);
+    this.bbvaBalance.userValue.set(null);
+    this.bbvaBalance.hasUserValue.set(false);
+  }
+
+  protected onDeleteBBVA(id: string): void {
+    this.service.deleteSnapshot(id);
+  }
+
+  protected onEditCaixa(snap: MonthlySnapshot): void {
+    this.editingCaixa.set(snap);
+    this.localYear.set(snap.year);
+    this.localMonth.set(snap.month);
+    this.caixaBalance.userValue.set(snap.balance);
+    this.caixaBalance.hasUserValue.set(true);
+  }
+
+  protected cancelEditCaixa(): void {
+    this.editingCaixa.set(null);
+    this.caixaBalance.userValue.set(null);
+    this.caixaBalance.hasUserValue.set(false);
+  }
+
+  protected onDeleteCaixa(id: string): void {
+    this.service.deleteSnapshot(id);
   }
 
   protected saveBBVA(): void {
     const bal = this.bbvaBalance.display();
     if (bal === null) { return; }
 
-    this.service.upsertSnapshot(this.BBVA_ID, this.localYear(), this.localMonth(), bal, 0).subscribe();
+    const existing = this.editingBBVA();
+    if (existing) {
+      this.service.updateSnapshot(existing.id, { balance: bal });
+      this.cancelEditBBVA();
+    } else {
+      this.service.upsertSnapshot(this.BBVA_ID, this.localYear(), this.localMonth(), bal, 0).subscribe();
+    }
 
     this.savedBBVA.set(true);
     setTimeout(() => this.savedBBVA.set(false), 2000);
@@ -223,7 +276,13 @@ export class BanksFormComponent {
     const bal = this.caixaBalance.display();
     if (bal === null) { return; }
 
-    this.service.upsertSnapshot(this.CAIXA_ID, this.localYear(), this.localMonth(), bal, 0).subscribe();
+    const existing = this.editingCaixa();
+    if (existing) {
+      this.service.updateSnapshot(existing.id, { balance: bal });
+      this.cancelEditCaixa();
+    } else {
+      this.service.upsertSnapshot(this.CAIXA_ID, this.localYear(), this.localMonth(), bal, 0).subscribe();
+    }
 
     this.savedCaixa.set(true);
     setTimeout(() => this.savedCaixa.set(false), 2000);

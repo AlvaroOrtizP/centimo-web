@@ -4,11 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
+import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
+import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
 
 @Component({
   selector: 'app-mintos-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, SnapshotHistoryTableComponent],
   template: `
     <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <h3 class="mb-4 text-sm font-semibold text-gray-900">Mintos — Balance mensual</h3>
@@ -70,29 +72,24 @@ import { Account } from '../../../../models/account';
           class="rounded-lg bg-teal-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
           [disabled]="!balance()"
           (click)="save()"
-        >Guardar balance</button>
+        >{{ editingSnapshot() ? 'Actualizar balance' : 'Guardar balance' }}</button>
+        @if (editingSnapshot()) {
+          <button
+            class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            (click)="cancelEdit()"
+          >Cancelar</button>
+        }
         @if (saved()) {
           <span class="text-sm text-emerald-600">✓ Guardado</span>
         }
       </div>
     </div>
 
-    @if (history().length > 0) {
-      <div class="mt-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <p class="mb-3 text-xs font-medium uppercase tracking-wider text-gray-500">Historial de balances</p>
-        <div class="space-y-1">
-          @for (h of history(); track h.id) {
-            <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
-              <span class="w-20 text-gray-500">{{ getMonthLabel(h.year, h.month) }}</span>
-              <span class="font-semibold text-gray-900">{{ h.balance.toLocaleString('es-ES') }} €</span>
-              @if (h.contribution) {
-                <span class="text-xs text-teal-600">+{{ h.contribution.toLocaleString('es-ES') }} € aportación</span>
-              }
-            </div>
-          }
-        </div>
-      </div>
-    }
+    <app-snapshot-history-table
+      [snapshots]="history()"
+      (edit)="onEdit($event)"
+      (delete)="onDelete($event)"
+    />
   `,
 })
 export class MintosFormComponent {
@@ -112,6 +109,7 @@ export class MintosFormComponent {
   protected readonly balance = signal<number | null>(null);
   protected readonly contribution = signal<number | null>(null);
   protected readonly saved = signal(false);
+  protected readonly editingSnapshot = signal<MonthlySnapshot | null>(null);
 
   protected readonly snapshotId = computed(() =>
     `${this.MINTOS_ACCOUNT_ID}-${this.localYear()}-${String(this.localMonth()).padStart(2, '0')}`
@@ -134,9 +132,31 @@ export class MintosFormComponent {
   constructor() {
     effect(() => {
       this.service.snapshots();
+      this.localYear();
+      this.localMonth();
+      this.editingSnapshot.set(null);
       const snap = this.service.getSnapshot(this.MINTOS_ACCOUNT_ID, this.localYear(), this.localMonth());
       this.balance.set(snap?.balance ?? null);
+      this.contribution.set(snap?.contribution ?? null);
     });
+  }
+
+  protected onEdit(snap: MonthlySnapshot): void {
+    this.editingSnapshot.set(snap);
+    this.localYear.set(snap.year);
+    this.localMonth.set(snap.month);
+    this.balance.set(snap.balance);
+    this.contribution.set(snap.contribution ?? null);
+  }
+
+  protected cancelEdit(): void {
+    this.editingSnapshot.set(null);
+    this.balance.set(null);
+    this.contribution.set(null);
+  }
+
+  protected onDelete(id: string): void {
+    this.service.deleteSnapshot(id);
   }
 
   protected save(): void {
@@ -144,7 +164,17 @@ export class MintosFormComponent {
     if (bal === null) { return; }
 
     const contrib = this.contribution() ?? 0;
-    this.service.upsertSnapshot(this.MINTOS_ACCOUNT_ID, this.localYear(), this.localMonth(), bal, 0, undefined, contrib).subscribe();
+
+    const existing = this.editingSnapshot();
+    if (existing) {
+      this.service.updateSnapshot(existing.id, {
+        balance: bal,
+        contribution: contrib,
+      });
+      this.cancelEdit();
+    } else {
+      this.service.upsertSnapshot(this.MINTOS_ACCOUNT_ID, this.localYear(), this.localMonth(), bal, 0, undefined, contrib).subscribe();
+    }
 
     this.contribution.set(null);
     this.saved.set(true);

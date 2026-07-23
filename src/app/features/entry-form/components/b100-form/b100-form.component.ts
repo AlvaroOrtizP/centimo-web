@@ -4,38 +4,41 @@ import { FormsModule } from '@angular/forms';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
+import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
 import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.helper';
+import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
 
 @Component({
   selector: 'app-b100-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, SnapshotHistoryTableComponent],
   template: `
     <div class="space-y-4">
+      <!-- Selector mes/año -->
+      <div class="flex gap-2">
+        <select
+          aria-label="Mes"
+          class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          [(ngModel)]="localMonth"
+        >
+          @for (m of months; track m.value) {
+            <option [value]="m.value">{{ m.label }}</option>
+          }
+        </select>
+        <select
+          aria-label="Año"
+          class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          [(ngModel)]="localYear"
+        >
+          @for (y of years; track y) {
+            <option [value]="y">{{ y }}</option>
+          }
+        </select>
+      </div>
+
       <!-- Cuenta Ahorro -->
       <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <h3 class="mb-4 text-sm font-semibold text-gray-900">B100 — Cuenta Save</h3>
-
-        <div class="mb-4 flex gap-2">
-          <select
-            aria-label="Mes"
-            class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            [(ngModel)]="localMonth"
-          >
-            @for (m of months; track m.value) {
-              <option [value]="m.value">{{ m.label }}</option>
-            }
-          </select>
-          <select
-            aria-label="Año"
-            class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            [(ngModel)]="localYear"
-          >
-            @for (y of years; track y) {
-              <option [value]="y">{{ y }}</option>
-            }
-          </select>
-        </div>
 
         @if (previousSavingsBalance() !== null) {
           <div class="mb-4 rounded-lg bg-gray-50 px-4 py-2 text-sm text-gray-600">
@@ -86,7 +89,13 @@ import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.h
             class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
             [disabled]="!savingsBalance.display()"
             (click)="saveSavings()"
-          >{{ hasExistingSavingsSnapshot() ? 'Editar balance' : 'Guardar' }}</button>
+          >{{ editingSavings() ? 'Actualizar balance' : 'Guardar' }}</button>
+          @if (editingSavings()) {
+            <button
+              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              (click)="cancelEditSavings()"
+            >Cancelar</button>
+          }
           @if (savedSavings()) {
             <span class="text-sm text-emerald-600">✓ Guardado</span>
           }
@@ -146,28 +155,40 @@ import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.h
             class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
             [disabled]="!investmentBalance.display()"
             (click)="saveInvestment()"
-          >{{ hasExistingInvestmentSnapshot() ? 'Editar balance' : 'Guardar' }}</button>
+          >{{ editingInvestment() ? 'Actualizar balance' : 'Guardar' }}</button>
+          @if (editingInvestment()) {
+            <button
+              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              (click)="cancelEditInvestment()"
+            >Cancelar</button>
+          }
           @if (savedInvestment()) {
             <span class="text-sm text-emerald-600">✓ Guardado</span>
           }
         </div>
       </div>
 
-      <!-- Historial -->
-      @if (history().length > 0) {
-        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p class="mb-3 text-xs font-medium uppercase tracking-wider text-gray-500">Historial</p>
-          <div class="space-y-1">
-            @for (h of history(); track h.id) {
-              <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
-                <span class="w-20 text-gray-500">{{ getMonthLabel(h.year, h.month) }}</span>
-                <span class="font-semibold text-gray-900">{{ h.savings.toLocaleString('es-ES') }} €</span>
-                <span class="text-xs text-gray-400">save</span>
-                <span class="font-semibold text-gray-900">{{ h.investment.toLocaleString('es-ES') }} €</span>
-                <span class="text-xs text-gray-400">health</span>
-              </div>
-            }
-          </div>
+      <!-- Historial Save -->
+      @if (historySavings().length > 0) {
+        <div>
+          <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Historial Save</p>
+          <app-snapshot-history-table
+            [snapshots]="historySavings()"
+            (edit)="onEditSavings($event)"
+            (delete)="onDeleteSavings($event)"
+          />
+        </div>
+      }
+
+      <!-- Historial Health -->
+      @if (historyInvestment().length > 0) {
+        <div>
+          <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Historial Health</p>
+          <app-snapshot-history-table
+            [snapshots]="historyInvestment()"
+            (edit)="onEditInvestment($event)"
+            (delete)="onDeleteInvestment($event)"
+          />
         </div>
       }
     </div>
@@ -187,6 +208,9 @@ export class B100FormComponent {
 
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = signal(this.service.currentYear());
+
+  protected readonly editingSavings = signal<MonthlySnapshot | null>(null);
+  protected readonly editingInvestment = signal<MonthlySnapshot | null>(null);
 
   protected readonly savingsBalance = createSnapshotField(this.service, this.SAVINGS_ID, () => this.localYear(), () => this.localMonth());
   protected readonly savingsInterest = createSnapshotField(this.service, this.SAVINGS_ID, () => this.localYear(), () => this.localMonth(), 'income');
@@ -226,36 +250,68 @@ export class B100FormComponent {
       .some(s => s.year === this.localYear() && s.month === this.localMonth())
   );
 
-  protected readonly history = computed(() => {
-    const savingsSnaps = this.service.getSnapshotsByAccount(this.SAVINGS_ID);
-    const investmentSnaps = this.service.getSnapshotsByAccount(this.INVESTMENT_ID);
+  protected readonly historySavings = computed(() =>
+    this.service.getSnapshotsByAccount(this.SAVINGS_ID)
+      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+  );
 
-    const allMonths = new Set<string>();
-    savingsSnaps.forEach(s => allMonths.add(`${s.year}-${s.month}`));
-    investmentSnaps.forEach(s => allMonths.add(`${s.year}-${s.month}`));
-
-    return Array.from(allMonths)
-      .map(key => {
-        const [y, m] = key.split('-').map(Number);
-        const sav = savingsSnaps.find(s => s.year === y && s.month === m);
-        const inv = investmentSnaps.find(s => s.year === y && s.month === m);
-        return {
-          id: key,
-          year: y,
-          month: m,
-          savings: sav?.balance ?? 0,
-          investment: inv?.balance ?? 0,
-        };
-      })
-      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month));
-  });
+  protected readonly historyInvestment = computed(() =>
+    this.service.getSnapshotsByAccount(this.INVESTMENT_ID)
+      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+  );
 
   constructor() {
     effect(() => {
       this.localYear();
       this.localMonth();
+      this.editingSavings.set(null);
+      this.editingInvestment.set(null);
       resetSnapshotFields(this.savingsBalance, this.savingsInterest, this.investmentBalance, this.investmentInterest);
     });
+  }
+
+  protected onEditSavings(snap: MonthlySnapshot): void {
+    this.editingSavings.set(snap);
+    this.localYear.set(snap.year);
+    this.localMonth.set(snap.month);
+    this.savingsBalance.userValue.set(snap.balance);
+    this.savingsBalance.hasUserValue.set(true);
+    this.savingsInterest.userValue.set(snap.income);
+    this.savingsInterest.hasUserValue.set(true);
+  }
+
+  protected cancelEditSavings(): void {
+    this.editingSavings.set(null);
+    this.savingsBalance.userValue.set(null);
+    this.savingsBalance.hasUserValue.set(false);
+    this.savingsInterest.userValue.set(null);
+    this.savingsInterest.hasUserValue.set(false);
+  }
+
+  protected onDeleteSavings(id: string): void {
+    this.service.deleteSnapshot(id);
+  }
+
+  protected onEditInvestment(snap: MonthlySnapshot): void {
+    this.editingInvestment.set(snap);
+    this.localYear.set(snap.year);
+    this.localMonth.set(snap.month);
+    this.investmentBalance.userValue.set(snap.balance);
+    this.investmentBalance.hasUserValue.set(true);
+    this.investmentInterest.userValue.set(snap.income);
+    this.investmentInterest.hasUserValue.set(true);
+  }
+
+  protected cancelEditInvestment(): void {
+    this.editingInvestment.set(null);
+    this.investmentBalance.userValue.set(null);
+    this.investmentBalance.hasUserValue.set(false);
+    this.investmentInterest.userValue.set(null);
+    this.investmentInterest.hasUserValue.set(false);
+  }
+
+  protected onDeleteInvestment(id: string): void {
+    this.service.deleteSnapshot(id);
   }
 
   protected saveSavings(): void {
@@ -263,10 +319,18 @@ export class B100FormComponent {
     if (bal === null) { return; }
 
     const inter = this.savingsInterest.display() ?? 0;
-    this.service.upsertSnapshot(this.SAVINGS_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
 
-    this.savingsInterest.userValue.set(null);
-    this.savingsInterest.hasUserValue.set(false);
+    const existing = this.editingSavings();
+    if (existing) {
+      this.service.updateSnapshot(existing.id, {
+        balance: bal,
+        income: inter,
+      });
+      this.cancelEditSavings();
+    } else {
+      this.service.upsertSnapshot(this.SAVINGS_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
+    }
+
     this.savedSavings.set(true);
     setTimeout(() => this.savedSavings.set(false), 2000);
   }
@@ -276,10 +340,18 @@ export class B100FormComponent {
     if (bal === null) { return; }
 
     const inter = this.investmentInterest.display() ?? 0;
-    this.service.upsertSnapshot(this.INVESTMENT_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
 
-    this.investmentInterest.userValue.set(null);
-    this.investmentInterest.hasUserValue.set(false);
+    const existing = this.editingInvestment();
+    if (existing) {
+      this.service.updateSnapshot(existing.id, {
+        balance: bal,
+        income: inter,
+      });
+      this.cancelEditInvestment();
+    } else {
+      this.service.upsertSnapshot(this.INVESTMENT_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
+    }
+
     this.savedInvestment.set(true);
     setTimeout(() => this.savedInvestment.set(false), 2000);
   }

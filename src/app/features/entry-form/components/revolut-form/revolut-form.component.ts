@@ -4,12 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
+import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
 import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.helper';
+import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
 
 @Component({
   selector: 'app-revolut-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, SnapshotHistoryTableComponent],
   template: `
     <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <h3 class="mb-4 text-sm font-semibold text-gray-900">Revolut — Balance mensual</h3>
@@ -84,29 +86,24 @@ import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.h
           class="rounded-lg bg-pink-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-pink-700 disabled:opacity-50"
           [disabled]="!balance.display()"
           (click)="save()"
-        >{{ hasExistingSnapshot() ? 'Editar balance' : 'Guardar balance' }}</button>
+        >{{ editingSnapshot() ? 'Actualizar balance' : 'Guardar balance' }}</button>
+        @if (editingSnapshot()) {
+          <button
+            class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            (click)="cancelEdit()"
+          >Cancelar</button>
+        }
         @if (saved()) {
           <span class="text-sm text-emerald-600">✓ Guardado</span>
         }
       </div>
     </div>
 
-    @if (history().length > 0) {
-      <div class="mt-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <p class="mb-3 text-xs font-medium uppercase tracking-wider text-gray-500">Historial de balances</p>
-        <div class="space-y-1">
-          @for (h of history(); track h.id) {
-            <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
-              <span class="w-20 text-gray-500">{{ getMonthLabel(h.year, h.month) }}</span>
-              <span class="font-semibold text-gray-900">{{ h.balance.toLocaleString('es-ES') }} €</span>
-              @if (h.income > 0) {
-                <span class="text-xs text-pink-600">+{{ h.income.toLocaleString('es-ES') }} € intereses</span>
-              }
-            </div>
-          }
-        </div>
-      </div>
-    }
+    <app-snapshot-history-table
+      [snapshots]="history()"
+      (edit)="onEdit($event)"
+      (delete)="onDelete($event)"
+    />
   `,
 })
 export class RevolutFormComponent {
@@ -115,7 +112,6 @@ export class RevolutFormComponent {
   readonly accounts = input.required<Account[]>();
 
   private readonly ACCOUNT_ID = 'revolut-main';
-  private readonly B100_SAVINGS_ID = 'b100-save';
 
   protected readonly months = MONTH_OPTIONS;
   protected readonly years = YEARS;
@@ -125,6 +121,7 @@ export class RevolutFormComponent {
   protected readonly localYear = signal(this.service.currentYear());
   protected readonly tae = signal<number | null>(null);
   protected readonly saved = signal(false);
+  protected readonly editingSnapshot = signal<MonthlySnapshot | null>(null);
 
   protected readonly balance = createSnapshotField(this.service, this.ACCOUNT_ID, () => this.localYear(), () => this.localMonth());
   protected readonly interest = createSnapshotField(this.service, this.ACCOUNT_ID, () => this.localYear(), () => this.localMonth(), 'income');
@@ -152,6 +149,7 @@ export class RevolutFormComponent {
     effect(() => {
       this.localYear();
       this.localMonth();
+      this.editingSnapshot.set(null);
       resetSnapshotFields(this.balance, this.interest);
     });
   }
@@ -161,12 +159,41 @@ export class RevolutFormComponent {
     this.balance.hasUserValue.set(true);
   }
 
+  protected onEdit(snap: MonthlySnapshot): void {
+    this.editingSnapshot.set(snap);
+    this.localYear.set(snap.year);
+    this.localMonth.set(snap.month);
+    this.balance.userValue.set(snap.balance);
+    this.balance.hasUserValue.set(true);
+    this.interest.userValue.set(snap.income);
+    this.interest.hasUserValue.set(true);
+  }
+
+  protected cancelEdit(): void {
+    this.editingSnapshot.set(null);
+    resetSnapshotFields(this.balance, this.interest);
+  }
+
+  protected onDelete(id: string): void {
+    this.service.deleteSnapshot(id);
+  }
+
   protected save(): void {
     const bal = this.balance.display();
     if (bal === null) { return; }
 
     const inter = this.interest.display() ?? 0;
-    this.service.upsertSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
+
+    const existing = this.editingSnapshot();
+    if (existing) {
+      this.service.updateSnapshot(existing.id, {
+        balance: bal,
+        income: inter,
+      });
+      this.cancelEdit();
+    } else {
+      this.service.upsertSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth(), bal, inter).subscribe();
+    }
 
     this.interest.userValue.set(null);
     this.interest.hasUserValue.set(false);
