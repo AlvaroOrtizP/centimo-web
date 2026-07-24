@@ -4,9 +4,7 @@ import { map, catchError } from 'rxjs/operators';
 
 import { PlatformsService } from '../../api/generated/api/platforms.service';
 import { AccountsService } from '../../api/generated/api/accounts.service';
-import { Platform } from '../../models/platform';
-import { PlatformType } from '../../models/platform-type';
-import { Account } from '../../models/account';
+import { Platform, PlatformType, Account } from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class PlatformsDataService {

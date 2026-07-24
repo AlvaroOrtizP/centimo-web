@@ -9,19 +9,21 @@ import { SalaryDataService } from './salary.service';
 import { InvestmentsDataService } from './investments.service';
 import { SummaryDataService } from './summary.service';
 
-import { Platform } from '../../models/platform';
-import { Account } from '../../models/account';
-import { MonthlySnapshot } from '../../models/monthly-snapshot';
-import { InvestmentHolding } from '../../models/investment-holding';
-import { InvestmentTransaction } from '../../models/investment-transaction';
-import { CrowdlendingInvestment } from '../../models/crowdlending-investment';
-import { MyInvestorFund } from '../../models/myinvestor-fund';
-import { FundBalance } from '../../models/fund-balance';
-import { Expense } from '../../models/expense';
-import { IncomeSource } from '../../models/income-source';
-import { MonthlySummary } from '../../models/monthly-summary';
-import { SalaryAllocation } from '../../models/salary-allocation';
-import { Commitment } from '../../models/commitment';
+import {
+  Platform,
+  Account,
+  MonthlySnapshot,
+  InvestmentHolding,
+  InvestmentTransaction,
+  CrowdlendingInvestment,
+  MyInvestorFund,
+  FundBalance,
+  Expense,
+  IncomeSource,
+  MonthlySummary,
+  SalaryAllocation,
+  Commitment,
+} from '../../models';
 import { EXPENSES_PLATFORM_ID } from '../constants/platform.constants';
 
 import { SnapshotResponse } from '../../api/generated/model/snapshotResponse';

@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 
 import { SummariesService } from '../../api/generated/api/summaries.service';
-import { MonthlySummary } from '../../models/monthly-summary';
+import { MonthlySummary } from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class SummaryDataService {

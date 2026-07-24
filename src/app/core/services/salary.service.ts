@@ -1,7 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 
-import { SalaryAllocation } from '../../models/salary-allocation';
-import { Commitment } from '../../models/commitment';
+import { SalaryAllocation, Commitment } from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class SalaryDataService {

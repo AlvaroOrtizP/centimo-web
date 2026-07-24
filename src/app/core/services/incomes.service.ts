@@ -8,7 +8,7 @@ import { NominaService } from '../../api/generated/api/nomina.service';
 import { IncomeSourceCreate } from '../../api/generated/model/incomeSourceCreate';
 import { NominaCreate } from '../../api/generated/model/nominaCreate';
 import { NominaResponse } from '../../api/generated/model/nominaResponse';
-import { IncomeSource } from '../../models/income-source';
+import { IncomeSource } from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class IncomesDataService {

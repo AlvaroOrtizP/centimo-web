@@ -5,7 +5,7 @@ import { map, catchError } from 'rxjs/operators';
 import { ExpensesService } from '../../api/generated/api/expenses.service';
 import { ExpenseCreate } from '../../api/generated/model/expenseCreate';
 import { ExpenseUpdate } from '../../api/generated/model/expenseUpdate';
-import { Expense } from '../../models/expense';
+import { Expense } from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class ExpensesDataService {

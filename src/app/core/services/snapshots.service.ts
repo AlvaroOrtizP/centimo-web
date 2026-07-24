@@ -7,7 +7,7 @@ import { SnapshotsService } from '../../api/generated/api/snapshots.service';
 import { SnapshotResponse } from '../../api/generated/model/snapshotResponse';
 import { SnapshotUpsert } from '../../api/generated/model/snapshotUpsert';
 import { MonthlySnapshotCreate } from '../../api/generated/model/monthlySnapshotCreate';
-import { MonthlySnapshot } from '../../models/monthly-snapshot';
+import { MonthlySnapshot } from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class SnapshotsDataService {

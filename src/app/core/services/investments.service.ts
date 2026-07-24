@@ -1,10 +1,12 @@
 import { Injectable, signal } from '@angular/core';
 
-import { InvestmentHolding } from '../../models/investment-holding';
-import { InvestmentTransaction } from '../../models/investment-transaction';
-import { CrowdlendingInvestment } from '../../models/crowdlending-investment';
-import { MyInvestorFund } from '../../models/myinvestor-fund';
-import { FundBalance } from '../../models/fund-balance';
+import {
+  InvestmentHolding,
+  InvestmentTransaction,
+  CrowdlendingInvestment,
+  MyInvestorFund,
+  FundBalance,
+} from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class InvestmentsDataService {
