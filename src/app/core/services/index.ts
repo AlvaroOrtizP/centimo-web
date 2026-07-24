@@ -6,3 +6,5 @@ export { IncomesDataService } from './incomes.service';
 export { SalaryDataService } from './salary.service';
 export { InvestmentsDataService } from './investments.service';
 export { SummaryDataService } from './summary.service';
+export { LoggerService } from './logger.service';
+export { NotificationService } from './notification.service';

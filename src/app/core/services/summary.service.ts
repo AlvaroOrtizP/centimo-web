@@ -4,10 +4,12 @@ import { map, catchError } from 'rxjs/operators';
 
 import { SummariesService } from '../../api/generated/api/summaries.service';
 import { MonthlySummary } from '../../models';
+import { LoggerService } from './logger.service';
 
 @Injectable({ providedIn: 'root' })
 export class SummaryDataService {
   private readonly summariesApi = inject(SummariesService);
+  private readonly logger = inject(LoggerService);
 
   readonly currentYear = signal(new Date().getFullYear());
   readonly currentMonth = signal(new Date().getMonth() + 1);
@@ -51,7 +53,7 @@ export class SummaryDataService {
         netSavings: s.netSavings ?? 0,
       })),
       catchError((err) => {
-        console.error('[SummaryData] loadMonthlySummary error', { year, month }, err);
+        this.logger.error('SummaryData', 'loadMonthlySummary error', { year, month }, err);
         return of(null);
       }),
     ).subscribe(summary => {

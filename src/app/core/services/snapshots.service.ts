@@ -8,10 +8,12 @@ import { SnapshotResponse } from '../../api/generated/model/snapshotResponse';
 import { SnapshotUpsert } from '../../api/generated/model/snapshotUpsert';
 import { MonthlySnapshotCreate } from '../../api/generated/model/monthlySnapshotCreate';
 import { MonthlySnapshot } from '../../models';
+import { LoggerService } from './logger.service';
 
 @Injectable({ providedIn: 'root' })
 export class SnapshotsDataService {
   private readonly snapshotsApi = inject(SnapshotsService);
+  private readonly logger = inject(LoggerService);
 
   readonly snapshots = signal<MonthlySnapshot[]>([]);
 
@@ -51,7 +53,7 @@ export class SnapshotsDataService {
         checklistItems: s.checklistItems ?? undefined,
       }))),
       catchError((err) => {
-        console.error('[SnapshotsData] loadAllSnapshots error', err);
+        this.logger.error('SnapshotsData', 'loadAllSnapshots error', err);
         return of([]);
       }),
     ).subscribe(snapshots => {

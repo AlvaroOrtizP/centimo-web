@@ -5,11 +5,13 @@ import { map, catchError } from 'rxjs/operators';
 import { PlatformsService } from '../../api/generated/api/platforms.service';
 import { AccountsService } from '../../api/generated/api/accounts.service';
 import { Platform, PlatformType, Account } from '../../models';
+import { LoggerService } from './logger.service';
 
 @Injectable({ providedIn: 'root' })
 export class PlatformsDataService {
   private readonly platformsApi = inject(PlatformsService);
   private readonly accountsApi = inject(AccountsService);
+  private readonly logger = inject(LoggerService);
 
   readonly platforms = signal<Platform[]>([]);
   readonly accounts = signal<Account[]>([]);
@@ -42,7 +44,7 @@ export class PlatformsDataService {
         fixedNotes: p.fixedNotes ?? undefined,
       }))),
       catchError((err) => {
-        console.error('[PlatformsData] loadAllPlatforms error', err);
+        this.logger.error('PlatformsData', 'loadAllPlatforms error', err);
         return of([]);
       }),
     ).subscribe(platforms => {
@@ -61,7 +63,7 @@ export class PlatformsDataService {
         order: a.order,
       }))),
       catchError((err) => {
-        console.error('[PlatformsData] loadAllAccounts error', err);
+        this.logger.error('PlatformsData', 'loadAllAccounts error', err);
         return of([]);
       }),
     ).subscribe(accounts => {

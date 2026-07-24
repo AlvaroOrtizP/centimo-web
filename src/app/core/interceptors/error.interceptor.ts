@@ -3,14 +3,16 @@ import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 
 import { NotificationService } from '../services/notification.service';
+import { LoggerService } from '../services/logger.service';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const notification = inject(NotificationService);
+  const logger = inject(LoggerService);
 
   return next(req).pipe(
     catchError(error => {
       const message = getErrorMessage(error);
-      console.error(`[HTTP Error] ${req.method} ${req.url}:`, error);
+      logger.error('HTTP', `${req.method} ${req.url}`, error);
       notification.showError(message);
       return throwError(() => error);
     }),

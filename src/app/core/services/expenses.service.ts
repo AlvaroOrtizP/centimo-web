@@ -6,10 +6,12 @@ import { ExpensesService } from '../../api/generated/api/expenses.service';
 import { ExpenseCreate } from '../../api/generated/model/expenseCreate';
 import { ExpenseUpdate } from '../../api/generated/model/expenseUpdate';
 import { Expense } from '../../models';
+import { LoggerService } from './logger.service';
 
 @Injectable({ providedIn: 'root' })
 export class ExpensesDataService {
   private readonly expensesApi = inject(ExpensesService);
+  private readonly logger = inject(LoggerService);
 
   readonly expenses = signal<Expense[]>([]);
 
@@ -28,7 +30,7 @@ export class ExpensesDataService {
         description: e.description ?? undefined,
       }))),
       catchError((err) => {
-        console.error('[ExpensesData] loadExpenses error', err);
+        this.logger.error('ExpensesData', 'loadExpenses error', err);
         return of([]);
       }),
     ).subscribe(expenses => {
@@ -78,7 +80,7 @@ export class ExpensesDataService {
         return expense;
       }),
       catchError((err) => {
-        console.error('[ExpensesData] updateExpense error', err);
+        this.logger.error('ExpensesData', 'updateExpense error', err);
         return of(null as unknown as Expense);
       }),
     );
