@@ -4,7 +4,7 @@
 
 Angular 17.3 standalone application (no NgModules) with Tailwind CSS. TypeScript 5.4, Jasmine 5.1 + Karma 6.4 for testing. No NgRx.
 
-Personal finance dashboard — **mock data only, no backend, no HTTP calls**. All state lives in `FinancialDataService` (signals-based).
+Personal finance dashboard — **backend Java en `http://localhost:8080`**. API generada desde OpenAPI spec (`docs/swagger.yaml`). Datos iniciales cargados vía HTTP al navegar a la ruta raíz (resolver).
 
 ## Build / Serve / Test Commands
 
@@ -40,7 +40,7 @@ ng generate enum models/status
 
 ## Architecture
 
-### Routes (all lazy-loaded via `loadComponent`)
+### Routes (all lazy-loaded via `loadComponent` + barrel exports)
 
 | Path | Component |
 |---|---|
@@ -54,10 +54,13 @@ ng generate enum models/status
 
 ### Data Layer
 
-- **`FinancialDataService`** (`core/services/`) is the single source of truth — all signals, no HTTP.
-- Initial data loaded from JSON files in `src/assets/data/` (platforms, accounts, snapshots, holdings, trades, incomes, expenses, crowdlending, salary-allocations, commitments, alerts).
-- Mutations via `add*`, `update*`, `delete*` methods that `.update()` signals in-memory.
-- `monthlySummary` is a `computed()` signal derived from `currentYear`/`currentMonth` signals.
+- **API generada** en `api/generated/` desde OpenAPI spec. 15 servicios HTTP (Accounts, Alerts, Commitments, Crowdlending, Expenses, etc.).
+- **`FinancialDataService`** (`core/services/`) — fachada que delega en sub-servicios (`PlatformsDataService`, `SnapshotsDataService`, `ExpensesDataService`, etc.).
+- **Carga inicial:** `initDataResolver` en ruta raíz carga platforms, accounts, snapshots y 6 meses de summaries al navegar.
+- **Sub-servicios con HTTP:** platforms, snapshots, expenses, incomes, summary.
+- **Sub-servicios solo locales (sin backend aún):** salary, investments.
+- **Mutaciones:** `add*`, `update*`, `delete*` — algunas van al backend, otras solo actualizan signals en memoria.
+- **Cache:** `SummaryDataService` usa `signal<Map>` como cache de monthly summaries.
 
 ### Charts
 
@@ -82,14 +85,21 @@ Template-driven (`FormsModule`) with signals for state — **not** Reactive Form
 
 ```
 src/app/
-├── core/services/      # FinancialDataService + mock data
+├── core/services/      # FinancialDataService + sub-services (fachada)
+├── core/resolvers/     # initDataResolver (lazy loading)
+├── core/interceptors/  # errorInterceptor
+├── core/constants/     # platform, date, trade constants
+├── api/generated/      # OpenAPI-generated services (15 HTTP clients)
 ├── features/           # One folder per lazy route (dashboard, monthly-view, etc.)
+│   ├── index.ts        # Barrel export por feature
 │   └── components/     # Feature-local subcomponents
 ├── shared/
-│   ├── components/     # sidebar, header, month-picker
-│   └── layouts/        # main-layout
+│   ├── components/     # sidebar, header, month-picker, base-chart
+│   ├── layouts/        # main-layout
+│   └── pipes/          # currencyEUR pipe
 ├── models/             # Interfaces and enums (account.ts, platform.ts, etc.)
-└── app.routes.ts       # All route definitions
+│   └── index.ts        # Barrel export
+└── app.routes.ts       # All route definitions (barrel imports)
 ```
 
 - Shared components go under `shared/`, never in a feature folder.

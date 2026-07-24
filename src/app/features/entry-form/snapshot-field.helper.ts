@@ -42,3 +42,32 @@ export function resetSnapshotFields(...fields: SnapshotField[]): void {
     });
   });
 }
+
+export function previousBalance(
+  service: FinancialDataService,
+  accountId: string,
+  year: () => number,
+  month: () => number,
+): Signal<number | null> {
+  return computed(() => {
+    const snapshots = service.getSnapshotsByAccount(accountId);
+    let pm = month() - 1;
+    let py = year();
+    if (pm < 1) { pm = 12; py--; }
+    return snapshots.find(s => s.year === py && s.month === pm)?.balance ?? null;
+  });
+}
+
+export function sortedHistory(
+  service: FinancialDataService,
+  accountId: string,
+): Signal<MonthlySnapshot[]> {
+  return computed(() =>
+    service.getSnapshotsByAccount(accountId)
+      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+  );
+}
+
+export function snapshotIdFor(accountId: string, year: number, month: number): string {
+  return `${accountId}-${year}-${String(month).padStart(2, '0')}`;
+}
