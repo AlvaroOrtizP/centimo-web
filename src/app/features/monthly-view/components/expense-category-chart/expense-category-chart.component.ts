@@ -1,7 +1,7 @@
-import { Component, input, viewChild, ElementRef, afterNextRender, OnDestroy } from '@angular/core';
-import { Chart } from 'chart.js';
-
-import { Expense } from '../../../../models/expense';
+import { Component, input } from '@angular/core';
+import { ChartConfiguration } from 'chart.js';
+import { BaseChartComponent } from '../../../../shared/components/base-chart/base-chart.component';
+import { Expense } from '../../../../models';
 
 const CATEGORY_COLORS: Record<string, string> = {
   aseo: '#FCD34D',
@@ -36,19 +36,8 @@ const CATEGORY_COLORS: Record<string, string> = {
     </div>
   `,
 })
-export class ExpenseCategoryChartComponent implements OnDestroy {
+export class ExpenseCategoryChartComponent extends BaseChartComponent {
   readonly expenses = input<Expense[]>([]);
-
-  private readonly canvasRef = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
-  private chart: Chart | null = null;
-
-  constructor() {
-    afterNextRender(() => this.createChart());
-  }
-
-  ngOnDestroy(): void {
-    this.chart?.destroy();
-  }
 
   protected aggregated = () => {
     const groups = new Map<string, number>();
@@ -62,14 +51,9 @@ export class ExpenseCategoryChartComponent implements OnDestroy {
     })).sort((a, b) => b.total - a.total);
   };
 
-  private createChart(): void {
-    this.chart?.destroy();
-    const canvas = this.canvasRef()?.nativeElement;
-    if (!canvas) { return; }
-
+  protected getChartConfig(): ChartConfiguration {
     const items = this.aggregated();
-
-    this.chart = new Chart(canvas, {
+    return {
       type: 'doughnut',
       data: {
         labels: items.map(i => i.category),
@@ -83,10 +67,8 @@ export class ExpenseCategoryChartComponent implements OnDestroy {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-        },
+        plugins: { legend: { display: false } },
       },
-    });
+    };
   }
 }

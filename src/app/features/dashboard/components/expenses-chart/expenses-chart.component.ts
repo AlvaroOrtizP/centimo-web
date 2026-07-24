@@ -1,5 +1,6 @@
-import { Component, input, viewChild, ElementRef, afterNextRender, effect, OnDestroy } from '@angular/core';
-import { Chart } from 'chart.js';
+import { Component, input, effect } from '@angular/core';
+import { ChartConfiguration } from 'chart.js';
+import { BaseChartComponent } from '../../../../shared/components/base-chart/base-chart.component';
 
 @Component({
   selector: 'app-expenses-chart',
@@ -20,17 +21,14 @@ import { Chart } from 'chart.js';
     </div>
   `,
 })
-export class ExpensesChartComponent implements OnDestroy {
+export class ExpensesChartComponent extends BaseChartComponent {
   readonly labels = input<string[]>([]);
   readonly data = input<number[]>([]);
   readonly platformColor = input<string>('');
   readonly selectedPlatformName = input<string>('');
 
-  private readonly canvasRef = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
-  private chart: Chart | null = null;
-
   constructor() {
-    afterNextRender(() => this.createChart());
+    super();
 
     effect(() => {
       if (!this.chart) { return; }
@@ -62,43 +60,31 @@ export class ExpensesChartComponent implements OnDestroy {
     });
   }
 
-  ngOnDestroy(): void {
-    this.chart?.destroy();
-  }
-
-  private createChart(): void {
-    this.chart?.destroy();
-    const canvas = this.canvasRef()?.nativeElement;
-    if (!canvas) { return; }
-
-    this.chart = new Chart(canvas, {
+  protected getChartConfig(): ChartConfiguration {
+    return {
       type: 'line',
       data: {
         labels: this.labels(),
-        datasets: [
-          {
-            label: 'Gastos',
-            data: this.data(),
-            borderColor: '#EF4444',
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            fill: true,
-            tension: 0.3,
-            pointRadius: 4,
-            pointBackgroundColor: '#EF4444',
-          },
-        ],
+        datasets: [{
+          label: 'Gastos',
+          data: this.data(),
+          borderColor: '#EF4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointBackgroundColor: '#EF4444',
+        }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-        },
+        plugins: { legend: { display: false } },
         scales: {
           x: { grid: { display: false }, ticks: { color: '#6B7280' } },
           y: { grid: { color: '#F3F4F6' }, ticks: { color: '#6B7280', callback: (v: string | number) => Number(v).toLocaleString('es-ES') + '€' } },
         },
       },
-    });
+    };
   }
 }

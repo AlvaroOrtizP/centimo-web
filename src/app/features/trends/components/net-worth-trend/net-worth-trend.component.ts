@@ -1,5 +1,6 @@
-import { Component, input, viewChild, ElementRef, afterNextRender, OnDestroy } from '@angular/core';
-import { Chart } from 'chart.js';
+import { Component, input } from '@angular/core';
+import { ChartConfiguration } from 'chart.js';
+import { BaseChartComponent } from '../../../../shared/components/base-chart/base-chart.component';
 
 @Component({
   selector: 'app-net-worth-trend',
@@ -13,27 +14,12 @@ import { Chart } from 'chart.js';
     </div>
   `,
 })
-export class NetWorthTrendComponent implements OnDestroy {
+export class NetWorthTrendComponent extends BaseChartComponent {
   readonly labels = input<string[]>([]);
   readonly data = input<number[]>([]);
 
-  private readonly canvasRef = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
-  private chart: Chart | null = null;
-
-  constructor() {
-    afterNextRender(() => this.createChart());
-  }
-
-  ngOnDestroy(): void {
-    this.chart?.destroy();
-  }
-
-  private createChart(): void {
-    this.chart?.destroy();
-    const canvas = this.canvasRef()?.nativeElement;
-    if (!canvas) { return; }
-
-    this.chart = new Chart(canvas, {
+  protected getChartConfig(): ChartConfiguration {
+    return {
       type: 'line',
       data: {
         labels: this.labels(),
@@ -57,6 +43,6 @@ export class NetWorthTrendComponent implements OnDestroy {
           y: { grid: { color: '#F3F4F6' }, ticks: { color: '#6B7280', callback: (v) => Number(v).toLocaleString('es-ES') + '€' } },
         },
       },
-    });
+    };
   }
 }
