@@ -130,7 +130,7 @@ interface TabConfig {
             }
             @case ('urbanitae') {
               <app-collapsible-description description="Registra el saldo e intereses de tus inversiones en Urbanitae (crowdlending inmobiliario). Los datos se reflejan en el resumen de inversiones fijas." storageKey="desc-entry-urbanitae" />
-              <app-urbanitae-form [accounts]="allAccounts()" />
+              <app-urbanitae-form />
             }
           }
         </div>

@@ -261,12 +261,16 @@ export class FinancialDataService {
     this.investmentsData.deleteTrade(id);
   }
 
-  addCrowdlendingInvestment(investment: CrowdlendingInvestment): void {
-    this.investmentsData.addCrowdlendingInvestment(investment);
+  addCrowdlendingInvestment(investment: CrowdlendingInvestment): Observable<CrowdlendingInvestment> {
+    return this.investmentsData.addCrowdlendingInvestment(investment);
   }
 
-  deleteCrowdlendingInvestment(id: string): void {
-    this.investmentsData.deleteCrowdlendingInvestment(id);
+  deleteCrowdlendingInvestment(id: string): Observable<void> {
+    return this.investmentsData.deleteCrowdlendingInvestment(id);
+  }
+
+  loadAllCrowdlending(): void {
+    this.investmentsData.loadAllCrowdlending();
   }
 
   deleteSnapshot(id: string): void {

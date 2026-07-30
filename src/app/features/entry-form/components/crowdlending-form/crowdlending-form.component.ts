@@ -149,18 +149,18 @@ export class CrowdlendingFormComponent {
       monthlyReturn,
       totalReturned: 0,
       status: ProjectStatus.Active,
+    }).subscribe(() => {
+      this.projectName.set('');
+      this.investedAmount.set(0);
+      this.interestRate.set(0);
+      this.termMonths.set(0);
+      this.startDate.set('');
+      this.saved.set(true);
+      setTimeout(() => this.saved.set(false), 2000);
     });
-
-    this.projectName.set('');
-    this.investedAmount.set(0);
-    this.interestRate.set(0);
-    this.termMonths.set(0);
-    this.startDate.set('');
-    this.saved.set(true);
-    setTimeout(() => this.saved.set(false), 2000);
   }
 
   protected deleteInvestment(inv: CrowdlendingInvestment): void {
-    this.service.deleteCrowdlendingInvestment(inv.id);
+    this.service.deleteCrowdlendingInvestment(inv.id).subscribe();
   }
 }
