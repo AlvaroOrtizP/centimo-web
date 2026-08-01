@@ -148,8 +148,17 @@ export class FinancialDataService {
     this.expensesData.loadExpenses(snapshotId);
   }
 
+  loadExpensesByPeriod(year: number, month: number): void {
+    this.expensesData.loadExpensesByPeriod(year, month);
+  }
+
   getExpensesBySnapshot(snapshotId: string): Expense[] {
     return this.expensesData.getExpensesBySnapshot(snapshotId);
+  }
+
+  getExpensesByPeriod(year: number, month: number): Expense[] {
+    const snapshotIds = new Set(this.getSnapshotsByMonth(year, month).map(s => s.id));
+    return this.expenses().filter(e => snapshotIds.has(e.snapshotId));
   }
 
   getIncomesBySnapshot(snapshotId: string): IncomeSource[] {

@@ -5,8 +5,20 @@ import { map, catchError } from 'rxjs/operators';
 import { ExpensesService } from '../../api/generated/api/expenses.service';
 import { ExpenseCreate } from '../../api/generated/model/expenseCreate';
 import { ExpenseUpdate } from '../../api/generated/model/expenseUpdate';
+import { Expense as ApiExpense } from '../../api/generated/model/expense';
 import { Expense } from '../../models';
 import { LoggerService } from './logger.service';
+
+function toExpense(e: ApiExpense): Expense {
+  return {
+    id: e.id,
+    snapshotId: e.snapshotId,
+    category: e.category,
+    amount: e.amount,
+    date: e.date,
+    description: e.description ?? undefined,
+  };
+}
 
 @Injectable({ providedIn: 'root' })
 export class ExpensesDataService {
@@ -21,14 +33,7 @@ export class ExpensesDataService {
 
   loadExpenses(snapshotId: string): void {
     this.expensesApi.listExpenses(snapshotId).pipe(
-      map(list => list.map(e => ({
-        id: e.id,
-        snapshotId: e.snapshotId,
-        category: e.category,
-        amount: e.amount,
-        date: e.date,
-        description: e.description ?? undefined,
-      }))),
+      map(list => list.map(toExpense)),
       catchError((err) => {
         this.logger.error('ExpensesData', 'loadExpenses error', err);
         return of([]);
@@ -38,6 +43,18 @@ export class ExpensesDataService {
         const others = arr.filter(e => e.snapshotId !== snapshotId);
         return [...others, ...expenses];
       });
+    });
+  }
+
+  loadExpensesByPeriod(year: number, month: number): void {
+    this.expensesApi.listExpenses(undefined, year, month).pipe(
+      map(list => list.map(toExpense)),
+      catchError((err) => {
+        this.logger.error('ExpensesData', 'loadExpensesByPeriod error', err);
+        return of([]);
+      }),
+    ).subscribe(expenses => {
+      this.expenses.set(expenses);
     });
   }
 
@@ -51,14 +68,7 @@ export class ExpensesDataService {
     };
     return this.expensesApi.createExpense(create).pipe(
       map(created => {
-        const result: Expense = {
-          id: created.id,
-          snapshotId: created.snapshotId,
-          category: created.category,
-          amount: created.amount,
-          date: created.date,
-          description: created.description ?? undefined,
-        };
+        const result = toExpense(created);
         this.expenses.update(arr => [...arr, result]);
         return result;
       }),
@@ -68,14 +78,7 @@ export class ExpensesDataService {
   updateExpense(id: string, data: ExpenseUpdate): Observable<Expense> {
     return this.expensesApi.updateExpense(id, data).pipe(
       map(updated => {
-        const expense: Expense = {
-          id: updated.id,
-          snapshotId: updated.snapshotId,
-          category: updated.category,
-          amount: updated.amount,
-          date: updated.date,
-          description: updated.description ?? undefined,
-        };
+        const expense = toExpense(updated);
         this.expenses.update(arr => arr.map(e => e.id === id ? expense : e));
         return expense;
       }),

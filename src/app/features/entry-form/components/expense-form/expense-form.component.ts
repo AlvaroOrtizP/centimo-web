@@ -1,9 +1,7 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { switchMap } from 'rxjs/operators';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
-import { Account } from '../../../../models/account';
 import { ExpenseCategory } from '../../../../models/expense-category';
 import { Expense } from '../../../../models/expense';
 
@@ -68,7 +66,10 @@ import { Expense } from '../../../../models/expense';
 
       @if (expenses().length > 0) {
         <div class="mt-4 border-t border-gray-100 pt-3">
-          <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Gastos registrados</p>
+          <div class="mb-2 flex items-center justify-between">
+            <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Gastos registrados</p>
+            <p class="text-sm font-semibold text-red-600">{{ total().toLocaleString('es-ES') }} €</p>
+          </div>
           <div class="space-y-1">
             @for (exp of expenses(); track exp.id) {
               <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
@@ -107,7 +108,6 @@ import { Expense } from '../../../../models/expense';
 export class ExpenseFormComponent {
   private readonly service = inject(FinancialDataService);
 
-  readonly accounts = input.required<Account[]>();
   readonly year = input.required<number>();
   readonly month = input.required<number>();
 
@@ -119,24 +119,26 @@ export class ExpenseFormComponent {
     effect(() => {
       const y = this.year();
       const m = this.month();
+      this.service.loadExpensesByPeriod(y, m);
+
       const existing = this.service.getSnapshot(this.ACCOUNT_ID, y, m);
       if (existing) {
         this.snapshotId.set(existing.id);
-        this.service.loadExpenses(existing.id);
         return;
       }
       this.service.upsertSnapshot(this.ACCOUNT_ID, y, m, 0, 0).subscribe(res => {
         this.snapshotId.set(res.id);
-        this.service.loadExpenses(res.id);
       });
     });
   }
 
-  protected readonly expenses = computed<Expense[]>(() => {
-    const id = this.snapshotId();
-    if (!id) { return []; }
-    return this.service.getExpensesBySnapshot(id);
-  });
+  protected readonly expenses = computed<Expense[]>(() =>
+    this.service.getExpensesByPeriod(this.year(), this.month())
+  );
+
+  protected readonly total = computed(() =>
+    this.expenses().reduce((sum, e) => sum + e.amount, 0)
+  );
 
   protected readonly ExpenseCategory = ExpenseCategory;
   protected readonly category = signal<ExpenseCategory | ''>('');
@@ -148,11 +150,10 @@ export class ExpenseFormComponent {
 
   protected save(): void {
     const editing = this.editingExpense();
-    const snapId = this.snapshotId();
 
     if (editing) {
       this.service.updateExpense(editing.id, {
-        snapshotId: snapId,
+        snapshotId: editing.snapshotId,
         category: this.category() as ExpenseCategory,
         amount: this.amount(),
         date: this.date(),
@@ -164,6 +165,8 @@ export class ExpenseFormComponent {
       });
       return;
     }
+
+    const snapId = this.snapshotId();
 
     this.service.addExpense({
       id: `exp-${snapId}-${Date.now()}`,
@@ -193,7 +196,7 @@ export class ExpenseFormComponent {
   }
 
   protected deleteExpense(exp: Expense): void {
-    this.service.deleteExpense(exp.id, this.snapshotId());
+    this.service.deleteExpense(exp.id, exp.snapshotId);
   }
 
   private resetForm(): void {

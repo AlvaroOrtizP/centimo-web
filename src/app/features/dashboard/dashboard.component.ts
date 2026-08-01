@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { FinancialDataService } from '../../core/services/financial-data.service';
 import { MONTHS } from '../../core/constants/date.constants';
 import { EXPENSES_PLATFORM_ID, PLATFORM_GROUPS } from '../../core/constants/platform.constants';
+import { MonthPickerComponent } from '../../shared/components/month-picker/month-picker.component';
 import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 import { SummaryCardsComponent } from './components/summary-cards/summary-cards.component';
 import { PlatformSummaryTableComponent } from './components/platform-summary-table/platform-summary-table.component';
@@ -17,17 +18,12 @@ type ExpensesMode = 'acumulado' | 'mensual';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [FormsModule, CollapsibleDescriptionComponent, SummaryCardsComponent, PlatformSummaryTableComponent, NetWorthChartComponent, ExpensesChartComponent],
+  imports: [FormsModule, CollapsibleDescriptionComponent, SummaryCardsComponent, PlatformSummaryTableComponent, NetWorthChartComponent, ExpensesChartComponent, MonthPickerComponent],
   template: `
     <div class="space-y-6">
       <app-collapsible-description description="Resumen general de tu patrimonio, distribución por plataformas y evolución en los últimos meses." storageKey="desc-dashboard" />
       <div class="flex justify-end">
-        <span class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 shadow-sm">
-          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
-            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>
-          </svg>
-          Datos de <span class="font-semibold text-gray-900">{{ currentMonthLabel() }}</span>
-        </span>
+        <app-month-picker />
       </div>
       <app-summary-cards [summary]="currentSummary()" [previousSummary]="previousSummary()" />
       <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -121,10 +117,6 @@ export class DashboardComponent {
     const { year, month } = this.previousMonth();
     return this.service.getMonthlySummary(year, month);
   });
-
-  protected readonly currentMonthLabel = computed(() =>
-    `${MONTHS[this.service.currentMonth() - 1]} ${this.service.currentYear()}`
-  );
 
   protected readonly chartLabels = computed(() => {
     return this.last6Months().map(({ year, month }) => `${MONTHS[month - 1]} ${year}`);

@@ -24,7 +24,7 @@ import { ExpenseFormComponent } from '../entry-form/components/expense-form/expe
         </div>
       </div>
 
-      <app-expense-form [accounts]="allAccounts()" [year]="selectedYear()" [month]="selectedMonth()" />
+      <app-expense-form [year]="selectedYear()" [month]="selectedMonth()" />
     </div>
   `,
 })
@@ -33,6 +33,4 @@ export class ExpensesComponent {
 
   protected readonly selectedYear = computed(() => this.service.currentYear());
   protected readonly selectedMonth = computed(() => this.service.currentMonth());
-
-  protected readonly allAccounts = computed(() => this.service.accounts());
 }
