@@ -97,13 +97,14 @@ describe('DashboardComponent', () => {
       expect(values).toContain('+63,7');
     });
 
-    it('should show expense value for gastos platform', () => {
+    it('should show monthly expenses only in the gastos row of platform table', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
-      const expenseSpans = el.querySelectorAll('.text-right .text-red-600');
-      const values = Array.from(expenseSpans).map(s => s.textContent?.trim());
-      expect(values).toContain('890 €');
+
+      const table = el.querySelector('app-platform-summary-table');
+      const expenseValues = Array.from(table?.querySelectorAll('.text-right .text-red-600') ?? []).map(s => s.textContent?.trim());
+      expect(expenseValues).toEqual(['890 €']);
     });
 
     it('should compute all summary card values correctly', () => {
@@ -279,10 +280,10 @@ describe('DashboardComponent', () => {
       expect(incomeValues).toContain('+18');
       expect(incomeValues).toContain('+70');
 
-      // Expenses: gastos 800
-      const expenseSpans = el.querySelectorAll('.text-right .text-red-600');
-      const expenseValues = Array.from(expenseSpans).map(s => s.textContent?.trim());
-      expect(expenseValues).toContain('800 €');
+      // Expenses: fila "Gastos" con el total del mes en la tabla de plataformas
+      const table = el.querySelector('app-platform-summary-table');
+      const expenseValues = Array.from(table?.querySelectorAll('.text-right .text-red-600') ?? []).map(s => s.textContent?.trim());
+      expect(expenseValues).toEqual(['800 €']);
 
       // Summary computed
       const summary = service.monthlySummary();
