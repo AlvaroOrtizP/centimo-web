@@ -12,6 +12,7 @@ import { ExpensesChartComponent } from './components/expenses-chart/expenses-cha
 
 type ChartMode = 'total' | 'per-platform';
 type PlatformGroup = 'all' | 'liquidez' | 'fija' | 'variable';
+type ExpensesMode = 'acumulado' | 'mensual';
 
 @Component({
   selector: 'app-dashboard',
@@ -65,7 +66,29 @@ type PlatformGroup = 'all' | 'liquidez' | 'fija' | 'variable';
             [data]="chartExpensesData()"
             [platformColor]="selectedPlatformColor()"
             [selectedPlatformName]="selectedPlatformName()"
-          />
+            [title]="expensesTitle()"
+          >
+            <div actions class="flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+              <button
+                type="button"
+                class="rounded-md px-2.5 py-0.5 text-xs font-medium transition-colors"
+                [class.bg-white]="expensesMode() === 'acumulado'"
+                [class.shadow-sm]="expensesMode() === 'acumulado'"
+                [class.text-gray-900]="expensesMode() === 'acumulado'"
+                [class.text-gray-500]="expensesMode() !== 'acumulado'"
+                (click)="expensesMode.set('acumulado')"
+              >Acumulados</button>
+              <button
+                type="button"
+                class="rounded-md px-2.5 py-0.5 text-xs font-medium transition-colors"
+                [class.bg-white]="expensesMode() === 'mensual'"
+                [class.shadow-sm]="expensesMode() === 'mensual'"
+                [class.text-gray-900]="expensesMode() === 'mensual'"
+                [class.text-gray-500]="expensesMode() !== 'mensual'"
+                (click)="expensesMode.set('mensual')"
+              >Por mes</button>
+            </div>
+          </app-expenses-chart>
         </div>
       </div>
     </div>
@@ -76,6 +99,7 @@ export class DashboardComponent {
   protected readonly selectedPlatformId = signal<string | null>(null);
   protected readonly chartMode = signal<ChartMode>('total');
   protected readonly chartGroupFilter = signal<PlatformGroup>('all');
+  protected readonly expensesMode = signal<ExpensesMode>('acumulado');
 
   protected readonly currentSnapshots = computed(() =>
     this.service.getSnapshotsByMonth(this.service.currentYear(), this.service.currentMonth())
@@ -133,23 +157,29 @@ export class DashboardComponent {
 
   protected readonly chartExpensesData = computed(() => {
     const platformId = this.selectedPlatformId();
-    if (platformId) {
-      return this.last6Months().map(({ year, month }) => {
-        let cumulative = 0;
-        for (let m = 1; m <= month; m++) {
-          cumulative += this.getPlatformExpensesForMonth(platformId, year, m);
-        }
-        return cumulative;
-      });
-    }
-    return this.last6Months().map(({ year, month }) => {
-      let cumulative = 0;
-      for (let m = 1; m <= month; m++) {
-        cumulative += this.service.getMonthlySummary(year, m).totalExpenses;
+    const cumulative = this.expensesMode() === 'acumulado';
+    const monthlyExpenses = (year: number, month: number) => {
+      if (platformId) {
+        return this.getPlatformExpensesForMonth(platformId, year, month);
       }
-      return cumulative;
+      return this.service.getMonthlySummary(year, month).totalExpenses;
+    };
+
+    return this.last6Months().map(({ year, month }) => {
+      if (!cumulative) {
+        return monthlyExpenses(year, month);
+      }
+      let cumulativeTotal = 0;
+      for (let m = 1; m <= month; m++) {
+        cumulativeTotal += monthlyExpenses(year, m);
+      }
+      return cumulativeTotal;
     });
   });
+
+  protected readonly expensesTitle = computed(() =>
+    this.expensesMode() === 'acumulado' ? 'Gastos Acumulados' : 'Gastos por Mes'
+  );
 
   protected readonly selectedPlatformColor = computed(() => {
     const platformId = this.selectedPlatformId();
