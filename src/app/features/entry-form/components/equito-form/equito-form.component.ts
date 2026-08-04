@@ -263,18 +263,18 @@ export class EquitoFormComponent {
       monthlyReturn,
       totalReturned: 0,
       status: ProjectStatus.Active,
+    }).subscribe(() => {
+      this.projectName.set('');
+      this.investedAmount.set(0);
+      this.interestRate.set(0);
+      this.startDate.set('');
+      this.savedInvestment.set(true);
+      setTimeout(() => this.savedInvestment.set(false), 2000);
     });
-
-    this.projectName.set('');
-    this.investedAmount.set(0);
-    this.interestRate.set(0);
-    this.startDate.set('');
-    this.savedInvestment.set(true);
-    setTimeout(() => this.savedInvestment.set(false), 2000);
   }
 
   protected deleteInvestment(inv: CrowdlendingInvestment): void {
-    this.service.deleteCrowdlendingInvestment(inv.id);
+    this.service.deleteCrowdlendingInvestment(inv.id).subscribe();
   }
 
   // --- Balance mensual ---

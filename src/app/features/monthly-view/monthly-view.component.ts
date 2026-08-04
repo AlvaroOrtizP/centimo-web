@@ -1,7 +1,7 @@
 import { Component, inject, input, computed, effect } from '@angular/core';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
-import { MONTHS } from '../../core/constants/date.constants';
+import { MONTHS, PREVIOUS_MONTH } from '../../core/constants/date.constants';
 import { AccountBreakdownComponent } from './components/account-breakdown/account-breakdown.component';
 import { ExpenseCategoryChartComponent } from './components/expense-category-chart/expense-category-chart.component';
 import { IncomeBreakdownComponent } from './components/income-breakdown/income-breakdown.component';
@@ -61,8 +61,8 @@ import { CollapsibleDescriptionComponent } from '../../shared/components/collaps
   `,
 })
 export class MonthlyViewComponent {
-  readonly year = input<string>(String(new Date().getFullYear()));
-  readonly month = input<string>(String(new Date().getMonth() + 1));
+  readonly year = input<string>(String(PREVIOUS_MONTH.year));
+  readonly month = input<string>(String(PREVIOUS_MONTH.month));
 
   protected readonly service = inject(FinancialDataService);
 

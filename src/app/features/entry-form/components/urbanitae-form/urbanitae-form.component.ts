@@ -1,11 +1,10 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { CrowdlendingInvestment } from '../../../../models/crowdlending-investment';
 import { ProjectStatus } from '../../../../models/project-status';
-import { Account } from '../../../../models/account';
 
 @Component({
   selector: 'app-urbanitae-form',
@@ -185,8 +184,7 @@ import { Account } from '../../../../models/account';
 export class UrbanitaeFormComponent {
   private readonly service = inject(FinancialDataService);
 
-  readonly accounts = input.required<Account[]>();
-
+  private readonly ACCOUNT_ID = 'urbanitae';
   private readonly PLATFORM_ID = 'urbanitae';
 
   protected readonly months = MONTH_OPTIONS;
@@ -218,19 +216,12 @@ export class UrbanitaeFormComponent {
   protected readonly balance = signal<number | null>(null);
   protected readonly savedBalance = signal(false);
 
-  private readonly accountId = computed(() => {
-    const accs = this.accounts();
-    return accs.find(a => a.platformId === this.PLATFORM_ID)?.id ?? '';
-  });
-
   protected readonly snapshotId = computed(() =>
-    `${this.accountId()}-${this.localYear()}-${String(this.localMonth()).padStart(2, '0')}`
+    `${this.ACCOUNT_ID}-${this.localYear()}-${String(this.localMonth()).padStart(2, '0')}`
   );
 
   protected readonly previousBalance = computed(() => {
-    const accId = this.accountId();
-    if (!accId) { return null; }
-    const snapshots = this.service.getSnapshotsByAccount(accId);
+    const snapshots = this.service.getSnapshotsByAccount(this.ACCOUNT_ID);
     let prevMonth = this.localMonth() - 1;
     let prevYear = this.localYear();
     if (prevMonth < 1) { prevMonth = 12; prevYear--; }
@@ -239,18 +230,14 @@ export class UrbanitaeFormComponent {
   });
 
   protected readonly balanceHistory = computed(() => {
-    const accId = this.accountId();
-    if (!accId) { return []; }
-    return this.service.getSnapshotsByAccount(accId)
+    return this.service.getSnapshotsByAccount(this.ACCOUNT_ID)
       .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month));
   });
 
   constructor() {
     effect(() => {
       this.service.snapshots();
-      const accId = this.accountId();
-      if (!accId) { return; }
-      const snap = this.service.getSnapshot(accId, this.localYear(), this.localMonth());
+      const snap = this.service.getSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth());
       this.balance.set(snap?.balance ?? null);
     });
   }
@@ -273,19 +260,19 @@ export class UrbanitaeFormComponent {
       monthlyReturn,
       totalReturned: 0,
       status: ProjectStatus.Active,
+    }).subscribe(() => {
+      this.projectName.set('');
+      this.investedAmount.set(0);
+      this.interestRate.set(0);
+      this.termMonths.set(0);
+      this.startDate.set('');
+      this.savedInvestment.set(true);
+      setTimeout(() => this.savedInvestment.set(false), 2000);
     });
-
-    this.projectName.set('');
-    this.investedAmount.set(0);
-    this.interestRate.set(0);
-    this.termMonths.set(0);
-    this.startDate.set('');
-    this.savedInvestment.set(true);
-    setTimeout(() => this.savedInvestment.set(false), 2000);
   }
 
   protected deleteInvestment(inv: CrowdlendingInvestment): void {
-    this.service.deleteCrowdlendingInvestment(inv.id);
+    this.service.deleteCrowdlendingInvestment(inv.id).subscribe();
   }
 
   // --- Balance mensual ---
@@ -293,10 +280,7 @@ export class UrbanitaeFormComponent {
     const bal = this.balance();
     if (bal === null) { return; }
 
-    const accId = this.accountId();
-    if (!accId) { return; }
-
-    this.service.upsertSnapshot(accId, this.localYear(), this.localMonth(), bal, 0).subscribe();
+    this.service.upsertSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth(), bal, 0).subscribe();
 
     this.savedBalance.set(true);
     setTimeout(() => this.savedBalance.set(false), 2000);

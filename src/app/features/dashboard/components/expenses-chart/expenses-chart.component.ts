@@ -1,5 +1,6 @@
-import { Component, input, viewChild, ElementRef, afterNextRender, effect, OnDestroy } from '@angular/core';
-import { Chart } from 'chart.js';
+import { Component, input, effect } from '@angular/core';
+import { ChartConfiguration } from 'chart.js';
+import { BaseChartComponent } from '../../../../shared/components/base-chart/base-chart.component';
 
 @Component({
   selector: 'app-expenses-chart',
@@ -8,11 +9,14 @@ import { Chart } from 'chart.js';
     <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
       <div class="mb-4 flex items-center justify-between">
         <h2 class="text-base font-semibold text-gray-900">
-          {{ selectedPlatformName() || 'Gastos Acumulados' }}
+          {{ selectedPlatformName() || title() }}
         </h2>
-        @if (selectedPlatformName()) {
-          <span class="text-xs text-gray-400">{{ selectedPlatformName() }}</span>
-        }
+        <div class="flex items-center gap-2">
+          @if (selectedPlatformName()) {
+            <span class="text-xs text-gray-400">{{ selectedPlatformName() }}</span>
+          }
+          <ng-content select="[actions]"></ng-content>
+        </div>
       </div>
       <div class="relative h-72">
         <canvas aria-label="Gráfico de gastos acumulados" role="img" #canvas></canvas>
@@ -20,17 +24,15 @@ import { Chart } from 'chart.js';
     </div>
   `,
 })
-export class ExpensesChartComponent implements OnDestroy {
+export class ExpensesChartComponent extends BaseChartComponent {
   readonly labels = input<string[]>([]);
   readonly data = input<number[]>([]);
   readonly platformColor = input<string>('');
   readonly selectedPlatformName = input<string>('');
-
-  private readonly canvasRef = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
-  private chart: Chart | null = null;
+  readonly title = input<string>('Gastos Acumulados');
 
   constructor() {
-    afterNextRender(() => this.createChart());
+    super();
 
     effect(() => {
       if (!this.chart) { return; }
@@ -62,43 +64,31 @@ export class ExpensesChartComponent implements OnDestroy {
     });
   }
 
-  ngOnDestroy(): void {
-    this.chart?.destroy();
-  }
-
-  private createChart(): void {
-    this.chart?.destroy();
-    const canvas = this.canvasRef()?.nativeElement;
-    if (!canvas) { return; }
-
-    this.chart = new Chart(canvas, {
+  protected getChartConfig(): ChartConfiguration {
+    return {
       type: 'line',
       data: {
         labels: this.labels(),
-        datasets: [
-          {
-            label: 'Gastos',
-            data: this.data(),
-            borderColor: '#EF4444',
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            fill: true,
-            tension: 0.3,
-            pointRadius: 4,
-            pointBackgroundColor: '#EF4444',
-          },
-        ],
+        datasets: [{
+          label: 'Gastos',
+          data: this.data(),
+          borderColor: '#EF4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointBackgroundColor: '#EF4444',
+        }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-        },
+        plugins: { legend: { display: false } },
         scales: {
           x: { grid: { display: false }, ticks: { color: '#6B7280' } },
           y: { grid: { color: '#F3F4F6' }, ticks: { color: '#6B7280', callback: (v: string | number) => Number(v).toLocaleString('es-ES') + '€' } },
         },
       },
-    });
+    };
   }
 }

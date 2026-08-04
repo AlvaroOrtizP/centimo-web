@@ -12,7 +12,6 @@ interface PlatformRow {
   platform: Platform;
   balance: number;
   income: number;
-  expenses: number;
   pct: number;
 }
 
@@ -62,11 +61,21 @@ interface PlatformRow {
               <p class="text-sm font-semibold text-gray-900">{{ row.balance.toLocaleString('es-ES') }} €</p>
               <div class="mt-0.5 flex gap-2 text-xs">
                 <span class="text-green-600">{{ row.income > 0 ? '+' + row.income.toLocaleString('es-ES') : '-' }}</span>
-                <span class="text-red-600">{{ row.expenses > 0 ? row.expenses.toLocaleString('es-ES') + ' €' : '-' }}</span>
               </div>
             </div>
           </div>
         }
+        <div class="flex items-center gap-4 px-5 py-3.5">
+          <span class="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-red-50">
+            <span class="h-2.5 w-2.5 rounded-full bg-red-500"></span>
+          </span>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900">Gastos</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-semibold text-red-600">{{ totalExpenses().toLocaleString('es-ES') }} €</p>
+          </div>
+        </div>
       </div>
     </div>
   `,
@@ -82,6 +91,10 @@ export class PlatformSummaryTableComponent {
   readonly platformClick = output<string>();
 
   protected readonly filter = signal<PlatformFilter>('all');
+
+  protected readonly totalExpenses = computed(() =>
+    this.snapshots().reduce((sum, s) => sum + s.expenses, 0)
+  );
 
   protected readonly filteredRows = computed(() => {
     const allRows = this.rows();
@@ -105,7 +118,6 @@ export class PlatformSummaryTableComponent {
         platform,
         balance: platformSnapshots.reduce((sum, s) => sum + s.balance, 0),
         income: platformSnapshots.reduce((sum, s) => sum + s.income, 0),
-        expenses: platformSnapshots.reduce((sum, s) => sum + s.expenses, 0),
         pct: 0,
       };
     });

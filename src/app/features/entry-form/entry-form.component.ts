@@ -3,7 +3,6 @@ import { Component, inject, computed, signal } from '@angular/core';
 import { FinancialDataService } from '../../core/services/financial-data.service';
 import { PlatformType } from '../../models/platform-type';
 import { MonthPickerComponent } from '../../shared/components/month-picker/month-picker.component';
-import { ExpenseFormComponent } from './components/expense-form/expense-form.component';
 import { TradeFormComponent } from './components/trade-form/trade-form.component';
 import { CrowdlendingFormComponent } from './components/crowdlending-form/crowdlending-form.component';
 import { MintosFormComponent } from './components/mintos-form/mintos-form.component';
@@ -15,7 +14,7 @@ import { BanksFormComponent } from './components/banks-form/banks-form.component
 import { MyInvestorFormComponent } from './components/myinvestor-form/myinvestor-form.component';
 import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 
-type Tab = 'expenses' | 'trades' | 'banks' | 'revolut' | 'b100' | 'myinvestor' | 'mintos' | 'equito' | 'urbanitae';
+type Tab = 'trades' | 'banks' | 'revolut' | 'b100' | 'myinvestor' | 'mintos' | 'equito' | 'urbanitae';
 
 interface TabConfig {
   key: Tab;
@@ -28,12 +27,12 @@ interface TabConfig {
   standalone: true,
   imports: [
     MonthPickerComponent, CollapsibleDescriptionComponent,
-    ExpenseFormComponent, TradeFormComponent,
+    TradeFormComponent,
     CrowdlendingFormComponent, MintosFormComponent, EquitoFormComponent, UrbanitaeFormComponent, RevolutFormComponent, B100FormComponent, BanksFormComponent, MyInvestorFormComponent,
   ],
   template: `
     <div class="space-y-6">
-      <app-collapsible-description description="Formulario para registrar gastos mensuales, trades y saldos en cada plataforma." storageKey="desc-entry" />
+      <app-collapsible-description description="Formulario para registrar trades y saldos en cada plataforma." storageKey="desc-entry" />
 
       <div class="rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
         <div class="flex flex-wrap items-end gap-4">
@@ -67,9 +66,7 @@ interface TabConfig {
                   <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
                     [style.color]="activeTab() === tab.key ? '#fff' : tab.color"
                   >
-                    @if (tab.key === 'expenses') {
-                      <path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    } @else if (tab.key === 'trades') {
+                    @if (tab.key === 'trades') {
                       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                     } @else if (tab.key === 'banks') {
                       <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
@@ -96,10 +93,6 @@ interface TabConfig {
         <div class="h-0.5" [style.background-color]="activeTabColor()"></div>
         <div class="p-5">
           @switch (activeTab()) {
-            @case ('expenses') {
-              <app-collapsible-description description="Registra los gastos del mes por categoría: alimentación, transporte, suscripciones, etc. Se asignan a una cuenta y se reflejan en el resumen mensual." storageKey="desc-entry-expenses" />
-              <app-expense-form [accounts]="allAccounts()" [year]="selectedYear()" [month]="selectedMonth()" />
-            }
             @case ('trades') {
               <app-collapsible-description description="Registra compras y ventas de activos (acciones, ETFs, criptomonedas). Define precio, cantidad, fecha y estado de la operación. El P&L se calcula automáticamente al cerrar." storageKey="desc-entry-trades" />
               <app-trade-form [accounts]="tradeAccounts()" />
@@ -130,7 +123,7 @@ interface TabConfig {
             }
             @case ('urbanitae') {
               <app-collapsible-description description="Registra el saldo e intereses de tus inversiones en Urbanitae (crowdlending inmobiliario). Los datos se reflejan en el resumen de inversiones fijas." storageKey="desc-entry-urbanitae" />
-              <app-urbanitae-form [accounts]="allAccounts()" />
+              <app-urbanitae-form />
             }
           }
         </div>
@@ -140,10 +133,9 @@ interface TabConfig {
 })
 export class EntryFormComponent {
   protected readonly service = inject(FinancialDataService);
-  protected readonly activeTab = signal<Tab>('expenses');
+  protected readonly activeTab = signal<Tab>('trades');
 
   protected readonly tabs: TabConfig[] = [
-    { key: 'expenses', label: 'Gastos', color: '#dc2626' },
     { key: 'trades', label: 'Trades', color: '#7c3aed' },
     { key: 'banks', label: 'Bancos', color: '#004481' },
     { key: 'revolut', label: 'Revolut', color: '#EB008B' },
@@ -158,9 +150,6 @@ export class EntryFormComponent {
     const tab = this.tabs.find(t => t.key === this.activeTab());
     return tab?.color ?? '#6b7280';
   });
-
-  protected readonly selectedYear = computed(() => this.service.currentYear());
-  protected readonly selectedMonth = computed(() => this.service.currentMonth());
 
   protected readonly allAccounts = computed(() => this.service.accounts());
 

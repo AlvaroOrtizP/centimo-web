@@ -78,6 +78,7 @@ describe('DashboardComponent', () => {
 
     it('should show MyInvestor total as 8900 € (metal 1200 + fondos 7700)', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
+      setDashboardMonth(fixture.componentInstance, 2026, 6);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
       const platformBalances = el.querySelectorAll('.text-right .text-sm.font-semibold');
@@ -87,6 +88,7 @@ describe('DashboardComponent', () => {
 
     it('should show correct income values', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
+      setDashboardMonth(fixture.componentInstance, 2026, 6);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
       const incomeSpans = el.querySelectorAll('.text-right .text-green-600');
@@ -97,17 +99,20 @@ describe('DashboardComponent', () => {
       expect(values).toContain('+63,7');
     });
 
-    it('should show expense value for gastos platform', () => {
+    it('should show monthly expenses only in the gastos row of platform table', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
+      setDashboardMonth(fixture.componentInstance, 2026, 6);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
-      const expenseSpans = el.querySelectorAll('.text-right .text-red-600');
-      const values = Array.from(expenseSpans).map(s => s.textContent?.trim());
-      expect(values).toContain('890 €');
+
+      const table = el.querySelector('app-platform-summary-table');
+      const expenseValues = Array.from(table?.querySelectorAll('.text-right .text-red-600') ?? []).map(s => s.textContent?.trim());
+      expect(expenseValues).toEqual(['890 €']);
     });
 
     it('should compute all summary card values correctly', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
+      setDashboardMonth(fixture.componentInstance, 2026, 6);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
       const cards = el.querySelectorAll('.text-2xl');
@@ -162,6 +167,7 @@ describe('DashboardComponent', () => {
 
       // ── FASE 3: verificar dashboard ──
       const fixture = TestBed.createComponent(DashboardComponent);
+      setDashboardMonth(fixture.componentInstance, 2026, 6);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
 
@@ -253,9 +259,8 @@ describe('DashboardComponent', () => {
       expect(service.getExpensesBySnapshot('gastos-main-2026-07').length).toBe(2);
 
       // ── FASE 5: verificar dashboard para julio ──
-      service.currentMonth.set(7);
-
       const fixture = TestBed.createComponent(DashboardComponent);
+      setDashboardMonth(fixture.componentInstance, 2026, 7);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
 
@@ -279,10 +284,10 @@ describe('DashboardComponent', () => {
       expect(incomeValues).toContain('+18');
       expect(incomeValues).toContain('+70');
 
-      // Expenses: gastos 800
-      const expenseSpans = el.querySelectorAll('.text-right .text-red-600');
-      const expenseValues = Array.from(expenseSpans).map(s => s.textContent?.trim());
-      expect(expenseValues).toContain('800 €');
+      // Expenses: fila "Gastos" con el total del mes en la tabla de plataformas
+      const table = el.querySelector('app-platform-summary-table');
+      const expenseValues = Array.from(table?.querySelectorAll('.text-right .text-red-600') ?? []).map(s => s.textContent?.trim());
+      expect(expenseValues).toEqual(['800 €']);
 
       // Summary computed
       const summary = service.monthlySummary();
@@ -294,3 +299,14 @@ describe('DashboardComponent', () => {
     });
   });
 });
+
+function setDashboardMonth(component: DashboardComponent, year: number, month: number): void {
+  (component as unknown as {
+    viewYear: { set(value: number): void };
+    viewMonth: { set(value: number): void };
+  }).viewYear.set(year);
+  (component as unknown as {
+    viewYear: { set(value: number): void };
+    viewMonth: { set(value: number): void };
+  }).viewMonth.set(month);
+}

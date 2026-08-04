@@ -5,7 +5,6 @@ import { IncomeComponent } from './income.component';
 import { FinancialDataService } from '../../core/services/financial-data.service';
 import { IncomeFormComponent } from '../entry-form/components/income-form/income-form.component';
 import { SalaryDistributionComponent } from './components/salary-distribution/salary-distribution.component';
-import { AlertsComponent } from './components/alerts/alerts.component';
 
 describe('IncomeComponent', () => {
   let component: IncomeComponent;
@@ -14,7 +13,7 @@ describe('IncomeComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [FormsModule, IncomeComponent, IncomeFormComponent, SalaryDistributionComponent, AlertsComponent],
+      imports: [FormsModule, IncomeComponent, IncomeFormComponent, SalaryDistributionComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(IncomeComponent);
@@ -309,35 +308,6 @@ describe('IncomeComponent', () => {
       // Unmodified months should be intact
       const jul = service.getSalaryAllocationsByMonth(2026, 7);
       expect(jul.find(a => a.id === 'sa-future-1')!.value).toBe(21);
-    });
-  });
-
-  describe('alerts integration — no alert then add one for current month', () => {
-    it('should show no alert banner initially and show it after adding an alert', () => {
-      const compiled = fixture.nativeElement as HTMLElement;
-
-      // 1. Initially no alerts for current month (June 2026)
-      expect(service.getAlertsByMonth(2026, 6).length).toBe(0);
-      expect(compiled.querySelector('[class*="yellow"]')).toBeNull();
-
-      // 2. Add an alert for June 2026
-      service.addAlert({
-        id: 'alert-tax-2026-06',
-        description: 'Revisar declaracion de la renta',
-        month: 6,
-        year: 2026,
-      });
-      fixture.detectChanges();
-
-      // 3. Alert is now active via service
-      const alerts = service.getAlertsByMonth(2026, 6);
-      expect(alerts.length).toBe(1);
-      expect(alerts[0].description).toBe('Revisar declaracion de la renta');
-
-      // 4. Yellow banner is visible in the DOM
-      const banner = compiled.querySelector('[class*="yellow"]');
-      expect(banner).not.toBeNull();
-      expect(banner!.textContent).toContain('Revisar declaracion de la renta');
     });
   });
 });

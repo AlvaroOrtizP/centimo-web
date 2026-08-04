@@ -1,5 +1,6 @@
-import { Component, input, viewChild, ElementRef, afterNextRender, OnDestroy } from '@angular/core';
-import { Chart } from 'chart.js';
+import { Component, input } from '@angular/core';
+import { ChartConfiguration } from 'chart.js';
+import { BaseChartComponent } from '../../../../shared/components/base-chart/base-chart.component';
 
 @Component({
   selector: 'app-platform-distribution',
@@ -21,28 +22,12 @@ import { Chart } from 'chart.js';
     </div>
   `,
 })
-export class PlatformDistributionComponent implements OnDestroy {
+export class PlatformDistributionComponent extends BaseChartComponent {
   readonly items = input<{ name: string; value: number; color: string }[]>([]);
 
-  private readonly canvasRef = viewChild<ElementRef<HTMLCanvasElement>>('canvas');
-  private chart: Chart | null = null;
-
-  constructor() {
-    afterNextRender(() => this.createChart());
-  }
-
-  ngOnDestroy(): void {
-    this.chart?.destroy();
-  }
-
-  private createChart(): void {
-    this.chart?.destroy();
-    const canvas = this.canvasRef()?.nativeElement;
-    if (!canvas) { return; }
-
+  protected getChartConfig(): ChartConfiguration {
     const data = this.items();
-
-    this.chart = new Chart(canvas, {
+    return {
       type: 'doughnut',
       data: {
         labels: data.map(i => i.name),
@@ -56,10 +41,8 @@ export class PlatformDistributionComponent implements OnDestroy {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-        },
+        plugins: { legend: { display: false } },
       },
-    });
+    };
   }
 }

@@ -196,6 +196,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
           <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Historial Save</p>
           <app-snapshot-history-table
             [snapshots]="historySavings()"
+            headingTooltip="Solo se muestran los dos últimos registros"
             (edit)="onEditSavings($event)"
             (delete)="onDeleteSavings($event)"
           />
@@ -208,6 +209,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
           <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Historial Health</p>
           <app-snapshot-history-table
             [snapshots]="historyInvestment()"
+            headingTooltip="Solo se muestran los dos últimos registros"
             (edit)="onEditInvestment($event)"
             (delete)="onDeleteInvestment($event)"
           />
@@ -279,11 +281,13 @@ export class B100FormComponent {
   protected readonly historySavings = computed(() =>
     this.service.getSnapshotsByAccount(this.SAVINGS_ID)
       .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+      .slice(0, 2)
   );
 
   protected readonly historyInvestment = computed(() =>
     this.service.getSnapshotsByAccount(this.INVESTMENT_ID)
       .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+      .slice(0, 2)
   );
 
   constructor() {
