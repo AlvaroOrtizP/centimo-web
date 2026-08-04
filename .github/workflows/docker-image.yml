@@ -44,5 +44,5 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            alorpes/centimo:${{ env.VERSION }}
-            alorpes/centimo:latest
+            alorpes/centimo-web:${{ env.VERSION }}
+            alorpes/centimo-web:latest
