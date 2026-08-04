@@ -54,7 +54,10 @@ export class ExpensesDataService {
         return of([]);
       }),
     ).subscribe(expenses => {
-      this.expenses.set(expenses);
+      this.expenses.update(current => {
+        const freshIds = new Set(expenses.map(e => e.id));
+        return [...current.filter(e => !freshIds.has(e.id)), ...expenses];
+      });
     });
   }
 

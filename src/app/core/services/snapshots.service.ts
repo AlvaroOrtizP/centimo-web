@@ -22,11 +22,15 @@ export class SnapshotsDataService {
   }
 
   getSnapshotsByMonth(year: number, month: number): MonthlySnapshot[] {
-    return this.snapshots().filter(s => s.year === year && s.month === month);
+    const y = Number(year);
+    const m = Number(month);
+    return this.snapshots().filter(s => s.year === y && s.month === m);
   }
 
   getSnapshot(accountId: string, year: number, month: number): MonthlySnapshot | undefined {
-    return this.snapshots().find(s => s.accountId === accountId && s.year === year && s.month === month);
+    const y = Number(year);
+    const m = Number(month);
+    return this.snapshots().find(s => s.accountId === accountId && s.year === y && s.month === m);
   }
 
   fetchSnapshotFromBackend(accountId: string, year: number, month: number): Observable<SnapshotResponse | null> {

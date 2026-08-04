@@ -2,6 +2,7 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
+import { MONTHS, YEARS } from '../../../../core/constants/date.constants';
 import { ExpenseCategory } from '../../../../models/expense-category';
 import { Expense } from '../../../../models/expense';
 
@@ -64,12 +65,34 @@ import { Expense } from '../../../../models/expense';
         <p class="mt-2 text-sm text-green-600">Gasto guardado correctamente</p>
       }
 
-      @if (expenses().length > 0) {
-        <div class="mt-4 border-t border-gray-100 pt-3">
-          <div class="mb-2 flex items-center justify-between">
-            <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Gastos registrados</p>
+      <div class="mt-4 border-t border-gray-100 pt-3">
+        <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Gastos registrados</p>
+          <div class="flex items-center gap-2">
+            <select
+              aria-label="Mes del historial de gastos"
+              class="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+              [ngModel]="listMonth()"
+              (ngModelChange)="listMonth.set(+$event)"
+            >
+              @for (m of months; track $index) {
+                <option [value]="$index + 1">{{ m }}</option>
+              }
+            </select>
+            <select
+              aria-label="Año del historial de gastos"
+              class="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+              [ngModel]="listYear()"
+              (ngModelChange)="listYear.set(+$event)"
+            >
+              @for (y of years; track y) {
+                <option [value]="y">{{ y }}</option>
+              }
+            </select>
             <p class="text-sm font-semibold text-red-600">{{ total().toLocaleString('es-ES') }} €</p>
           </div>
+        </div>
+        @if (expenses().length > 0) {
           <div class="space-y-1">
             @for (exp of expenses(); track exp.id) {
               <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
@@ -100,8 +123,10 @@ import { Expense } from '../../../../models/expense';
               </div>
             }
           </div>
-        </div>
-      }
+        } @else {
+          <p class="text-sm text-gray-400">No hay gastos registrados en este mes.</p>
+        }
+      </div>
     </div>
   `,
 })
@@ -115,11 +140,21 @@ export class ExpenseFormComponent {
 
   protected readonly snapshotId = signal('');
 
+  protected readonly months = MONTHS;
+  protected readonly years = YEARS;
+
+  protected readonly listMonth = signal(this.service.currentMonth());
+  protected readonly listYear = signal(this.service.currentYear());
+
   constructor() {
+    effect(() => {
+      this.listYear.set(this.year());
+      this.listMonth.set(this.month());
+    }, { allowSignalWrites: true });
+
     effect(() => {
       const y = this.year();
       const m = this.month();
-      this.service.loadExpensesByPeriod(y, m);
 
       const existing = this.service.getSnapshot(this.ACCOUNT_ID, y, m);
       if (existing) {
@@ -129,11 +164,15 @@ export class ExpenseFormComponent {
       this.service.upsertSnapshot(this.ACCOUNT_ID, y, m, 0, 0).subscribe(res => {
         this.snapshotId.set(res.id);
       });
-    });
+    }, { allowSignalWrites: true });
+
+    effect(() => {
+      this.service.loadExpensesByPeriod(this.listYear(), this.listMonth());
+    }, { allowSignalWrites: true });
   }
 
   protected readonly expenses = computed<Expense[]>(() =>
-    this.service.getExpensesByPeriod(this.year(), this.month())
+    this.service.getExpensesByPeriod(this.listYear(), this.listMonth())
   );
 
   protected readonly total = computed(() =>
