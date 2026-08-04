@@ -1,4 +1,5 @@
 FROM node:20-alpine AS build
+RUN apk add --no-cache openjdk17-jre
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
