@@ -25,6 +25,7 @@ describe('SidebarComponent', () => {
     expect(el.textContent).toContain('Tendencias');
     expect(el.textContent).toContain('Trades');
     expect(el.textContent).toContain('Entrada Datos');
+    expect(el.textContent).toContain('Gastos');
   });
 
   it('should render app title', () => {

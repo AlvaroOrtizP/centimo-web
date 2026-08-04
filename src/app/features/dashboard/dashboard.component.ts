@@ -2,8 +2,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
-import { MONTHS } from '../../core/constants/date.constants';
+import { MONTHS, PREVIOUS_MONTH } from '../../core/constants/date.constants';
 import { EXPENSES_PLATFORM_ID, PLATFORM_GROUPS } from '../../core/constants/platform.constants';
+import { MonthPickerComponent } from '../../shared/components/month-picker/month-picker.component';
 import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 import { SummaryCardsComponent } from './components/summary-cards/summary-cards.component';
 import { PlatformSummaryTableComponent } from './components/platform-summary-table/platform-summary-table.component';
@@ -12,14 +13,18 @@ import { ExpensesChartComponent } from './components/expenses-chart/expenses-cha
 
 type ChartMode = 'total' | 'per-platform';
 type PlatformGroup = 'all' | 'liquidez' | 'fija' | 'variable';
+type ExpensesMode = 'acumulado' | 'mensual';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [FormsModule, CollapsibleDescriptionComponent, SummaryCardsComponent, PlatformSummaryTableComponent, NetWorthChartComponent, ExpensesChartComponent],
+  imports: [FormsModule, CollapsibleDescriptionComponent, SummaryCardsComponent, PlatformSummaryTableComponent, NetWorthChartComponent, ExpensesChartComponent, MonthPickerComponent],
   template: `
     <div class="space-y-6">
       <app-collapsible-description description="Resumen general de tu patrimonio, distribución por plataformas y evolución en los últimos meses." storageKey="desc-dashboard" />
+      <div class="flex justify-end">
+        <app-month-picker />
+      </div>
       <app-summary-cards [summary]="currentSummary()" [previousSummary]="previousSummary()" />
       <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <app-platform-summary-table
@@ -65,7 +70,29 @@ type PlatformGroup = 'all' | 'liquidez' | 'fija' | 'variable';
             [data]="chartExpensesData()"
             [platformColor]="selectedPlatformColor()"
             [selectedPlatformName]="selectedPlatformName()"
-          />
+            [title]="expensesTitle()"
+          >
+            <div actions class="flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+              <button
+                type="button"
+                class="rounded-md px-2.5 py-0.5 text-xs font-medium transition-colors"
+                [class.bg-white]="expensesMode() === 'acumulado'"
+                [class.shadow-sm]="expensesMode() === 'acumulado'"
+                [class.text-gray-900]="expensesMode() === 'acumulado'"
+                [class.text-gray-500]="expensesMode() !== 'acumulado'"
+                (click)="expensesMode.set('acumulado')"
+              >Acumulados</button>
+              <button
+                type="button"
+                class="rounded-md px-2.5 py-0.5 text-xs font-medium transition-colors"
+                [class.bg-white]="expensesMode() === 'mensual'"
+                [class.shadow-sm]="expensesMode() === 'mensual'"
+                [class.text-gray-900]="expensesMode() === 'mensual'"
+                [class.text-gray-500]="expensesMode() !== 'mensual'"
+                (click)="expensesMode.set('mensual')"
+              >Por mes</button>
+            </div>
+          </app-expenses-chart>
         </div>
       </div>
     </div>
@@ -73,16 +100,19 @@ type PlatformGroup = 'all' | 'liquidez' | 'fija' | 'variable';
 })
 export class DashboardComponent {
   protected readonly service = inject(FinancialDataService);
+  protected readonly viewYear = signal(PREVIOUS_MONTH.year);
+  protected readonly viewMonth = signal(PREVIOUS_MONTH.month);
   protected readonly selectedPlatformId = signal<string | null>(null);
   protected readonly chartMode = signal<ChartMode>('total');
   protected readonly chartGroupFilter = signal<PlatformGroup>('all');
+  protected readonly expensesMode = signal<ExpensesMode>('acumulado');
 
   protected readonly currentSnapshots = computed(() =>
-    this.service.getSnapshotsByMonth(this.service.currentYear(), this.service.currentMonth())
+    this.service.getSnapshotsByMonth(this.viewYear(), this.viewMonth())
   );
 
   protected readonly currentSummary = computed(() =>
-    this.service.monthlySummary()
+    this.service.getMonthlySummary(this.viewYear(), this.viewMonth())
   );
 
   protected readonly previousSummary = computed(() => {
@@ -133,23 +163,29 @@ export class DashboardComponent {
 
   protected readonly chartExpensesData = computed(() => {
     const platformId = this.selectedPlatformId();
-    if (platformId) {
-      return this.last6Months().map(({ year, month }) => {
-        let cumulative = 0;
-        for (let m = 1; m <= month; m++) {
-          cumulative += this.getPlatformExpensesForMonth(platformId, year, m);
-        }
-        return cumulative;
-      });
-    }
-    return this.last6Months().map(({ year, month }) => {
-      let cumulative = 0;
-      for (let m = 1; m <= month; m++) {
-        cumulative += this.service.getMonthlySummary(year, m).totalExpenses;
+    const cumulative = this.expensesMode() === 'acumulado';
+    const monthlyExpenses = (year: number, month: number) => {
+      if (platformId) {
+        return this.getPlatformExpensesForMonth(platformId, year, month);
       }
-      return cumulative;
+      return this.service.getMonthlySummary(year, month).totalExpenses;
+    };
+
+    return this.last6Months().map(({ year, month }) => {
+      if (!cumulative) {
+        return monthlyExpenses(year, month);
+      }
+      let cumulativeTotal = 0;
+      for (let m = 1; m <= month; m++) {
+        cumulativeTotal += monthlyExpenses(year, m);
+      }
+      return cumulativeTotal;
     });
   });
+
+  protected readonly expensesTitle = computed(() =>
+    this.expensesMode() === 'acumulado' ? 'Gastos Acumulados' : 'Gastos por Mes'
+  );
 
   protected readonly selectedPlatformColor = computed(() => {
     const platformId = this.selectedPlatformId();
@@ -183,8 +219,8 @@ export class DashboardComponent {
 
   private last6Months(): { year: number; month: number }[] {
     const result: { year: number; month: number }[] = [];
-    let y = this.service.currentYear();
-    let m = this.service.currentMonth();
+    let y = this.viewYear();
+    let m = this.viewMonth();
 
     for (let i = 0; i < 6; i++) {
       result.unshift({ year: y, month: m });
@@ -196,8 +232,8 @@ export class DashboardComponent {
   }
 
   private previousMonth(): { year: number; month: number } {
-    let y = this.service.currentYear();
-    let m = this.service.currentMonth() - 1;
+    let y = this.viewYear();
+    let m = this.viewMonth() - 1;
     if (m === 0) { m = 12; y--; }
     return { year: y, month: m };
   }

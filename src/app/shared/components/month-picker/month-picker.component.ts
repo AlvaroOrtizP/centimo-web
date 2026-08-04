@@ -17,7 +17,7 @@ import { MONTHS, YEARS } from '../../../core/constants/date.constants';
         aria-label="Seleccionar mes"
         class="appearance-none bg-transparent px-1 py-1 text-sm font-medium text-gray-700 outline-none"
         [ngModel]="service.currentMonth()"
-        (ngModelChange)="service.currentMonth.set($event)"
+        (ngModelChange)="service.currentMonth.set(+$event)"
       >
         @for (m of months; track $index) {
           <option [value]="$index + 1">{{ m }}</option>
@@ -28,7 +28,7 @@ import { MONTHS, YEARS } from '../../../core/constants/date.constants';
         aria-label="Seleccionar año"
         class="appearance-none bg-transparent px-1 py-1 text-sm font-medium text-gray-700 outline-none"
         [ngModel]="service.currentYear()"
-        (ngModelChange)="service.currentYear.set($event)"
+        (ngModelChange)="service.currentYear.set(+$event)"
       >
         @for (y of years; track y) {
           <option [value]="y">{{ y }}</option>

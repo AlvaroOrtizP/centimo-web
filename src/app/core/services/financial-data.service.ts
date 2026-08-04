@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Injectable, inject, signal, computed, effect } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { PlatformsDataService } from './platforms.service';
@@ -56,6 +56,29 @@ export class FinancialDataService {
 
   readonly currentYear = signal(new Date().getFullYear());
   readonly currentMonth = signal(new Date().getMonth() + 1);
+
+  private autoAdjustedToData = false;
+
+  constructor() {
+    effect(() => {
+      const snapshots = this.snapshots();
+      if (this.autoAdjustedToData || snapshots.length === 0) { return; }
+
+      const latest = this.latestMonthWithData();
+      if (!latest) { return; }
+
+      const hasDataForCurrentMonth = snapshots.some(s =>
+        s.year === this.currentYear() && s.month === this.currentMonth() &&
+        (s.balance !== 0 || s.income !== 0 || s.expenses !== 0)
+      );
+
+      if (!hasDataForCurrentMonth) {
+        this.currentYear.set(latest.year);
+        this.currentMonth.set(latest.month);
+      }
+      this.autoAdjustedToData = true;
+    }, { allowSignalWrites: true });
+  }
 
   getAccountsByPlatform(platformId: string): Account[] {
     return this.platformsData.getAccountsByPlatform(platformId);
@@ -125,8 +148,19 @@ export class FinancialDataService {
     this.expensesData.loadExpenses(snapshotId);
   }
 
+  loadExpensesByPeriod(year: number, month: number): void {
+    this.getSnapshotsByMonth(year, month).forEach(s => {
+      this.expensesData.loadExpenses(s.id);
+    });
+  }
+
   getExpensesBySnapshot(snapshotId: string): Expense[] {
     return this.expensesData.getExpensesBySnapshot(snapshotId);
+  }
+
+  getExpensesByPeriod(year: number, month: number): Expense[] {
+    const snapshotIds = new Set(this.getSnapshotsByMonth(year, month).map(s => s.id));
+    return this.expenses().filter(e => snapshotIds.has(e.snapshotId));
   }
 
   getIncomesBySnapshot(snapshotId: string): IncomeSource[] {
@@ -171,6 +205,17 @@ export class FinancialDataService {
 
   getAvailableMonths(): { year: number; month: number }[] {
     return this.snapshotsData.getAvailableMonths();
+  }
+
+  private latestMonthWithData(): { year: number; month: number } | null {
+    const months = this.getAvailableMonths();
+    for (let i = months.length - 1; i >= 0; i--) {
+      const { year, month } = months[i];
+      const hasData = this.getSnapshotsByMonth(year, month)
+        .some(s => s.balance !== 0 || s.income !== 0 || s.expenses !== 0);
+      if (hasData) { return { year, month }; }
+    }
+    return null;
   }
 
   addSnapshot(snapshot: MonthlySnapshot): void {

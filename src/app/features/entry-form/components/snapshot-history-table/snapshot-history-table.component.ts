@@ -10,7 +10,17 @@ import { MONTHS } from '../../../../core/constants/date.constants';
     @if (snapshots().length > 0) {
       <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div class="mb-3 flex items-center justify-between">
-          <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Historial de balances</p>
+          <p
+            class="group relative text-xs font-medium uppercase tracking-wider text-gray-500"
+            [class.cursor-help]="headingTooltip() !== undefined"
+          >
+            Historial de balances
+            @if (headingTooltip()) {
+              <span class="pointer-events-none absolute left-0 top-full z-10 mt-1 hidden whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs font-normal normal-case tracking-normal text-white shadow-lg group-hover:block">
+                {{ headingTooltip() }}
+              </span>
+            }
+          </p>
           <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500">{{ snapshots().length }} registros</span>
         </div>
         <div class="overflow-x-auto">
@@ -68,6 +78,8 @@ import { MONTHS } from '../../../../core/constants/date.constants';
 })
 export class SnapshotHistoryTableComponent {
   readonly snapshots = input.required<MonthlySnapshot[]>();
+
+  readonly headingTooltip = input<string | undefined>();
 
   readonly edit = output<MonthlySnapshot>();
   readonly delete = output<string>();

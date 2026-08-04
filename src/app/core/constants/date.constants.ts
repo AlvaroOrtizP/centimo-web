@@ -21,3 +21,10 @@ export const YEARS = [
 export function getMonthLabel(year: number, month: number): string {
   return `${MONTHS_SHORT[month - 1]} ${year}`;
 }
+
+export const PREVIOUS_MONTH: { year: number; month: number } = (() => {
+  const now = new Date();
+  return now.getMonth() === 0
+    ? { year: now.getFullYear() - 1, month: 12 }
+    : { year: now.getFullYear(), month: now.getMonth() };
+})();

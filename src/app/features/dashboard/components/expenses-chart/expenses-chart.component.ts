@@ -9,11 +9,14 @@ import { BaseChartComponent } from '../../../../shared/components/base-chart/bas
     <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
       <div class="mb-4 flex items-center justify-between">
         <h2 class="text-base font-semibold text-gray-900">
-          {{ selectedPlatformName() || 'Gastos Acumulados' }}
+          {{ selectedPlatformName() || title() }}
         </h2>
-        @if (selectedPlatformName()) {
-          <span class="text-xs text-gray-400">{{ selectedPlatformName() }}</span>
-        }
+        <div class="flex items-center gap-2">
+          @if (selectedPlatformName()) {
+            <span class="text-xs text-gray-400">{{ selectedPlatformName() }}</span>
+          }
+          <ng-content select="[actions]"></ng-content>
+        </div>
       </div>
       <div class="relative h-72">
         <canvas aria-label="Gráfico de gastos acumulados" role="img" #canvas></canvas>
@@ -26,6 +29,7 @@ export class ExpensesChartComponent extends BaseChartComponent {
   readonly data = input<number[]>([]);
   readonly platformColor = input<string>('');
   readonly selectedPlatformName = input<string>('');
+  readonly title = input<string>('Gastos Acumulados');
 
   constructor() {
     super();
