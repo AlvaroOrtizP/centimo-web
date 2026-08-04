@@ -78,6 +78,7 @@ describe('DashboardComponent', () => {
 
     it('should show MyInvestor total as 8900 € (metal 1200 + fondos 7700)', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
+      setDashboardMonth(fixture.componentInstance, 2026, 6);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
       const platformBalances = el.querySelectorAll('.text-right .text-sm.font-semibold');
@@ -87,6 +88,7 @@ describe('DashboardComponent', () => {
 
     it('should show correct income values', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
+      setDashboardMonth(fixture.componentInstance, 2026, 6);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
       const incomeSpans = el.querySelectorAll('.text-right .text-green-600');
@@ -99,6 +101,7 @@ describe('DashboardComponent', () => {
 
     it('should show monthly expenses only in the gastos row of platform table', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
+      setDashboardMonth(fixture.componentInstance, 2026, 6);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
 
@@ -109,6 +112,7 @@ describe('DashboardComponent', () => {
 
     it('should compute all summary card values correctly', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
+      setDashboardMonth(fixture.componentInstance, 2026, 6);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
       const cards = el.querySelectorAll('.text-2xl');
@@ -163,6 +167,7 @@ describe('DashboardComponent', () => {
 
       // ── FASE 3: verificar dashboard ──
       const fixture = TestBed.createComponent(DashboardComponent);
+      setDashboardMonth(fixture.componentInstance, 2026, 6);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
 
@@ -254,9 +259,8 @@ describe('DashboardComponent', () => {
       expect(service.getExpensesBySnapshot('gastos-main-2026-07').length).toBe(2);
 
       // ── FASE 5: verificar dashboard para julio ──
-      service.currentMonth.set(7);
-
       const fixture = TestBed.createComponent(DashboardComponent);
+      setDashboardMonth(fixture.componentInstance, 2026, 7);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
 
@@ -295,3 +299,14 @@ describe('DashboardComponent', () => {
     });
   });
 });
+
+function setDashboardMonth(component: DashboardComponent, year: number, month: number): void {
+  (component as unknown as {
+    viewYear: { set(value: number): void };
+    viewMonth: { set(value: number): void };
+  }).viewYear.set(year);
+  (component as unknown as {
+    viewYear: { set(value: number): void };
+    viewMonth: { set(value: number): void };
+  }).viewMonth.set(month);
+}

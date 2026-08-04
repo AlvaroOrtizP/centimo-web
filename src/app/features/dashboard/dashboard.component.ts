@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
-import { MONTHS } from '../../core/constants/date.constants';
+import { MONTHS, PREVIOUS_MONTH } from '../../core/constants/date.constants';
 import { EXPENSES_PLATFORM_ID, PLATFORM_GROUPS } from '../../core/constants/platform.constants';
 import { MonthPickerComponent } from '../../shared/components/month-picker/month-picker.component';
 import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
@@ -100,17 +100,19 @@ type ExpensesMode = 'acumulado' | 'mensual';
 })
 export class DashboardComponent {
   protected readonly service = inject(FinancialDataService);
+  protected readonly viewYear = signal(PREVIOUS_MONTH.year);
+  protected readonly viewMonth = signal(PREVIOUS_MONTH.month);
   protected readonly selectedPlatformId = signal<string | null>(null);
   protected readonly chartMode = signal<ChartMode>('total');
   protected readonly chartGroupFilter = signal<PlatformGroup>('all');
   protected readonly expensesMode = signal<ExpensesMode>('acumulado');
 
   protected readonly currentSnapshots = computed(() =>
-    this.service.getSnapshotsByMonth(this.service.currentYear(), this.service.currentMonth())
+    this.service.getSnapshotsByMonth(this.viewYear(), this.viewMonth())
   );
 
   protected readonly currentSummary = computed(() =>
-    this.service.monthlySummary()
+    this.service.getMonthlySummary(this.viewYear(), this.viewMonth())
   );
 
   protected readonly previousSummary = computed(() => {
@@ -217,8 +219,8 @@ export class DashboardComponent {
 
   private last6Months(): { year: number; month: number }[] {
     const result: { year: number; month: number }[] = [];
-    let y = this.service.currentYear();
-    let m = this.service.currentMonth();
+    let y = this.viewYear();
+    let m = this.viewMonth();
 
     for (let i = 0; i < 6; i++) {
       result.unshift({ year: y, month: m });
@@ -230,8 +232,8 @@ export class DashboardComponent {
   }
 
   private previousMonth(): { year: number; month: number } {
-    let y = this.service.currentYear();
-    let m = this.service.currentMonth() - 1;
+    let y = this.viewYear();
+    let m = this.viewMonth() - 1;
     if (m === 0) { m = 12; y--; }
     return { year: y, month: m };
   }

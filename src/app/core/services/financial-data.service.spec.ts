@@ -133,7 +133,7 @@ describe('FinancialDataService', () => {
       const expense: Expense = {
         id: 'exp-test',
         snapshotId: 'bbva-checking-2026-01',
-        category: 'comida' as any,
+        category: 'Comida' as any,
         amount: 50,
         date: '2026-01-15',
       };
