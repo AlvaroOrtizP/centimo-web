@@ -301,7 +301,7 @@ export class B100FormComponent {
       this.savingsWithdrawal.set(null);
       this.investmentContribution.set(null);
       this.investmentWithdrawal.set(null);
-    });
+    }, { allowSignalWrites: true });
   }
 
   protected onEditSavings(snap: MonthlySnapshot): void {

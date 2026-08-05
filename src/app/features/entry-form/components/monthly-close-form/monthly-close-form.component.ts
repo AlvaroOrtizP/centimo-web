@@ -104,7 +104,7 @@ export class MonthlyCloseFormComponent {
           balance: snap?.balance ?? 0,
         };
       }));
-    });
+    }, { allowSignalWrites: true });
   }
 
   protected existingSnapshot(accountId: string) {

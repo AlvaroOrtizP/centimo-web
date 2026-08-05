@@ -217,7 +217,7 @@ export class BanksFormComponent {
       this.editingBBVA.set(null);
       this.editingCaixa.set(null);
       resetSnapshotFields(this.bbvaBalance, this.caixaBalance);
-    });
+    }, { allowSignalWrites: true });
   }
 
   protected onEditBBVA(snap: MonthlySnapshot): void {

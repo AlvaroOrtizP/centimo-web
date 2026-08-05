@@ -200,7 +200,7 @@ export class TradeFormComponent {
       const accs = this.accounts();
       const inv = accs.find(a => a.type === AccountType.Investment);
       this.selectedAccountId.set(inv?.id ?? accs[0]?.id ?? '');
-    });
+    }, { allowSignalWrites: true });
   }
 
   protected save(): void {

@@ -116,7 +116,7 @@ export class ProjectsFormComponent {
         map[acc.id] = holdings.map(h => ({ name: h.assetName, value: h.totalValue }));
       }
       this.projectsMap.set(map);
-    });
+    }, { allowSignalWrites: true });
   }
 
   protected getProjects(accountId: string): ProjectEntry[] {
