@@ -243,7 +243,7 @@ export class EquitoFormComponent {
       if (!accId) { return; }
       const snap = this.service.getSnapshot(accId, this.localYear(), this.localMonth());
       this.balance.set(snap?.balance ?? null);
-    });
+    }, { allowSignalWrites: true });
   }
 
   // --- Inversiones ---

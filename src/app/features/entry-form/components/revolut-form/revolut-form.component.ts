@@ -166,7 +166,7 @@ export class RevolutFormComponent {
       resetSnapshotFields(this.balance, this.interest);
       this.contribution.set(null);
       this.withdrawal.set(null);
-    });
+    }, { allowSignalWrites: true });
   }
 
   protected onBalanceChange(value: number | null): void {

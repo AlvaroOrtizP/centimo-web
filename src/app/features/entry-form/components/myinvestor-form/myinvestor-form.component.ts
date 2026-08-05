@@ -358,7 +358,7 @@ export class MyInvestorFormComponent {
       this.metalBalance.set(
         snapshots.find(s => s.accountId === this.METAL_ID && s.year === y && s.month === m)?.balance ?? null
       );
-    });
+    }, { allowSignalWrites: true });
 
     effect(() => {
       const snapshots = this.service.snapshots();
@@ -381,7 +381,7 @@ export class MyInvestorFormComponent {
           expenses: 0,
         });
       }
-    });
+    }, { allowSignalWrites: true });
   }
 
   protected getFundName(fundId: string): string {

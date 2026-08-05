@@ -164,7 +164,7 @@ export class MintosFormComponent {
       this.income.set(snap?.income ?? null);
       this.contribution.set(snap?.contribution ?? null);
       this.withdrawal.set(snap?.expenses && snap.expenses > 0 ? snap.expenses : null);
-    });
+    }, { allowSignalWrites: true });
   }
 
   protected onEdit(snap: MonthlySnapshot): void {

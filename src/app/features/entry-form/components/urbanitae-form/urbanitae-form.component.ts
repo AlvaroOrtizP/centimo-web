@@ -239,7 +239,7 @@ export class UrbanitaeFormComponent {
       this.service.snapshots();
       const snap = this.service.getSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth());
       this.balance.set(snap?.balance ?? null);
-    });
+    }, { allowSignalWrites: true });
   }
 
   // --- Inversiones ---
