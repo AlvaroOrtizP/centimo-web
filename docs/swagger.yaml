@@ -2286,6 +2286,15 @@ components:
         balance:
           type: number
           format: float
+        income:
+          type: number
+          format: float
+        contribution:
+          type: number
+          format: float
+        expenses:
+          type: number
+          format: float
 
     FundBalanceCreate:
       type: object
@@ -2300,11 +2309,29 @@ components:
         balance:
           type: number
           format: float
+        income:
+          type: number
+          format: float
+        contribution:
+          type: number
+          format: float
+        expenses:
+          type: number
+          format: float
 
     FundBalanceUpdate:
       type: object
       properties:
         balance:
+          type: number
+          format: float
+        income:
+          type: number
+          format: float
+        contribution:
+          type: number
+          format: float
+        expenses:
           type: number
           format: float
 

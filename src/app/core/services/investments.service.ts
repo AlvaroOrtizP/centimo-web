@@ -201,6 +201,9 @@ export class InvestmentsDataService {
       year: balance.year,
       month: balance.month,
       balance: balance.balance,
+      income: balance.income,
+      contribution: balance.contribution,
+      expenses: balance.expenses,
     };
     return this.fundBalancesApi.createFundBalance(create).pipe(
       map(created => {
@@ -211,7 +214,12 @@ export class InvestmentsDataService {
   }
 
   updateFundBalance(id: string, data: Partial<FundBalance>): Observable<FundBalance> {
-    const update: FundBalanceUpdate = { balance: data.balance };
+    const update: FundBalanceUpdate = {
+      balance: data.balance,
+      income: data.income,
+      contribution: data.contribution,
+      expenses: data.expenses,
+    };
     return this.fundBalancesApi.updateFundBalance(id, update).pipe(
       map(updated => {
         this.fundBalances.update(arr => arr.map(b => b.id === id ? { ...b, ...updated } : b));

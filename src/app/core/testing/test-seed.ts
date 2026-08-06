@@ -29,8 +29,7 @@ export const SEED_PLATFORMS = [
 export const SEED_ACCOUNTS = [
   { id: 'bbva-checking', platformId: 'bbva', name: 'Cuenta Nómina', type: AccountType.Checking, currency: 'EUR', order: 1 },
   { id: 'myinvestor-checking', platformId: 'myinvestor', name: 'Cuenta efectivo', type: AccountType.Checking, currency: 'EUR', order: 1 },
-  { id: 'myinvestor-investment', platformId: 'myinvestor', name: 'Cartera', type: AccountType.Investment, currency: 'EUR', order: 2 },
-  { id: 'myinvestor-metal', platformId: 'myinvestor', name: 'Oro', type: AccountType.Investment, currency: 'EUR', order: 3 },
+  { id: 'myinvestor-fondo', platformId: 'myinvestor', name: 'Cartera', type: AccountType.Investment, currency: 'EUR', order: 2 },
   { id: 'b100-checking', platformId: 'b100', name: 'Cuenta', type: AccountType.Checking, currency: 'EUR', order: 1 },
   { id: 'b100-savings', platformId: 'b100', name: 'Ahorro', type: AccountType.Savings, currency: 'EUR', order: 2 },
   { id: 'b100-investment', platformId: 'b100', name: 'Inversión', type: AccountType.Investment, currency: 'EUR', order: 3 },
@@ -47,8 +46,7 @@ export const SEED_ACCOUNTS = [
 export const SEED_JUNE_SNAPSHOTS = [
   { id: 'bbva-checking-2026-06', accountId: 'bbva-checking', year: 2026, month: 6, balance: 5000, income: 0, expenses: 0, contribution: null, notes: null, checklistItems: null },
   { id: 'myinvestor-checking-2026-06', accountId: 'myinvestor-checking', year: 2026, month: 6, balance: 0, income: 0, expenses: 0, contribution: null, notes: null, checklistItems: null },
-  { id: 'myinvestor-investment-2026-06', accountId: 'myinvestor-investment', year: 2026, month: 6, balance: 7700, income: 63.7, expenses: 0, contribution: null, notes: null, checklistItems: null },
-  { id: 'myinvestor-metal-2026-06', accountId: 'myinvestor-metal', year: 2026, month: 6, balance: 1200, income: 0, expenses: 0, contribution: null, notes: null, checklistItems: null },
+  { id: 'myinvestor-fondo-2026-06', accountId: 'myinvestor-fondo', year: 2026, month: 6, balance: 8900, income: 63.7, expenses: 0, contribution: null, notes: null, checklistItems: null },
   { id: 'b100-checking-2026-06', accountId: 'b100-checking', year: 2026, month: 6, balance: 0, income: 0, expenses: 0, contribution: null, notes: null, checklistItems: null },
   { id: 'b100-savings-2026-06', accountId: 'b100-savings', year: 2026, month: 6, balance: 4000, income: 8.4, expenses: 0, contribution: null, notes: null, checklistItems: null },
   { id: 'b100-investment-2026-06', accountId: 'b100-investment', year: 2026, month: 6, balance: 2000, income: 12.3, expenses: 0, contribution: null, notes: null, checklistItems: null },
@@ -65,10 +63,12 @@ export const SEED_JUNE_SNAPSHOTS = [
 export const SEED_FUNDS = [
   { id: 'mif-001', code: 'IE00B5BMR087', name: 'Amundi Indexado' },
   { id: 'mif-002', code: 'IE00B03HD191', name: 'Vanguard Global' },
+  { id: 'mif-metal', code: 'GB00B4X3JQ46', name: 'Oro' },
 ] as const;
 
 export const SEED_JUNE_FUND_BALANCES = [
   { id: 'fb-mif-001-2026-06', fundId: 'mif-001', year: 2026, month: 6, balance: 7700 },
+  { id: 'fb-mif-metal-2026-06', fundId: 'mif-metal', year: 2026, month: 6, balance: 1200 },
 ] as const;
 
 export function configureSeedSpies(): void {

@@ -63,7 +63,7 @@ describe('DashboardComponent', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
       fixture.detectChanges();
       const summary = service.monthlySummary();
-      // revolut 15.50 + b100-savings 8.40 + b100-investment 12.30 + mintos 50 + myinvestor-investment 63.70
+      // revolut 15.50 + b100-savings 8.40 + b100-investment 12.30 + mintos 50 + myinvestor-fondo 63.70
       expect(summary.totalIncome).toBeCloseTo(149.9, 1);
     });
 
@@ -79,7 +79,7 @@ describe('DashboardComponent', () => {
       expect(service.monthlySummary().balanceWithoutExpenses).toBe(30800);
     });
 
-    it('should show MyInvestor total as 8900 € (metal 1200 + fondos 7700)', () => {
+    it('should show MyInvestor total as 8900 € (fondos 7700 + metal 1200)', () => {
       const fixture = TestBed.createComponent(DashboardComponent);
       setDashboardMonth(fixture.componentInstance, 2026, 6);
       fixture.detectChanges();
@@ -149,9 +149,9 @@ describe('DashboardComponent', () => {
         balance: 4200,
       }).subscribe();
 
-      // Sync: recalcular total fondos → actualizar snapshot myinvestor-investment
+      // Sync: recalcular total fondos → actualizar snapshot myinvestor-fondo
       const totalFunds = service.getTotalFundBalanceForMonth(2026, 6);
-      const snap = service.getSnapshot('myinvestor-investment', 2026, 6);
+      const snap = service.getSnapshot('myinvestor-fondo', 2026, 6);
       if (snap) {
         service.updateSnapshot(snap.id, { balance: totalFunds });
       }
@@ -166,7 +166,7 @@ describe('DashboardComponent', () => {
       const newBalance = service.getFundBalance('mif-test-001', 2026, 6);
       expect(newBalance).toBeDefined();
       expect(newBalance!.balance).toBe(4200);
-      expect(totalFunds).toBe(11900);
+      expect(totalFunds).toBe(13100);
 
       // ── FASE 3: verificar dashboard ──
       const fixture = TestBed.createComponent(DashboardComponent);
@@ -174,7 +174,7 @@ describe('DashboardComponent', () => {
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
 
-      // MyInvestor: metal 1200 + fondos 11900 = 13100
+      // MyInvestor: fondos 7700 + metal 1200 + nuevo 4200 = 13100
       const platformBalances = el.querySelectorAll('.text-right .text-sm.font-semibold');
       const values = Array.from(platformBalances).map(c => c.textContent?.trim());
       expect(values).toContain('13.100 €');
@@ -211,20 +211,20 @@ describe('DashboardComponent', () => {
       service.addFundBalance({ id: 'fb-jul-van', fundId: 'mif-002', year: 2026, month: 7, balance: 3500 }).subscribe();
       service.addFundBalance({ id: 'fb-jul-msci', fundId: 'mif-phase2-001', year: 2026, month: 7, balance: 4500 }).subscribe();
       service.addFundBalance({ id: 'fb-jul-sp500', fundId: 'mif-phase4-001', year: 2026, month: 7, balance: 7000 }).subscribe();
+      service.addFundBalance({ id: 'fb-jul-metal', fundId: 'mif-metal', year: 2026, month: 7, balance: 1500 }).subscribe();
 
       const totalFunds = service.getTotalFundBalanceForMonth(2026, 7);
-      expect(totalFunds).toBe(20000);
+      expect(totalFunds).toBe(21500);
 
       // Verificaciones Fase 4 — fondos
-      expect(service.myInvestorFunds().length).toBe(4);
-      expect(service.fundBalances().filter(f => f.year === 2026 && f.month === 7).length).toBe(4);
+      expect(service.myInvestorFunds().length).toBe(5);
+      expect(service.fundBalances().filter(f => f.year === 2026 && f.month === 7).length).toBe(5);
 
       // ── FASE 4: snapshots para julio ──
       const julySnapshots = [
         { id: 'bbva-checking-2026-07', accountId: 'bbva-checking', year: 2026, month: 7, balance: 5000, income: 0, expenses: 0 },
         { id: 'myinvestor-checking-2026-07', accountId: 'myinvestor-checking', year: 2026, month: 7, balance: 0, income: 0, expenses: 0 },
-        { id: 'myinvestor-investment-2026-07', accountId: 'myinvestor-investment', year: 2026, month: 7, balance: totalFunds, income: 87, expenses: 0 },
-        { id: 'myinvestor-metal-2026-07', accountId: 'myinvestor-metal', year: 2026, month: 7, balance: 1500, income: 0, expenses: 0 },
+        { id: 'myinvestor-fondo-2026-07', accountId: 'myinvestor-fondo', year: 2026, month: 7, balance: totalFunds, income: 87, expenses: 0 },
         { id: 'b100-checking-2026-07', accountId: 'b100-checking', year: 2026, month: 7, balance: 0, income: 0, expenses: 0 },
         { id: 'b100-savings-2026-07', accountId: 'b100-savings', year: 2026, month: 7, balance: 3000, income: 10, expenses: 0 },
         { id: 'b100-investment-2026-07', accountId: 'b100-investment', year: 2026, month: 7, balance: 5000, income: 15, expenses: 0 },
@@ -240,7 +240,7 @@ describe('DashboardComponent', () => {
       julySnapshots.forEach(s => service.addSnapshot(s));
       tick();
 
-      expect(service.getSnapshotsByMonth(2026, 7).length).toBe(15);
+      expect(service.getSnapshotsByMonth(2026, 7).length).toBe(14);
 
       // ── FASE 4: gastos para julio ──
       service.addExpense({
@@ -281,7 +281,7 @@ describe('DashboardComponent', () => {
       expect(cardValues).toContain('800 €');
       expect(cardValues).toContain('-600 €');
 
-      // MyInvestor: metal 1500 + fondos 20000 = 21500
+      // MyInvestor: fondos 20000 + metal 1500 = 21500
       const platformBalances = el.querySelectorAll('.text-right .text-sm.font-semibold');
       const balanceValues = Array.from(platformBalances).map(c => c.textContent?.trim());
       expect(balanceValues).toContain('21.500 €');

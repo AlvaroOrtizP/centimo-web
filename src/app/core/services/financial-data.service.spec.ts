@@ -28,8 +28,8 @@ describe('FinancialDataService', () => {
     expect(service.platforms().length).toBe(11);
   });
 
-  it('should have 15 mock accounts', () => {
-    expect(service.accounts().length).toBe(15);
+  it('should have 14 mock accounts', () => {
+    expect(service.accounts().length).toBe(14);
   });
 
   describe('getPlatform', () => {
