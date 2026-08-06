@@ -9,6 +9,8 @@ export const initDataResolver: ResolveFn<void> = () => {
   data.loadAllAccounts();
   data.loadAllSnapshots();
   data.loadAllCrowdlending();
+  data.loadAllMyInvestorFunds();
+  data.loadFundBalances(new Date().getFullYear(), new Date().getMonth() + 1);
 
   let y = new Date().getFullYear();
   let m = new Date().getMonth() + 1;

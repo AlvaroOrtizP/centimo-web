@@ -1,9 +1,7 @@
 import { Component, inject, computed, signal } from '@angular/core';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
-import { PlatformType } from '../../models/platform-type';
 import { MonthPickerComponent } from '../../shared/components/month-picker/month-picker.component';
-import { TradeFormComponent } from './components/trade-form/trade-form.component';
 import { CrowdlendingFormComponent } from './components/crowdlending-form/crowdlending-form.component';
 import { MintosFormComponent } from './components/mintos-form/mintos-form.component';
 import { EquitoFormComponent } from './components/equito-form/equito-form.component';
@@ -14,12 +12,13 @@ import { BanksFormComponent } from './components/banks-form/banks-form.component
 import { MyInvestorFormComponent } from './components/myinvestor-form/myinvestor-form.component';
 import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 
-type Tab = 'trades' | 'banks' | 'revolut' | 'b100' | 'myinvestor' | 'mintos' | 'equito' | 'urbanitae';
+type Tab = 'banks' | 'revolut' | 'b100' | 'myinvestor' | 'mintos' | 'equito' | 'urbanitae';
 
 interface TabConfig {
   key: Tab;
   label: string;
   color: string;
+  done?: boolean;
 }
 
 @Component({
@@ -27,12 +26,11 @@ interface TabConfig {
   standalone: true,
   imports: [
     MonthPickerComponent, CollapsibleDescriptionComponent,
-    TradeFormComponent,
     CrowdlendingFormComponent, MintosFormComponent, EquitoFormComponent, UrbanitaeFormComponent, RevolutFormComponent, B100FormComponent, BanksFormComponent, MyInvestorFormComponent,
   ],
   template: `
     <div class="space-y-6">
-      <app-collapsible-description description="Formulario para registrar trades y saldos en cada plataforma." storageKey="desc-entry" />
+      <app-collapsible-description description="Formulario para registrar saldos en cada plataforma." storageKey="desc-entry" />
 
       <div class="rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
         <div class="flex flex-wrap items-end gap-4">
@@ -66,9 +64,7 @@ interface TabConfig {
                   <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
                     [style.color]="activeTab() === tab.key ? '#fff' : tab.color"
                   >
-                    @if (tab.key === 'trades') {
-                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                    } @else if (tab.key === 'banks') {
+                    @if (tab.key === 'banks') {
                       <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
                     } @else if (tab.key === 'revolut') {
                       <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
@@ -86,6 +82,9 @@ interface TabConfig {
                   </svg>
                 </span>
                 {{ tab.label }}
+                @if (tab.done) {
+                  <span aria-hidden="true" class="pointer-events-none absolute inset-x-2 bottom-0.5 h-0.5 rounded-full bg-green-500"></span>
+                }
               </button>
             }
           </div>
@@ -93,10 +92,6 @@ interface TabConfig {
         <div class="h-0.5" [style.background-color]="activeTabColor()"></div>
         <div class="p-5">
           @switch (activeTab()) {
-            @case ('trades') {
-              <app-collapsible-description description="Registra compras y ventas de activos (acciones, ETFs, criptomonedas). Define precio, cantidad, fecha y estado de la operación. El P&L se calcula automáticamente al cerrar." storageKey="desc-entry-trades" />
-              <app-trade-form [accounts]="tradeAccounts()" />
-            }
             @case ('banks') {
               <app-collapsible-description description="Actualiza el saldo y los ingresos de las cuentas bancarias (BBVA, CaixaBank) para el mes seleccionado. Estos datos alimentan el resumen del Dashboard." storageKey="desc-entry-banks" />
               <app-banks-form [accounts]="allAccounts()" />
@@ -133,17 +128,16 @@ interface TabConfig {
 })
 export class EntryFormComponent {
   protected readonly service = inject(FinancialDataService);
-  protected readonly activeTab = signal<Tab>('trades');
+  protected readonly activeTab = signal<Tab>('banks');
 
   protected readonly tabs: TabConfig[] = [
-    { key: 'trades', label: 'Trades', color: '#7c3aed' },
-    { key: 'banks', label: 'Bancos', color: '#004481' },
-    { key: 'revolut', label: 'Revolut', color: '#EB008B' },
-    { key: 'b100', label: 'B100', color: '#6C3FD1' },
+    { key: 'banks', label: 'Bancos', color: '#004481', done: true },
+    { key: 'revolut', label: 'Revolut', color: '#EB008B', done: true },
+    { key: 'b100', label: 'B100', color: '#6C3FD1', done: true },
     { key: 'myinvestor', label: 'MyInvestor', color: '#00A3E0' },
-    { key: 'mintos', label: 'Mintos', color: '#00BFA5' },
-    { key: 'equito', label: 'Equito', color: '#FF6B35' },
-    { key: 'urbanitae', label: 'Urbanitae', color: '#E63946' },
+    { key: 'mintos', label: 'Mintos', color: '#00BFA5', done: true },
+    { key: 'equito', label: 'Equito', color: '#FF6B35', done: true },
+    { key: 'urbanitae', label: 'Urbanitae', color: '#E63946', done: true },
   ];
 
   protected readonly activeTabColor = computed(() => {
@@ -152,14 +146,4 @@ export class EntryFormComponent {
   });
 
   protected readonly allAccounts = computed(() => this.service.accounts());
-
-  protected readonly tradeAccounts = computed(() => {
-    const tradeTypes = new Set([PlatformType.Investment, PlatformType.Crypto]);
-    const tradePlatformIds = new Set(
-      this.service.platforms()
-        .filter(p => tradeTypes.has(p.type))
-        .map(p => p.id)
-    );
-    return this.service.accounts().filter(a => tradePlatformIds.has(a.platformId));
-  });
 }

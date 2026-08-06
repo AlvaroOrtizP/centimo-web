@@ -1,12 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 
 import { PlatformDetailComponent } from './platform-detail.component';
+import { provideApiMocks } from '../../core/testing/api-mocks';
+import { configureSeedSpies, applyFinancialSeed } from '../../core/testing/test-seed';
 
 describe('PlatformDetailComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PlatformDetailComponent],
+      providers: provideApiMocks(),
     }).compileComponents();
+    configureSeedSpies();
+    applyFinancialSeed();
   });
 
   it('should create', () => {

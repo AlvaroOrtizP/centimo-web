@@ -1,11 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
+import { provideApiMocks } from '../../../core/testing/api-mocks';
 import { HeaderComponent } from './header.component';
 
 describe('HeaderComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [HeaderComponent],
+      providers: provideApiMocks(),
     }).compileComponents();
   });
 

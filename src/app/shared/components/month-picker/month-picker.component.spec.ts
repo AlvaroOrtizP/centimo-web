@@ -1,11 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
+import { provideApiMocks } from '../../../core/testing/api-mocks';
 import { MonthPickerComponent } from './month-picker.component';
 
 describe('MonthPickerComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MonthPickerComponent],
+      providers: provideApiMocks(),
     }).compileComponents();
   });
 

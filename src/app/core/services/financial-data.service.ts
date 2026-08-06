@@ -310,6 +310,10 @@ export class FinancialDataService {
     return this.investmentsData.addCrowdlendingInvestment(investment);
   }
 
+  updateCrowdlendingInvestment(id: string, investment: CrowdlendingInvestment): Observable<CrowdlendingInvestment> {
+    return this.investmentsData.updateCrowdlendingInvestment(id, investment);
+  }
+
   deleteCrowdlendingInvestment(id: string): Observable<void> {
     return this.investmentsData.deleteCrowdlendingInvestment(id);
   }
@@ -326,16 +330,24 @@ export class FinancialDataService {
     this.investmentsData.deleteHolding(id);
   }
 
-  addMyInvestorFund(fund: MyInvestorFund): void {
-    this.investmentsData.addMyInvestorFund(fund);
+  addMyInvestorFund(fund: MyInvestorFund): Observable<MyInvestorFund> {
+    return this.investmentsData.addMyInvestorFund(fund);
   }
 
   updateMyInvestorFund(id: string, data: Partial<MyInvestorFund>): void {
     this.investmentsData.updateMyInvestorFund(id, data);
   }
 
-  deleteMyInvestorFund(id: string): void {
-    this.investmentsData.deleteMyInvestorFund(id);
+  deleteMyInvestorFund(id: string): Observable<void> {
+    return this.investmentsData.deleteMyInvestorFund(id);
+  }
+
+  loadAllMyInvestorFunds(): void {
+    this.investmentsData.loadAllMyInvestorFunds();
+  }
+
+  loadFundBalances(year: number, month: number): void {
+    this.investmentsData.loadFundBalances(year, month);
   }
 
   getFundBalancesByMonth(year: number, month: number): FundBalance[] {
@@ -350,15 +362,15 @@ export class FinancialDataService {
     return this.investmentsData.getFundBalancesByMonth(year, month).reduce((sum, b) => sum + b.balance, 0);
   }
 
-  addFundBalance(balance: FundBalance): void {
-    this.investmentsData.addFundBalance(balance);
+  addFundBalance(balance: FundBalance): Observable<FundBalance> {
+    return this.investmentsData.addFundBalance(balance);
   }
 
-  updateFundBalance(id: string, data: Partial<FundBalance>): void {
-    this.investmentsData.updateFundBalance(id, data);
+  updateFundBalance(id: string, data: Partial<FundBalance>): Observable<FundBalance> {
+    return this.investmentsData.updateFundBalance(id, data);
   }
 
-  deleteFundBalance(id: string): void {
-    this.investmentsData.deleteFundBalance(id);
+  deleteFundBalance(id: string): Observable<void> {
+    return this.investmentsData.deleteFundBalance(id);
   }
 }

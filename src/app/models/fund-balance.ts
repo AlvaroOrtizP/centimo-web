@@ -8,4 +8,7 @@ export interface FundBalance {
   year: number;
   month: number;
   balance: number;
+  income?: number;
+  contribution?: number;
+  expenses?: number;
 }

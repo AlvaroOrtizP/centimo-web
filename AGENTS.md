@@ -56,7 +56,7 @@ ng generate enum models/status
 
 - **API generada** en `api/generated/` desde OpenAPI spec. 15 servicios HTTP (Accounts, Alerts, Commitments, Crowdlending, Expenses, etc.).
 - **`FinancialDataService`** (`core/services/`) — fachada que delega en sub-servicios (`PlatformsDataService`, `SnapshotsDataService`, `ExpensesDataService`, etc.).
-- **Carga inicial:** `initDataResolver` en ruta raíz carga platforms, accounts, snapshots y 6 meses de summaries al navegar.
+- **Carga inicial:** `initDataResolver` en la ruta padre `''` carga platforms, accounts, snapshots y 6 meses de summaries al navegar a cualquier ruta.
 - **Sub-servicios con HTTP:** platforms, snapshots, expenses, incomes, summary.
 - **Sub-servicios solo locales (sin backend aún):** salary, investments.
 - **Mutaciones:** `add*`, `update*`, `delete*` — algunas van al backend, otras solo actualizan signals en memoria.

@@ -2,9 +2,10 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
-import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
+import { MONTH_OPTIONS, MONTHS, YEARS } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
 import { MyInvestorFund } from '../../../../models/myinvestor-fund';
+import { FundBalance } from '../../../../models/fund-balance';
 
 @Component({
   selector: 'app-myinvestor-form',
@@ -12,24 +13,24 @@ import { MyInvestorFund } from '../../../../models/myinvestor-fund';
   imports: [FormsModule],
   template: `
     <div class="space-y-4">
-      <!-- Cartera Metal -->
+      <!-- Balance mensual por fondo -->
       <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h3 class="mb-4 text-sm font-semibold text-gray-900">MyInvestor — Cartera Metal</h3>
+        <h3 class="mb-4 text-sm font-semibold text-gray-900">Balance mensual por fondo</h3>
 
         <div class="mb-4 flex gap-2">
           <select
-            aria-label="Mes"
+            aria-label="Mes fondos"
             class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-            [(ngModel)]="localMonth"
+            [(ngModel)]="fundsLocalMonth"
           >
             @for (m of months; track m.value) {
               <option [value]="m.value">{{ m.label }}</option>
             }
           </select>
           <select
-            aria-label="Año"
+            aria-label="Año fondos"
             class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-            [(ngModel)]="localYear"
+            [(ngModel)]="fundsLocalYear"
           >
             @for (y of years; track y) {
               <option [value]="y">{{ y }}</option>
@@ -37,47 +38,162 @@ import { MyInvestorFund } from '../../../../models/myinvestor-fund';
           </select>
         </div>
 
-        @if (previousMetalBalance() !== null) {
-          <div class="mb-4 rounded-lg bg-gray-50 px-4 py-2 text-sm text-gray-600">
-            Balance mes anterior: <strong>{{ previousMetalBalance()!.toLocaleString('es-ES') }} €</strong>
+        @if (funds().length === 0) {
+          <p class="text-sm text-gray-400">Primero registra un fondo en la sección inferior.</p>
+        } @else {
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Fondo</label>
+              <select
+                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
+                [(ngModel)]="selectedFundId"
+              >
+                <option value="">Seleccionar fondo</option>
+                @for (fund of funds(); track fund.id) {
+                  <option [value]="fund.id">{{ fund.name }}</option>
+                }
+              </select>
+            </div>
+            @if (previousFundBalance() !== null) {
+              <div class="flex items-end">
+                <p class="rounded-lg bg-gray-50 px-4 py-2 text-sm text-gray-600">
+                  Balance mes anterior: <strong>{{ previousFundBalance()!.toLocaleString('es-ES') }} €</strong>
+                </p>
+              </div>
+            }
+          </div>
+
+          <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
+              <input
+                type="number"
+                step="any"
+                placeholder="ej: 4500"
+                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
+                [(ngModel)]="fundBalanceValue"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses este mes (€)</label>
+              <input
+                type="number"
+                step="any"
+                placeholder="ej: 63"
+                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
+                [(ngModel)]="fundsIncomeValue"
+              />
+              <p class="mt-0.5 text-xs text-gray-400">Intereses obtenidos este mes</p>
+            </div>
+            <div>
+              <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
+              <input
+                type="number"
+                step="any"
+                placeholder="ej: 100"
+                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
+                [(ngModel)]="fundsContributionValue"
+              />
+              <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
+            </div>
+            <div>
+              <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Retirada este mes (€)</label>
+              <input
+                type="number"
+                step="any"
+                placeholder="ej: 50"
+                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
+                [(ngModel)]="fundsWithdrawalValue"
+              />
+              <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
+            </div>
+          </div>
+
+          <div class="mt-4 flex items-center gap-3">
+            <button
+              class="rounded-lg bg-[#00A3E0] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0089C0] disabled:opacity-50"
+              [disabled]="!selectedFundId || !fundBalanceValue()"
+              (click)="saveFundBalance()"
+            >{{ editingFundBalance() ? 'Actualizar balance' : 'Guardar balance' }}</button>
+            @if (editingFundBalance()) {
+              <button
+                class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                (click)="cancelEditBalance()"
+              >Cancelar</button>
+            }
+            @if (savedFundBalance()) {
+              <span class="text-sm text-emerald-600">✓ Guardado</span>
+            }
+          </div>
+          <p class="mt-2 text-sm text-gray-600">
+            Balance total fondos del mes: <strong class="text-gray-900">{{ totalFundBalanceForMonth().toLocaleString('es-ES') }} €</strong>
+          </p>
+
+          <!-- Historial de balances -->
+          <div class="mt-4 border-t border-gray-100 pt-4">
+            <div class="mb-3 flex items-center justify-between">
+              <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Historial de balances</p>
+              <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500">{{ historyBalances().length }} registros</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-gray-100 bg-gray-50/80 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    <th class="px-4 py-3">Fondo</th>
+                    <th class="px-4 py-3">Mes</th>
+                    <th class="px-4 py-3 text-right">Balance</th>
+                    <th class="px-4 py-3 text-right">Intereses</th>
+                    <th class="px-4 py-3 text-right">Retiradas</th>
+                    <th class="px-4 py-3 text-right">Aportación</th>
+                    <th class="px-4 py-3 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  @if (historyBalances().length === 0) {
+                    <tr>
+                      <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-400">Sin registros todavía. Guarda un balance para este mes.</td>
+                    </tr>
+                  } @else {
+                    @for (b of historyBalances(); track b.id) {
+                      <tr class="transition-all duration-150 hover:bg-gray-50/80">
+                        <td class="px-4 py-3 font-semibold text-gray-900">{{ getFundName(b.fundId) }}</td>
+                        <td class="px-4 py-3 font-semibold text-gray-900">{{ MONTHS[b.month - 1] }} {{ b.year }}</td>
+                        <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ b.balance.toLocaleString('es-ES') }} €</td>
+                        <td class="px-4 py-3 text-right font-medium text-emerald-600">{{ (b.income ?? 0) > 0 ? '+' + b.income!.toLocaleString('es-ES') : '-' }}</td>
+                        <td class="px-4 py-3 text-right font-medium text-red-600">{{ (b.expenses ?? 0) > 0 ? b.expenses!.toLocaleString('es-ES') + ' €' : '-' }}</td>
+                        <td class="px-4 py-3 text-right text-gray-500">{{ b.contribution ? b.contribution!.toLocaleString('es-ES') + ' €' : '-' }}</td>
+                        <td class="px-4 py-3 text-center">
+                          <div class="flex items-center justify-center gap-1">
+                            <button
+                              class="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-500"
+                              (click)="onEditBalance(b)"
+                              title="Editar balance"
+                              aria-label="Editar balance"
+                            >
+                              <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
+                              </svg>
+                            </button>
+                            <button
+                              class="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                              (click)="deleteFundBalance(b)"
+                              title="Eliminar balance"
+                              aria-label="Eliminar balance"
+                            >
+                              <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
           </div>
         }
-
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
-            <input
-              type="number"
-              step="any"
-              placeholder="ej: 1200"
-              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-              [(ngModel)]="metalBalance"
-            />
-            <p class="mt-0.5 text-xs text-gray-400">Valor total en Cartera Metal a 31 del mes</p>
-          </div>
-          <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
-            <input
-              type="number"
-              step="any"
-              placeholder="ej: 100"
-              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-              [(ngModel)]="metalContribution"
-            />
-            <p class="mt-0.5 text-xs text-gray-400">Opcional — cantidad ingresada este mes</p>
-          </div>
-        </div>
-
-        <div class="mt-4 flex items-center gap-3">
-          <button
-            class="rounded-lg bg-[#00A3E0] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0089C0] disabled:opacity-50"
-            [disabled]="!metalBalance()"
-            (click)="saveMetal()"
-          >Guardar</button>
-          @if (savedMetal()) {
-            <span class="text-sm text-emerald-600">✓ Guardado</span>
-          }
-        </div>
       </div>
 
       <!-- Fondos — Registro -->
@@ -118,177 +234,48 @@ import { MyInvestorFund } from '../../../../models/myinvestor-fund';
       <!-- Fondos registrados -->
       @if (funds().length > 0) {
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p class="mb-3 text-xs font-medium uppercase tracking-wider text-gray-500">Fondos registrados</p>
-          <div class="space-y-1">
-            @for (fund of funds(); track fund.id) {
-              <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
-                <span class="flex-1 font-semibold text-gray-900 truncate">{{ fund.name }}</span>
-                <span class="text-xs text-gray-400">{{ fund.code }}</span>
-                <button
-                  class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                  (click)="deleteFund(fund)"
-                  title="Eliminar fondo"
-                  aria-label="Eliminar fondo"
-                >
-                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                  </svg>
-                </button>
-              </div>
-            }
-          </div>
+          <button
+            type="button"
+            class="flex w-full items-center justify-between text-left"
+            (click)="fundsListExpanded.set(!fundsListExpanded())"
+            [attr.aria-expanded]="fundsListExpanded()"
+          >
+            <span class="text-xs font-medium uppercase tracking-wider text-gray-500">Fondos registrados</span>
+            <svg
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"
+              class="text-gray-400 transition-transform"
+              [class.rotate-180]="fundsListExpanded()"
+            >
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          @if (fundsListExpanded()) {
+            <div class="space-y-1">
+              @for (fund of funds(); track fund.id) {
+                <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
+                  <span class="flex-1 font-semibold text-gray-900 truncate">{{ fund.name }}</span>
+                  <span class="text-xs text-gray-400">{{ fund.code }}</span>
+                  <button
+                    class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                    (click)="deleteFund(fund)"
+                    title="Eliminar fondo"
+                    aria-label="Eliminar fondo"
+                  >
+                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                  </button>
+                </div>
+              }
+            </div>
+          }
         </div>
       }
 
-      <!-- Balance mensual por fondo -->
-      <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h3 class="mb-4 text-sm font-semibold text-gray-900">Balance mensual por fondo</h3>
-
-        <div class="mb-4 flex gap-2">
-          <select
-            aria-label="Mes fondos"
-            class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-            [(ngModel)]="fundsLocalMonth"
-          >
-            @for (m of months; track m.value) {
-              <option [value]="m.value">{{ m.label }}</option>
-            }
-          </select>
-          <select
-            aria-label="Año fondos"
-            class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-            [(ngModel)]="fundsLocalYear"
-          >
-            @for (y of years; track y) {
-              <option [value]="y">{{ y }}</option>
-            }
-          </select>
-        </div>
-
-        @if (funds().length === 0) {
-          <p class="text-sm text-gray-400">Primero registra un fondo en la sección de arriba.</p>
-        } @else {
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div>
-              <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Fondo</label>
-              <select
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-                [(ngModel)]="selectedFundId"
-              >
-                <option value="">Seleccionar fondo</option>
-                @for (fund of funds(); track fund.id) {
-                  <option [value]="fund.id">{{ fund.name }}</option>
-                }
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
-              <input
-                type="number"
-                step="any"
-                placeholder="ej: 4500"
-                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-                [(ngModel)]="fundBalanceValue"
-              />
-            </div>
-            <div class="flex items-end">
-              <button
-                class="rounded-lg bg-[#00A3E0] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0089C0] disabled:opacity-50"
-                [disabled]="!selectedFundId || !fundBalanceValue()"
-                (click)="saveFundBalance()"
-              >Guardar</button>
-              @if (savedFundBalance()) {
-                <span class="ml-3 text-sm text-emerald-600">✓ Guardado</span>
-              }
-            </div>
-          </div>
-
-          <!-- Balances del mes -->
-          @if (currentMonthBalances().length > 0) {
-            <div class="mt-4 border-t border-gray-100 pt-3">
-              <div class="mb-2 flex items-center justify-between">
-                <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Balances del mes</p>
-                <p class="text-sm font-semibold text-gray-900">Total: {{ totalFundBalanceForMonth().toLocaleString('es-ES') }} €</p>
-              </div>
-              <div class="space-y-1">
-                @for (b of currentMonthBalances(); track b.id) {
-                  <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
-                    <span class="flex-1 font-medium text-gray-900">{{ getFundName(b.fundId) }}</span>
-                    <span class="font-semibold text-gray-900">{{ b.balance.toLocaleString('es-ES') }} €</span>
-                    <button
-                      class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                      (click)="deleteFundBalance(b)"
-                      title="Eliminar balance"
-                      aria-label="Eliminar balance"
-                    >
-                      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                      </svg>
-                    </button>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-        }
-      </div>
-
-      <!-- Intereses del mes (fondos) -->
-      <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h3 class="mb-4 text-sm font-semibold text-gray-900">MyInvestor Fondos — Intereses del mes</h3>
-
-        <div class="mb-4 flex gap-2">
-          <select
-            aria-label="Mes intereses"
-            class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-            [(ngModel)]="fundsLocalMonth"
-          >
-            @for (m of months; track m.value) {
-              <option [value]="m.value">{{ m.label }}</option>
-            }
-          </select>
-          <select
-            aria-label="Año intereses"
-            class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-            [(ngModel)]="fundsLocalYear"
-          >
-            @for (y of years; track y) {
-              <option [value]="y">{{ y }}</option>
-            }
-          </select>
-        </div>
-
-        @if (previousFundsIncome() !== null) {
-          <div class="mb-4 rounded-lg bg-gray-50 px-4 py-2 text-sm text-gray-600">
-            Intereses mes anterior: <strong>{{ previousFundsIncome()!.toLocaleString('es-ES') }} €</strong>
-          </div>
-        }
-
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses este mes (€)</label>
-            <input
-              type="number"
-              step="any"
-              placeholder="ej: 63"
-              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-              [(ngModel)]="fundsInterest"
-            />
-            <p class="mt-0.5 text-xs text-gray-400">Rentabilidad total del mes</p>
-          </div>
-        </div>
-
-        <div class="mt-4 flex items-center gap-3">
-          <button
-            class="rounded-lg bg-[#00A3E0] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0089C0] disabled:opacity-50"
-            [disabled]="!fundsInterest()"
-            (click)="saveFundsIncome()"
-          >Guardar intereses</button>
-          @if (savedFundsIncome()) {
-            <span class="text-sm text-emerald-600">✓ Guardado</span>
-          }
-        </div>
-      </div>
     </div>
   `,
 })
@@ -297,28 +284,16 @@ export class MyInvestorFormComponent {
 
   readonly accounts = input.required<Account[]>();
 
-  private readonly METAL_ID = 'myinvestor-metal';
-  private readonly INVESTMENT_ID = 'myinvestor-investment';
-
+  private readonly INVESTMENT_ID = 'myinvestor-fondo';
   protected readonly months = MONTH_OPTIONS;
+
   protected readonly years = YEARS;
-  protected readonly getMonthLabel = getMonthLabel;
 
-  // --- Cartera Metal ---
-  protected readonly localMonth = signal(this.service.currentMonth());
-  protected readonly localYear = signal(this.service.currentYear());
-  protected readonly metalBalance = signal<number | null>(null);
-  protected readonly metalContribution = signal<number | null>(null);
-  protected readonly savedMetal = signal(false);
-
-  protected readonly previousMetalBalance = computed(() => {
-    const snapshots = this.service.getSnapshotsByAccount(this.METAL_ID);
-    const current = snapshots.find(s => s.year === this.localYear() && s.month === this.localMonth());
-    return current?.balance ?? null;
-  });
+  protected readonly MONTHS = MONTHS;
 
   // --- Fondos (lista) ---
   protected readonly funds = computed(() => this.service.myInvestorFunds());
+  protected readonly fundsListExpanded = signal(false);
 
   // --- Formulario nuevo fondo ---
   protected readonly newCode = signal('');
@@ -330,6 +305,10 @@ export class MyInvestorFormComponent {
   protected readonly fundsLocalYear = signal(this.service.currentYear());
   protected readonly selectedFundId = signal('');
   protected readonly fundBalanceValue = signal<number | null>(null);
+  protected readonly fundsIncomeValue = signal<number | null>(null);
+  protected readonly fundsContributionValue = signal<number | null>(null);
+  protected readonly fundsWithdrawalValue = signal<number | null>(null);
+  protected readonly editingFundBalance = signal<FundBalance | null>(null);
   protected readonly savedFundBalance = signal(false);
 
   protected readonly currentMonthBalances = computed(() =>
@@ -340,45 +319,59 @@ export class MyInvestorFormComponent {
     this.currentMonthBalances().reduce((sum, b) => sum + b.balance, 0)
   );
 
-  // --- Intereses fondos ---
-  protected readonly fundsInterest = signal<number | null>(null);
-  protected readonly savedFundsIncome = signal(false);
+  protected readonly historyBalances = computed(() =>
+    [...this.service.fundBalances()].sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+  );
 
-  protected readonly previousFundsIncome = computed(() => {
-    const snapshots = this.service.getSnapshotsByAccount(this.INVESTMENT_ID);
-    const current = snapshots.find(s => s.year === this.fundsLocalYear() && s.month === this.fundsLocalMonth());
-    return current?.income ?? null;
+  protected readonly previousFundBalance = computed(() => {
+    const fundId = this.selectedFundId();
+    if (!fundId) { return null; }
+    let pm = this.fundsLocalMonth() - 1;
+    let py = this.fundsLocalYear();
+    if (pm < 1) { pm = 12; py--; }
+    return this.service.getFundBalance(fundId, py, pm)?.balance ?? null;
   });
 
   constructor() {
     effect(() => {
-      const snapshots = this.service.snapshots();
-      const y = this.localYear();
-      const m = this.localMonth();
-      this.metalBalance.set(
-        snapshots.find(s => s.accountId === this.METAL_ID && s.year === y && s.month === m)?.balance ?? null
-      );
+      const fundId = this.selectedFundId();
+      const y = this.fundsLocalYear();
+      const m = this.fundsLocalMonth();
+      const existing = fundId ? this.service.getFundBalance(fundId, y, m) : undefined;
+      this.fundBalanceValue.set(existing?.balance ?? null);
+      this.fundsIncomeValue.set(existing?.income ?? null);
+      this.fundsContributionValue.set(existing?.contribution ?? null);
+      this.fundsWithdrawalValue.set(existing?.expenses ?? null);
     }, { allowSignalWrites: true });
 
     effect(() => {
       const snapshots = this.service.snapshots();
-      const total = this.totalFundBalanceForMonth();
+      const balances = this.currentMonthBalances();
+      const total = balances.reduce((sum, b) => sum + b.balance, 0);
+      const totalIncome = balances.reduce((sum, b) => sum + (b.income ?? 0), 0);
+      const totalContribution = balances.reduce((sum, b) => sum + (b.contribution ?? 0), 0);
+      const totalExpenses = balances.reduce((sum, b) => sum + (b.expenses ?? 0), 0);
       const y = this.fundsLocalYear();
       const m = this.fundsLocalMonth();
       const snapId = `${this.INVESTMENT_ID}-${y}-${String(m).padStart(2, '0')}`;
       const existing = snapshots.find(s => s.accountId === this.INVESTMENT_ID && s.year === y && s.month === m);
 
+      const data = { balance: total, income: totalIncome, contribution: totalContribution, expenses: totalExpenses };
       if (existing) {
-        this.service.updateSnapshot(existing.id, { balance: total });
+        const changed = existing.balance !== total
+          || existing.income !== totalIncome
+          || existing.contribution !== totalContribution
+          || existing.expenses !== totalExpenses;
+        if (changed) {
+          this.service.updateSnapshot(existing.id, data);
+        }
       } else if (total > 0) {
         this.service.addSnapshot({
           id: snapId,
           accountId: this.INVESTMENT_ID,
           year: y,
           month: m,
-          balance: total,
-          income: 0,
-          expenses: 0,
+          ...data,
         });
       }
     }, { allowSignalWrites: true });
@@ -386,39 +379,6 @@ export class MyInvestorFormComponent {
 
   protected getFundName(fundId: string): string {
     return this.funds().find(f => f.id === fundId)?.name ?? fundId;
-  }
-
-  // --- Cartera Metal ---
-  protected saveMetal(): void {
-    const bal = this.metalBalance();
-    if (bal === null) { return; }
-
-    const y = this.localYear();
-    const m = this.localMonth();
-    const snapId = `${this.METAL_ID}-${y}-${String(m).padStart(2, '0')}`;
-    const contrib = this.metalContribution() ?? 0;
-
-    const existing = this.service.getSnapshot(this.METAL_ID, y, m);
-    if (existing) {
-      this.service.updateSnapshot(existing.id, {
-        balance: bal,
-        income: existing.income + contrib,
-      });
-    } else {
-      this.service.addSnapshot({
-        id: snapId,
-        accountId: this.METAL_ID,
-        year: y,
-        month: m,
-        balance: bal,
-        income: contrib,
-        expenses: 0,
-      });
-    }
-
-    this.metalContribution.set(null);
-    this.savedMetal.set(true);
-    setTimeout(() => this.savedMetal.set(false), 2000);
   }
 
   // --- Registro fondo ---
@@ -431,16 +391,16 @@ export class MyInvestorFormComponent {
       id: `mif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       code,
       name,
+    }).subscribe(() => {
+      this.newCode.set('');
+      this.newName.set('');
+      this.savedFund.set(true);
+      setTimeout(() => this.savedFund.set(false), 2000);
     });
-
-    this.newCode.set('');
-    this.newName.set('');
-    this.savedFund.set(true);
-    setTimeout(() => this.savedFund.set(false), 2000);
   }
 
   protected deleteFund(fund: MyInvestorFund): void {
-    this.service.deleteMyInvestorFund(fund.id);
+    this.service.deleteMyInvestorFund(fund.id).subscribe();
   }
 
   // --- Balance mensual por fondo ---
@@ -451,10 +411,21 @@ export class MyInvestorFormComponent {
 
     const y = this.fundsLocalYear();
     const m = this.fundsLocalMonth();
-    const existing = this.service.getFundBalance(fundId, y, m);
+    const income = this.fundsIncomeValue() ?? 0;
+    const contribution = this.fundsContributionValue() ?? 0;
+    const withdrawal = this.fundsWithdrawalValue() ?? 0;
+
+    const existing = this.editingFundBalance() ?? this.service.getFundBalance(fundId, y, m);
+
+    const onSaved = () => {
+      this.selectedFundId.set('');
+      this.editingFundBalance.set(null);
+      this.savedFundBalance.set(true);
+      setTimeout(() => this.savedFundBalance.set(false), 2000);
+    };
 
     if (existing) {
-      this.service.updateFundBalance(existing.id, { balance: bal });
+      this.service.updateFundBalance(existing.id, { balance: bal, income, contribution, expenses: withdrawal }).subscribe(onSaved);
     } else {
       this.service.addFundBalance({
         id: `fb-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -462,49 +433,28 @@ export class MyInvestorFormComponent {
         year: y,
         month: m,
         balance: bal,
-      });
+        income,
+        contribution,
+        expenses: withdrawal,
+      }).subscribe(onSaved);
     }
+  }
 
+  protected onEditBalance(balance: FundBalance): void {
+    this.selectedFundId.set(balance.fundId);
+    this.editingFundBalance.set(balance);
+    this.fundBalanceValue.set(balance.balance);
+    this.fundsIncomeValue.set(balance.income ?? null);
+    this.fundsContributionValue.set(balance.contribution ?? null);
+    this.fundsWithdrawalValue.set(balance.expenses ?? null);
+  }
+
+  protected cancelEditBalance(): void {
     this.selectedFundId.set('');
-    this.fundBalanceValue.set(null);
-    this.savedFundBalance.set(true);
-    setTimeout(() => this.savedFundBalance.set(false), 2000);
+    this.editingFundBalance.set(null);
   }
 
   protected deleteFundBalance(balance: { id: string }): void {
-    this.service.deleteFundBalance(balance.id);
-  }
-
-  // --- Intereses fondos ---
-  protected saveFundsIncome(): void {
-    const inter = this.fundsInterest();
-    if (inter === null) { return; }
-
-    const y = this.fundsLocalYear();
-    const m = this.fundsLocalMonth();
-    const snapId = `${this.INVESTMENT_ID}-${y}-${String(m).padStart(2, '0')}`;
-    const total = this.totalFundBalanceForMonth();
-
-    const existing = this.service.getSnapshot(this.INVESTMENT_ID, y, m);
-    if (existing) {
-      this.service.updateSnapshot(existing.id, {
-        balance: total,
-        income: existing.income + inter,
-      });
-    } else {
-      this.service.addSnapshot({
-        id: snapId,
-        accountId: this.INVESTMENT_ID,
-        year: y,
-        month: m,
-        balance: total,
-        income: inter,
-        expenses: 0,
-      });
-    }
-
-    this.fundsInterest.set(null);
-    this.savedFundsIncome.set(true);
-    setTimeout(() => this.savedFundsIncome.set(false), 2000);
+    this.service.deleteFundBalance(balance.id).subscribe();
   }
 }
