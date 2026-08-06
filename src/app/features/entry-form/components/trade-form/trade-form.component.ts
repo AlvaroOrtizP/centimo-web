@@ -7,7 +7,6 @@ import { Account } from '../../../../models/account';
 import { AssetType } from '../../../../models/asset-type';
 import { TransactionType } from '../../../../models/transaction-type';
 import { TradeStatus } from '../../../../models/trade-status';
-import { InvestmentTransaction } from '../../../../models/investment-transaction';
 import { ASSET_SUGGESTIONS } from '../../../../core/constants/trade.constants';
 
 @Component({
@@ -131,42 +130,6 @@ import { ASSET_SUGGESTIONS } from '../../../../core/constants/trade.constants';
           <span class="text-sm text-emerald-600">✓ Operación registrada</span>
         }
       </div>
-
-      @if (trades().length > 0) {
-        <div class="mt-6 border-t border-gray-100 pt-4">
-          <p class="mb-3 text-xs font-medium uppercase tracking-wider text-gray-500">Historial de operaciones</p>
-          <div class="space-y-1">
-            @for (t of trades(); track t.id) {
-              <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
-                <span
-                  class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
-                  [class.bg-emerald-100 text-emerald-800]="t.type === 'buy'"
-                  [class.bg-red-100 text-red-800]="t.type === 'sell'"
-                >
-                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline [attr.points]="t.type === 'buy' ? '18 15 12 9 6 15' : '6 9 12 15 18 9'"/>
-                  </svg>
-                  {{ t.type === 'buy' ? 'COMPRA' : 'VENTA' }}
-                </span>
-                <span class="w-16 font-semibold text-gray-700">{{ t.assetName }}</span>
-                <span class="text-gray-500">{{ t.buyQuantity }} × {{ t.buyPricePerUnit.toLocaleString('es-ES') }} €</span>
-                <span class="text-gray-500">= <strong>{{ t.buyTotalCost.toLocaleString('es-ES') }} €</strong></span>
-                <span class="text-gray-400">{{ t.buyDate }}</span>
-                <button
-                  class="ml-auto flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                  (click)="deleteTrade(t)"
-                  title="Eliminar operación"
-                  aria-label="Eliminar operación"
-                >
-                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                  </svg>
-                </button>
-              </div>
-            }
-          </div>
-        </div>
-      }
     </div>
   `,
 })
@@ -176,12 +139,6 @@ export class TradeFormComponent {
   readonly accounts = input.required<Account[]>();
 
   protected readonly selectedAccountId = signal('');
-
-  protected readonly trades = computed<InvestmentTransaction[]>(() => {
-    const id = this.selectedAccountId();
-    if (!id) { return []; }
-    return this.service.getTradesByAccount(id);
-  });
 
   protected readonly type = signal<'buy' | 'sell'>('buy');
   protected readonly assetName = signal('');
@@ -223,9 +180,5 @@ export class TradeFormComponent {
     this.date.set('');
     this.saved.set(true);
     setTimeout(() => this.saved.set(false), 2000);
-  }
-
-  protected deleteTrade(t: InvestmentTransaction): void {
-    this.service.deleteTrade(t.id);
   }
 }

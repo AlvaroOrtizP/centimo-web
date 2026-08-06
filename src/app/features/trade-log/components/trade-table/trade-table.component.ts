@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { NgClass } from '@angular/common';
 
 import { InvestmentTransaction } from '../../../../models/investment-transaction';
@@ -24,6 +24,7 @@ import { InvestmentTransaction } from '../../../../models/investment-transaction
               <th class="whitespace-nowrap px-4 py-3.5 text-right">Total Recibido</th>
               <th class="whitespace-nowrap px-4 py-3.5 text-right">P&L</th>
               <th class="whitespace-nowrap px-4 py-3.5 text-right">ROI</th>
+              <th class="whitespace-nowrap px-4 py-3.5"><span class="sr-only">Acciones</span></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
@@ -52,6 +53,18 @@ import { InvestmentTransaction } from '../../../../models/investment-transaction
                 <td class="whitespace-nowrap px-4 py-3.5 text-right text-gray-600">{{ trade.sellTotalReceived != null ? trade.sellTotalReceived.toLocaleString('es-ES') + ' €' : '—' }}</td>
                 <td class="whitespace-nowrap px-4 py-3.5 text-right font-semibold" [class.text-emerald-600]="trade.pnl != null && trade.pnl >= 0" [class.text-red-600]="trade.pnl != null && trade.pnl < 0">{{ trade.pnl != null ? (trade.pnl >= 0 ? '+' : '') + trade.pnl.toLocaleString('es-ES') + ' €' : '—' }}</td>
                 <td class="whitespace-nowrap px-4 py-3.5 text-right font-semibold" [class.text-emerald-600]="trade.pnl != null && trade.pnl >= 0" [class.text-red-600]="trade.pnl != null && trade.pnl < 0">{{ roiDisplay(trade) }}</td>
+                <td class="whitespace-nowrap px-4 py-3.5">
+                  <button
+                    class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                    (click)="delete.emit(trade.id)"
+                    title="Eliminar operación"
+                    aria-label="Eliminar operación"
+                  >
+                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                  </button>
+                </td>
               </tr>
             }
           </tbody>
@@ -70,6 +83,7 @@ import { InvestmentTransaction } from '../../../../models/investment-transaction
 })
 export class TradeTableComponent {
   readonly trades = input.required<InvestmentTransaction[]>();
+  readonly delete = output<string>();
 
   protected roiDisplay(trade: InvestmentTransaction): string {
     if (trade.pnl == null || trade.buyTotalCost === 0) { return '—'; }
