@@ -146,7 +146,9 @@ export class SnapshotsDataService {
   }
 
   deleteSnapshot(id: string): void {
-    this.snapshots.update(arr => arr.filter(s => s.id !== id));
+    this.snapshotsApi.deleteSnapshot(id).subscribe(() => {
+      this.snapshots.update(arr => arr.filter(s => s.id !== id));
+    });
   }
 
   getAvailableMonths(): { year: number; month: number }[] {

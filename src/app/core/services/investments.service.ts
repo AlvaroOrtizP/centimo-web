@@ -6,6 +6,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { CrowdlendingService } from '../../api/generated/api/crowdlending.service';
 import { CrowdlendingInvestment as CrowdlendingInvestmentApi } from '../../api/generated/model/crowdlendingInvestment';
 import { CrowdlendingInvestmentCreate } from '../../api/generated/model/crowdlendingInvestmentCreate';
+import { MyInvestorFundsService } from '../../api/generated/api/myInvestorFunds.service';
+import { FundBalancesService } from '../../api/generated/api/fundBalances.service';
+import { MyInvestorFundCreate } from '../../api/generated/model/myInvestorFundCreate';
+import { FundBalanceCreate } from '../../api/generated/model/fundBalanceCreate';
+import { FundBalanceUpdate } from '../../api/generated/model/fundBalanceUpdate';
 
 import {
   InvestmentHolding,
@@ -19,6 +24,8 @@ import { LoggerService } from './logger.service';
 @Injectable({ providedIn: 'root' })
 export class InvestmentsDataService {
   private readonly crowdlendingApi = inject(CrowdlendingService);
+  private readonly myInvestorFundsApi = inject(MyInvestorFundsService);
+  private readonly fundBalancesApi = inject(FundBalancesService);
   private readonly logger = inject(LoggerService);
 
   readonly holdings = signal<InvestmentHolding[]>([]);
@@ -125,16 +132,59 @@ export class InvestmentsDataService {
     this.trades.update(arr => arr.filter(t => t.id !== id));
   }
 
-  addMyInvestorFund(fund: MyInvestorFund): void {
-    this.myInvestorFunds.update(arr => [...arr, fund]);
+  addMyInvestorFund(fund: MyInvestorFund): Observable<MyInvestorFund> {
+    const create: MyInvestorFundCreate = {
+      id: fund.id,
+      code: fund.code,
+      name: fund.name,
+    };
+    return this.myInvestorFundsApi.createMyInvestorFund(create).pipe(
+      map(created => {
+        this.myInvestorFunds.update(arr => [...arr, created]);
+        return created;
+      }),
+    );
   }
 
   updateMyInvestorFund(id: string, data: Partial<MyInvestorFund>): void {
     this.myInvestorFunds.update(arr => arr.map(f => f.id === id ? { ...f, ...data } : f));
   }
 
-  deleteMyInvestorFund(id: string): void {
-    this.myInvestorFunds.update(arr => arr.filter(f => f.id !== id));
+  deleteMyInvestorFund(id: string): Observable<void> {
+    return this.myInvestorFundsApi.deleteMyInvestorFund(id).pipe(
+      map(() => {
+        this.myInvestorFunds.update(arr => arr.filter(f => f.id !== id));
+      }),
+      catchError(err => {
+        this.logger.error('InvestmentsData', 'deleteMyInvestorFund error', err);
+        return of(undefined);
+      }),
+    );
+  }
+
+  loadAllMyInvestorFunds(): void {
+    this.myInvestorFundsApi.listMyInvestorFunds().pipe(
+      catchError(err => {
+        this.logger.error('InvestmentsData', 'loadAllMyInvestorFunds error', err);
+        return of([]);
+      }),
+    ).subscribe(funds => {
+      this.myInvestorFunds.set(funds);
+    });
+  }
+
+  loadFundBalances(year: number, month: number): void {
+    this.fundBalancesApi.listFundBalances(year, month).pipe(
+      catchError(err => {
+        this.logger.error('InvestmentsData', 'loadFundBalances error', err);
+        return of([]);
+      }),
+    ).subscribe(balances => {
+      this.fundBalances.update(arr => [
+        ...arr.filter(b => !(b.year === year && b.month === month)),
+        ...balances,
+      ]);
+    });
   }
 
   getFundBalancesByMonth(year: number, month: number): FundBalance[] {
@@ -145,16 +195,41 @@ export class InvestmentsDataService {
     return this.fundBalances().find(b => b.fundId === fundId && b.year === year && b.month === month);
   }
 
-  addFundBalance(balance: FundBalance): void {
-    this.fundBalances.update(arr => [...arr, balance]);
+  addFundBalance(balance: FundBalance): Observable<FundBalance> {
+    const create: FundBalanceCreate = {
+      fundId: balance.fundId,
+      year: balance.year,
+      month: balance.month,
+      balance: balance.balance,
+    };
+    return this.fundBalancesApi.createFundBalance(create).pipe(
+      map(created => {
+        this.fundBalances.update(arr => [...arr, created]);
+        return created;
+      }),
+    );
   }
 
-  updateFundBalance(id: string, data: Partial<FundBalance>): void {
-    this.fundBalances.update(arr => arr.map(b => b.id === id ? { ...b, ...data } : b));
+  updateFundBalance(id: string, data: Partial<FundBalance>): Observable<FundBalance> {
+    const update: FundBalanceUpdate = { balance: data.balance };
+    return this.fundBalancesApi.updateFundBalance(id, update).pipe(
+      map(updated => {
+        this.fundBalances.update(arr => arr.map(b => b.id === id ? { ...b, ...updated } : b));
+        return updated;
+      }),
+    );
   }
 
-  deleteFundBalance(id: string): void {
-    this.fundBalances.update(arr => arr.filter(b => b.id !== id));
+  deleteFundBalance(id: string): Observable<void> {
+    return this.fundBalancesApi.deleteFundBalance(id).pipe(
+      map(() => {
+        this.fundBalances.update(arr => arr.filter(b => b.id !== id));
+      }),
+      catchError(err => {
+        this.logger.error('InvestmentsData', 'deleteFundBalance error', err);
+        return of(undefined);
+      }),
+    );
   }
 
   private mapFromApi(api: CrowdlendingInvestmentApi): CrowdlendingInvestment {

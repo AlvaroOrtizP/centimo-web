@@ -90,9 +90,14 @@ export function configureSeedSpies(): void {
 
   const fundsApi = TestBed.inject(MyInvestorFundsService) as jasmine.SpyObj<MyInvestorFundsService>;
   fundsApi.listMyInvestorFunds.and.returnValue(of(SEED_FUNDS) as never);
+  fundsApi.createMyInvestorFund.and.callFake((create: never) => of(create) as never);
+  fundsApi.deleteMyInvestorFund.and.returnValue(of(undefined) as never);
 
   const fundBalancesApi = TestBed.inject(FundBalancesService) as jasmine.SpyObj<FundBalancesService>;
   fundBalancesApi.listFundBalances.and.returnValue(of(SEED_JUNE_FUND_BALANCES) as never);
+  fundBalancesApi.createFundBalance.and.callFake((create: never) => of({ ...(create as object), id: 'new-fb-id' }) as never);
+  fundBalancesApi.updateFundBalance.and.callFake((id: never, update: never) => of({ ...(update as object), id }) as never);
+  fundBalancesApi.deleteFundBalance.and.returnValue(of(undefined) as never);
 }
 
 export function applyFinancialSeed(): FinancialDataService {
@@ -103,9 +108,8 @@ export function applyFinancialSeed(): FinancialDataService {
     service.loadAllAccounts();
     service.loadAllSnapshots();
     service.loadAllCrowdlending();
-    service.addMyInvestorFund({ id: SEED_FUNDS[0].id, code: SEED_FUNDS[0].code, name: SEED_FUNDS[0].name });
-    service.addMyInvestorFund({ id: SEED_FUNDS[1].id, code: SEED_FUNDS[1].code, name: SEED_FUNDS[1].name });
-    service.addFundBalance({ id: SEED_JUNE_FUND_BALANCES[0].id, fundId: SEED_JUNE_FUND_BALANCES[0].fundId, year: SEED_JUNE_FUND_BALANCES[0].year, month: SEED_JUNE_FUND_BALANCES[0].month, balance: SEED_JUNE_FUND_BALANCES[0].balance });
+    service.loadAllMyInvestorFunds();
+    service.loadFundBalances(2026, 6);
     tick();
     TestBed.flushEffects();
   })();

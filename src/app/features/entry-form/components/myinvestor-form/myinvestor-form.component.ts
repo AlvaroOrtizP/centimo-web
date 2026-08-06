@@ -5,11 +5,13 @@ import { FinancialDataService } from '../../../../core/services/financial-data.s
 import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
 import { MyInvestorFund } from '../../../../models/myinvestor-fund';
+import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
+import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
 
 @Component({
   selector: 'app-myinvestor-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, SnapshotHistoryTableComponent],
   template: `
     <div class="space-y-4">
       <!-- Cartera Metal -->
@@ -43,7 +45,7 @@ import { MyInvestorFund } from '../../../../models/myinvestor-fund';
           </div>
         }
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
             <input
@@ -56,6 +58,17 @@ import { MyInvestorFund } from '../../../../models/myinvestor-fund';
             <p class="mt-0.5 text-xs text-gray-400">Valor total en Cartera Metal a 31 del mes</p>
           </div>
           <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses obtenidos este mes (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 15"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
+              [(ngModel)]="metalIncome"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Rendimiento obtenido en el mes</p>
+          </div>
+          <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
             <input
               type="number"
@@ -64,7 +77,18 @@ import { MyInvestorFund } from '../../../../models/myinvestor-fund';
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
               [(ngModel)]="metalContribution"
             />
-            <p class="mt-0.5 text-xs text-gray-400">Opcional — cantidad ingresada este mes</p>
+            <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Retirada este mes (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 50"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
+              [(ngModel)]="metalWithdrawal"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
           </div>
         </div>
 
@@ -73,12 +97,24 @@ import { MyInvestorFund } from '../../../../models/myinvestor-fund';
             class="rounded-lg bg-[#00A3E0] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0089C0] disabled:opacity-50"
             [disabled]="!metalBalance()"
             (click)="saveMetal()"
-          >Guardar</button>
+          >{{ editingMetalSnapshot() ? 'Actualizar balance' : 'Guardar balance' }}</button>
+          @if (editingMetalSnapshot()) {
+            <button
+              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              (click)="cancelEditMetal()"
+            >Cancelar</button>
+          }
           @if (savedMetal()) {
             <span class="text-sm text-emerald-600">✓ Guardado</span>
           }
         </div>
       </div>
+
+      <app-snapshot-history-table
+        [snapshots]="metalHistory()"
+        (edit)="onEditMetal($event)"
+        (delete)="onDeleteMetal($event)"
+      />
 
       <!-- Fondos — Registro -->
       <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -208,7 +244,11 @@ import { MyInvestorFund } from '../../../../models/myinvestor-fund';
             <div class="mt-4 border-t border-gray-100 pt-3">
               <div class="mb-2 flex items-center justify-between">
                 <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Balances del mes</p>
-                <p class="text-sm font-semibold text-gray-900">Total: {{ totalFundBalanceForMonth().toLocaleString('es-ES') }} €</p>
+                <div class="flex items-center gap-4 text-sm">
+                  <p class="text-gray-600">Fondos: <strong class="text-gray-900">{{ totalFundBalanceForMonth().toLocaleString('es-ES') }} €</strong></p>
+                  <p class="text-gray-600">Metal: <strong class="text-gray-900">{{ metalBalanceForFundsMonth().toLocaleString('es-ES') }} €</strong></p>
+                  <p class="text-gray-600">Total MyInvestor: <strong class="text-[#00A3E0]">{{ totalMyInvestorForMonth().toLocaleString('es-ES') }} €</strong></p>
+                </div>
               </div>
               <div class="space-y-1">
                 @for (b of currentMonthBalances(); track b.id) {
@@ -264,6 +304,10 @@ import { MyInvestorFund } from '../../../../models/myinvestor-fund';
           </div>
         }
 
+        <div class="mb-4 rounded-lg bg-gray-50 px-4 py-2 text-sm text-gray-600">
+          Balance total fondos: <strong class="text-gray-900">{{ totalFundBalanceForMonth().toLocaleString('es-ES') }} €</strong>
+        </div>
+
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses este mes (€)</label>
@@ -308,14 +352,25 @@ export class MyInvestorFormComponent {
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = signal(this.service.currentYear());
   protected readonly metalBalance = signal<number | null>(null);
+  protected readonly metalIncome = signal<number | null>(null);
   protected readonly metalContribution = signal<number | null>(null);
+  protected readonly metalWithdrawal = signal<number | null>(null);
   protected readonly savedMetal = signal(false);
+  protected readonly editingMetalSnapshot = signal<MonthlySnapshot | null>(null);
 
   protected readonly previousMetalBalance = computed(() => {
     const snapshots = this.service.getSnapshotsByAccount(this.METAL_ID);
-    const current = snapshots.find(s => s.year === this.localYear() && s.month === this.localMonth());
-    return current?.balance ?? null;
+    let prevMonth = this.localMonth() - 1;
+    let prevYear = this.localYear();
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+    const prev = snapshots.find(s => s.year === prevYear && s.month === prevMonth);
+    return prev?.balance ?? null;
   });
+
+  protected readonly metalHistory = computed(() =>
+    this.service.getSnapshotsByAccount(this.METAL_ID)
+      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+  );
 
   // --- Fondos (lista) ---
   protected readonly funds = computed(() => this.service.myInvestorFunds());
@@ -340,6 +395,14 @@ export class MyInvestorFormComponent {
     this.currentMonthBalances().reduce((sum, b) => sum + b.balance, 0)
   );
 
+  protected readonly metalBalanceForFundsMonth = computed(() =>
+    this.service.getSnapshot(this.METAL_ID, this.fundsLocalYear(), this.fundsLocalMonth())?.balance ?? 0
+  );
+
+  protected readonly totalMyInvestorForMonth = computed(() =>
+    this.totalFundBalanceForMonth() + this.metalBalanceForFundsMonth()
+  );
+
   // --- Intereses fondos ---
   protected readonly fundsInterest = signal<number | null>(null);
   protected readonly savedFundsIncome = signal(false);
@@ -352,12 +415,13 @@ export class MyInvestorFormComponent {
 
   constructor() {
     effect(() => {
-      const snapshots = this.service.snapshots();
-      const y = this.localYear();
-      const m = this.localMonth();
-      this.metalBalance.set(
-        snapshots.find(s => s.accountId === this.METAL_ID && s.year === y && s.month === m)?.balance ?? null
-      );
+      this.service.snapshots();
+      const snap = this.service.getSnapshot(this.METAL_ID, this.localYear(), this.localMonth());
+      if (this.editingMetalSnapshot()) { return; }
+      this.metalBalance.set(snap?.balance ?? null);
+      this.metalIncome.set(snap?.income ?? null);
+      this.metalContribution.set(snap?.contribution ?? null);
+      this.metalWithdrawal.set(snap?.expenses && snap.expenses > 0 ? snap.expenses : null);
     }, { allowSignalWrites: true });
 
     effect(() => {
@@ -389,34 +453,54 @@ export class MyInvestorFormComponent {
   }
 
   // --- Cartera Metal ---
+  protected onEditMetal(snap: MonthlySnapshot): void {
+    this.localMonth.set(snap.month);
+    this.localYear.set(snap.year);
+    this.metalBalance.set(snap.balance);
+    this.metalIncome.set(snap.income ?? null);
+    this.metalContribution.set(snap.contribution ?? null);
+    this.metalWithdrawal.set(snap.expenses && snap.expenses > 0 ? snap.expenses : null);
+    this.editingMetalSnapshot.set(snap);
+  }
+
+  protected cancelEditMetal(): void {
+    this.editingMetalSnapshot.set(null);
+    this.metalIncome.set(null);
+    this.metalContribution.set(null);
+    this.metalWithdrawal.set(null);
+  }
+
+  protected onDeleteMetal(id: string): void {
+    this.service.deleteSnapshot(id);
+    if (this.editingMetalSnapshot()?.id === id) {
+      this.cancelEditMetal();
+    }
+  }
+
   protected saveMetal(): void {
     const bal = this.metalBalance();
     if (bal === null) { return; }
 
-    const y = this.localYear();
-    const m = this.localMonth();
-    const snapId = `${this.METAL_ID}-${y}-${String(m).padStart(2, '0')}`;
+    const inc = this.metalIncome() ?? 0;
     const contrib = this.metalContribution() ?? 0;
+    const withdrawal = this.metalWithdrawal() ?? 0;
 
-    const existing = this.service.getSnapshot(this.METAL_ID, y, m);
-    if (existing) {
-      this.service.updateSnapshot(existing.id, {
+    const editing = this.editingMetalSnapshot();
+    if (editing) {
+      this.service.updateSnapshot(editing.id, {
         balance: bal,
-        income: existing.income + contrib,
+        income: inc,
+        contribution: contrib,
+        expenses: withdrawal,
       });
+      this.cancelEditMetal();
     } else {
-      this.service.addSnapshot({
-        id: snapId,
-        accountId: this.METAL_ID,
-        year: y,
-        month: m,
-        balance: bal,
-        income: contrib,
-        expenses: 0,
-      });
+      this.service.upsertSnapshot(this.METAL_ID, this.localYear(), this.localMonth(), bal, inc, withdrawal, contrib).subscribe();
     }
 
+    this.metalIncome.set(null);
     this.metalContribution.set(null);
+    this.metalWithdrawal.set(null);
     this.savedMetal.set(true);
     setTimeout(() => this.savedMetal.set(false), 2000);
   }
@@ -431,16 +515,16 @@ export class MyInvestorFormComponent {
       id: `mif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       code,
       name,
+    }).subscribe(() => {
+      this.newCode.set('');
+      this.newName.set('');
+      this.savedFund.set(true);
+      setTimeout(() => this.savedFund.set(false), 2000);
     });
-
-    this.newCode.set('');
-    this.newName.set('');
-    this.savedFund.set(true);
-    setTimeout(() => this.savedFund.set(false), 2000);
   }
 
   protected deleteFund(fund: MyInvestorFund): void {
-    this.service.deleteMyInvestorFund(fund.id);
+    this.service.deleteMyInvestorFund(fund.id).subscribe();
   }
 
   // --- Balance mensual por fondo ---
@@ -453,8 +537,15 @@ export class MyInvestorFormComponent {
     const m = this.fundsLocalMonth();
     const existing = this.service.getFundBalance(fundId, y, m);
 
+    const onSaved = () => {
+      this.selectedFundId.set('');
+      this.fundBalanceValue.set(null);
+      this.savedFundBalance.set(true);
+      setTimeout(() => this.savedFundBalance.set(false), 2000);
+    };
+
     if (existing) {
-      this.service.updateFundBalance(existing.id, { balance: bal });
+      this.service.updateFundBalance(existing.id, { balance: bal }).subscribe(onSaved);
     } else {
       this.service.addFundBalance({
         id: `fb-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -462,17 +553,12 @@ export class MyInvestorFormComponent {
         year: y,
         month: m,
         balance: bal,
-      });
+      }).subscribe(onSaved);
     }
-
-    this.selectedFundId.set('');
-    this.fundBalanceValue.set(null);
-    this.savedFundBalance.set(true);
-    setTimeout(() => this.savedFundBalance.set(false), 2000);
   }
 
   protected deleteFundBalance(balance: { id: string }): void {
-    this.service.deleteFundBalance(balance.id);
+    this.service.deleteFundBalance(balance.id).subscribe();
   }
 
   // --- Intereses fondos ---

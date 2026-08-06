@@ -139,7 +139,7 @@ describe('DashboardComponent', () => {
         id: 'mif-test-001',
         code: 'IE0002XZSHO5',
         name: 'Amundi MSCI World',
-      });
+      }).subscribe();
 
       service.addFundBalance({
         id: 'fb-test-001',
@@ -147,7 +147,7 @@ describe('DashboardComponent', () => {
         year: 2026,
         month: 6,
         balance: 4200,
-      });
+      }).subscribe();
 
       // Sync: recalcular total fondos → actualizar snapshot myinvestor-investment
       const totalFunds = service.getTotalFundBalanceForMonth(2026, 6);
@@ -200,17 +200,17 @@ describe('DashboardComponent', () => {
         id: 'mif-phase2-001',
         code: 'IE0002XZSHO5',
         name: 'Amundi MSCI World',
-      });
+      }).subscribe();
       service.addMyInvestorFund({
         id: 'mif-phase4-001',
         code: 'IE00BFMXXD54',
         name: 'Amundi S&P 500',
-      });
+      }).subscribe();
 
-      service.addFundBalance({ id: 'fb-jul-idx', fundId: 'mif-001', year: 2026, month: 7, balance: 5000 });
-      service.addFundBalance({ id: 'fb-jul-van', fundId: 'mif-002', year: 2026, month: 7, balance: 3500 });
-      service.addFundBalance({ id: 'fb-jul-msci', fundId: 'mif-phase2-001', year: 2026, month: 7, balance: 4500 });
-      service.addFundBalance({ id: 'fb-jul-sp500', fundId: 'mif-phase4-001', year: 2026, month: 7, balance: 7000 });
+      service.addFundBalance({ id: 'fb-jul-idx', fundId: 'mif-001', year: 2026, month: 7, balance: 5000 }).subscribe();
+      service.addFundBalance({ id: 'fb-jul-van', fundId: 'mif-002', year: 2026, month: 7, balance: 3500 }).subscribe();
+      service.addFundBalance({ id: 'fb-jul-msci', fundId: 'mif-phase2-001', year: 2026, month: 7, balance: 4500 }).subscribe();
+      service.addFundBalance({ id: 'fb-jul-sp500', fundId: 'mif-phase4-001', year: 2026, month: 7, balance: 7000 }).subscribe();
 
       const totalFunds = service.getTotalFundBalanceForMonth(2026, 7);
       expect(totalFunds).toBe(20000);
