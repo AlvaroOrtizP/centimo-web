@@ -55,7 +55,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
           <p class="mt-0.5 text-xs text-gray-400">Valor total en Mintos a 31 del mes</p>
         </div>
         <div>
-          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Ingresos este mes (€)</label>
+          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses obtenidos este mes (€)</label>
           <input
             type="number"
             step="any"

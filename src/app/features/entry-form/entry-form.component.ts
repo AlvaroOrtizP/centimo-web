@@ -20,6 +20,7 @@ interface TabConfig {
   key: Tab;
   label: string;
   color: string;
+  done?: boolean;
 }
 
 @Component({
@@ -86,6 +87,9 @@ interface TabConfig {
                   </svg>
                 </span>
                 {{ tab.label }}
+                @if (tab.done) {
+                  <span aria-hidden="true" class="pointer-events-none absolute inset-x-2 bottom-0.5 h-0.5 rounded-full bg-green-500"></span>
+                }
               </button>
             }
           </div>
@@ -137,11 +141,12 @@ export class EntryFormComponent {
 
   protected readonly tabs: TabConfig[] = [
     { key: 'trades', label: 'Trades', color: '#7c3aed' },
-    { key: 'banks', label: 'Bancos', color: '#004481' },
-    { key: 'revolut', label: 'Revolut', color: '#EB008B' },
-    { key: 'b100', label: 'B100', color: '#6C3FD1' },
+    // TODO: eliminar el marcador verde (done) de estas pestañas una vez entregado
+    { key: 'banks', label: 'Bancos', color: '#004481', done: true },
+    { key: 'revolut', label: 'Revolut', color: '#EB008B', done: true },
+    { key: 'b100', label: 'B100', color: '#6C3FD1', done: true },
     { key: 'myinvestor', label: 'MyInvestor', color: '#00A3E0' },
-    { key: 'mintos', label: 'Mintos', color: '#00BFA5' },
+    { key: 'mintos', label: 'Mintos', color: '#00BFA5', done: true },
     { key: 'equito', label: 'Equito', color: '#FF6B35' },
     { key: 'urbanitae', label: 'Urbanitae', color: '#E63946' },
   ];
