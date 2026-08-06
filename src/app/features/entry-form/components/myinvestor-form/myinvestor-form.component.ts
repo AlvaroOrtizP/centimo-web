@@ -2,7 +2,7 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
-import { MONTH_OPTIONS, YEARS } from '../../../../core/constants/date.constants';
+import { MONTH_OPTIONS, MONTHS, YEARS } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
 import { MyInvestorFund } from '../../../../models/myinvestor-fund';
 import { FundBalance } from '../../../../models/fund-balance';
@@ -125,53 +125,74 @@ import { FundBalance } from '../../../../models/fund-balance';
               <span class="text-sm text-emerald-600">✓ Guardado</span>
             }
           </div>
+          <p class="mt-2 text-sm text-gray-600">
+            Balance total fondos del mes: <strong class="text-gray-900">{{ totalFundBalanceForMonth().toLocaleString('es-ES') }} €</strong>
+          </p>
 
-          <!-- Balances del mes -->
-          @if (currentMonthBalances().length > 0) {
-            <div class="mt-4 border-t border-gray-100 pt-3">
-              <div class="mb-2 flex items-center justify-between">
-                <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Balances del mes</p>
-                <p class="text-sm text-gray-600">Balance total fondos: <strong class="text-gray-900">{{ totalFundBalanceForMonth().toLocaleString('es-ES') }} €</strong></p>
-              </div>
-              <div class="space-y-1">
-                @for (b of currentMonthBalances(); track b.id) {
-                  <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
-                    <span class="flex-1 font-medium text-gray-900">{{ getFundName(b.fundId) }}</span>
-                    <span class="font-semibold text-gray-900">{{ b.balance.toLocaleString('es-ES') }} €</span>
-                    @if (b.income) {
-                      <span class="font-medium text-emerald-600">+{{ b.income.toLocaleString('es-ES') }} €</span>
-                    }
-                    @if (b.contribution) {
-                      <span class="text-gray-500">{{ b.contribution.toLocaleString('es-ES') }} € aport.</span>
-                    }
-                    @if (b.expenses) {
-                      <span class="font-medium text-red-600">-{{ b.expenses.toLocaleString('es-ES') }} €</span>
-                    }
-                    <button
-                      class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-500"
-                      (click)="onEditBalance(b)"
-                      title="Editar balance"
-                      aria-label="Editar balance"
-                    >
-                      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
-                      </svg>
-                    </button>
-                    <button
-                      class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                      (click)="deleteFundBalance(b)"
-                      title="Eliminar balance"
-                      aria-label="Eliminar balance"
-                    >
-                      <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                      </svg>
-                    </button>
-                  </div>
-                }
-              </div>
+          <!-- Historial de balances -->
+          <div class="mt-4 border-t border-gray-100 pt-4">
+            <div class="mb-3 flex items-center justify-between">
+              <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Historial de balances</p>
+              <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500">{{ historyBalances().length }} registros</span>
             </div>
-          }
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-gray-100 bg-gray-50/80 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    <th class="px-4 py-3">Fondo</th>
+                    <th class="px-4 py-3">Mes</th>
+                    <th class="px-4 py-3 text-right">Balance</th>
+                    <th class="px-4 py-3 text-right">Intereses</th>
+                    <th class="px-4 py-3 text-right">Retiradas</th>
+                    <th class="px-4 py-3 text-right">Aportación</th>
+                    <th class="px-4 py-3 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  @if (historyBalances().length === 0) {
+                    <tr>
+                      <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-400">Sin registros todavía. Guarda un balance para este mes.</td>
+                    </tr>
+                  } @else {
+                    @for (b of historyBalances(); track b.id) {
+                      <tr class="transition-all duration-150 hover:bg-gray-50/80">
+                        <td class="px-4 py-3 font-semibold text-gray-900">{{ getFundName(b.fundId) }}</td>
+                        <td class="px-4 py-3 font-semibold text-gray-900">{{ MONTHS[b.month - 1] }} {{ b.year }}</td>
+                        <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ b.balance.toLocaleString('es-ES') }} €</td>
+                        <td class="px-4 py-3 text-right font-medium text-emerald-600">{{ (b.income ?? 0) > 0 ? '+' + b.income!.toLocaleString('es-ES') : '-' }}</td>
+                        <td class="px-4 py-3 text-right font-medium text-red-600">{{ (b.expenses ?? 0) > 0 ? b.expenses!.toLocaleString('es-ES') + ' €' : '-' }}</td>
+                        <td class="px-4 py-3 text-right text-gray-500">{{ b.contribution ? b.contribution!.toLocaleString('es-ES') + ' €' : '-' }}</td>
+                        <td class="px-4 py-3 text-center">
+                          <div class="flex items-center justify-center gap-1">
+                            <button
+                              class="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-500"
+                              (click)="onEditBalance(b)"
+                              title="Editar balance"
+                              aria-label="Editar balance"
+                            >
+                              <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
+                              </svg>
+                            </button>
+                            <button
+                              class="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                              (click)="deleteFundBalance(b)"
+                              title="Eliminar balance"
+                              aria-label="Eliminar balance"
+                            >
+                              <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
         }
       </div>
 
@@ -264,9 +285,11 @@ export class MyInvestorFormComponent {
   readonly accounts = input.required<Account[]>();
 
   private readonly INVESTMENT_ID = 'myinvestor-fondo';
-
   protected readonly months = MONTH_OPTIONS;
+
   protected readonly years = YEARS;
+
+  protected readonly MONTHS = MONTHS;
 
   // --- Fondos (lista) ---
   protected readonly funds = computed(() => this.service.myInvestorFunds());
@@ -294,6 +317,10 @@ export class MyInvestorFormComponent {
 
   protected readonly totalFundBalanceForMonth = computed(() =>
     this.currentMonthBalances().reduce((sum, b) => sum + b.balance, 0)
+  );
+
+  protected readonly historyBalances = computed(() =>
+    [...this.service.fundBalances()].sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
   );
 
   protected readonly previousFundBalance = computed(() => {
