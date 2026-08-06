@@ -2,12 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { MonthlyViewComponent } from './monthly-view.component';
+import { provideApiMocks } from '../../core/testing/api-mocks';
 
 describe('MonthlyViewComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MonthlyViewComponent],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), ...provideApiMocks()],
     }).compileComponents();
   });
 

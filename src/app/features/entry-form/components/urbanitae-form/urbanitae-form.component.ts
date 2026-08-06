@@ -2,14 +2,16 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
-import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
+import { MONTH_OPTIONS, YEARS } from '../../../../core/constants/date.constants';
 import { CrowdlendingInvestment } from '../../../../models/crowdlending-investment';
 import { ProjectStatus } from '../../../../models/project-status';
+import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
+import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
 
 @Component({
   selector: 'app-urbanitae-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, SnapshotHistoryTableComponent],
   template: `
     <div class="space-y-4">
       <!-- Registrar inversión -->
@@ -59,6 +61,14 @@ import { ProjectStatus } from '../../../../models/project-status';
               [(ngModel)]="startDate"
             />
           </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Fecha de fin <span class="normal-case text-gray-400">(opcional)</span></label>
+            <input
+              type="date"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              [(ngModel)]="endDate"
+            />
+          </div>
         </div>
 
         @if (investedAmount() > 0 && interestRate() > 0 && termMonths() > 0) {
@@ -71,7 +81,7 @@ import { ProjectStatus } from '../../../../models/project-status';
         <div class="mt-4 flex items-center gap-3">
           <button
             class="rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
-            [disabled]="!projectName || !investedAmount || !interestRate || !termMonths || !startDate"
+            [disabled]="!canSave()"
             (click)="saveInvestment()"
           >Registrar inversión</button>
           @if (savedInvestment()) {
@@ -141,16 +151,51 @@ import { ProjectStatus } from '../../../../models/project-status';
           </div>
         }
 
-        <div>
-          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
-          <input
-            type="number"
-            step="any"
-            placeholder="ej: 3000"
-            class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-            [(ngModel)]="balance"
-          />
-          <p class="mt-0.5 text-xs text-gray-400">Valor total en Urbanitae a 31 del mes</p>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 3000"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              [(ngModel)]="balance"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Valor total en Urbanitae a 31 del mes</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses obtenidos este mes (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 12"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              [(ngModel)]="income"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Intereses o rendimientos obtenidos</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 100"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              [(ngModel)]="contribution"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Retirada este mes (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 50"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              [(ngModel)]="withdrawal"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
+          </div>
         </div>
 
         <div class="mt-4 flex items-center gap-3">
@@ -158,26 +203,24 @@ import { ProjectStatus } from '../../../../models/project-status';
             class="rounded-lg bg-red-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
             [disabled]="!balance()"
             (click)="saveBalance()"
-          >Guardar balance</button>
+          >{{ editingSnapshot() ? 'Actualizar balance' : 'Guardar balance' }}</button>
+          @if (editingSnapshot()) {
+            <button
+              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              (click)="cancelEdit()"
+            >Cancelar</button>
+          }
           @if (savedBalance()) {
             <span class="text-sm text-emerald-600">✓ Guardado</span>
           }
         </div>
       </div>
 
-      @if (balanceHistory().length > 0) {
-        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p class="mb-3 text-xs font-medium uppercase tracking-wider text-gray-500">Historial de balances</p>
-          <div class="space-y-1">
-            @for (h of balanceHistory(); track h.id) {
-              <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
-                <span class="w-20 text-gray-500">{{ getMonthLabel(h.year, h.month) }}</span>
-                <span class="font-semibold text-gray-900">{{ h.balance.toLocaleString('es-ES') }} €</span>
-              </div>
-            }
-          </div>
-        </div>
-      }
+      <app-snapshot-history-table
+        [snapshots]="balanceHistory()"
+        (edit)="onEdit($event)"
+        (delete)="onDelete($event)"
+      />
     </div>
   `,
 })
@@ -189,7 +232,6 @@ export class UrbanitaeFormComponent {
 
   protected readonly months = MONTH_OPTIONS;
   protected readonly years = YEARS;
-  protected readonly getMonthLabel = getMonthLabel;
 
   // --- Inversiones ---
   protected readonly projectName = signal('');
@@ -197,6 +239,7 @@ export class UrbanitaeFormComponent {
   protected readonly interestRate = signal(0);
   protected readonly termMonths = signal(0);
   protected readonly startDate = signal('');
+  protected readonly endDate = signal('');
   protected readonly savedInvestment = signal(false);
 
   protected readonly investments = computed(() =>
@@ -210,11 +253,23 @@ export class UrbanitaeFormComponent {
     return Math.round((amount * rate / 100 / 12) * 100) / 100;
   });
 
+  protected readonly canSave = computed(() =>
+    this.projectName().trim().length > 0 &&
+    this.investedAmount() > 0 &&
+    this.interestRate() > 0 &&
+    this.termMonths() > 0 &&
+    this.startDate().trim().length > 0
+  );
+
   // --- Balance mensual ---
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = signal(this.service.currentYear());
   protected readonly balance = signal<number | null>(null);
+  protected readonly income = signal<number | null>(null);
+  protected readonly contribution = signal<number | null>(null);
+  protected readonly withdrawal = signal<number | null>(null);
   protected readonly savedBalance = signal(false);
+  protected readonly editingSnapshot = signal<MonthlySnapshot | null>(null);
 
   protected readonly snapshotId = computed(() =>
     `${this.ACCOUNT_ID}-${this.localYear()}-${String(this.localMonth()).padStart(2, '0')}`
@@ -237,8 +292,14 @@ export class UrbanitaeFormComponent {
   constructor() {
     effect(() => {
       this.service.snapshots();
+      this.localYear();
+      this.localMonth();
+      this.editingSnapshot.set(null);
       const snap = this.service.getSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth());
       this.balance.set(snap?.balance ?? null);
+      this.income.set(snap?.income ?? null);
+      this.contribution.set(snap?.contribution ?? null);
+      this.withdrawal.set(snap?.expenses && snap.expenses > 0 ? snap.expenses : null);
     }, { allowSignalWrites: true });
   }
 
@@ -257,6 +318,7 @@ export class UrbanitaeFormComponent {
       interestRate: rate,
       termMonths: term,
       startDate: this.startDate(),
+      endDate: this.endDate() || undefined,
       monthlyReturn,
       totalReturned: 0,
       status: ProjectStatus.Active,
@@ -266,6 +328,7 @@ export class UrbanitaeFormComponent {
       this.interestRate.set(0);
       this.termMonths.set(0);
       this.startDate.set('');
+      this.endDate.set('');
       this.savedInvestment.set(true);
       setTimeout(() => this.savedInvestment.set(false), 2000);
     });
@@ -276,12 +339,52 @@ export class UrbanitaeFormComponent {
   }
 
   // --- Balance mensual ---
+  protected onEdit(snap: MonthlySnapshot): void {
+    this.editingSnapshot.set(snap);
+    this.localYear.set(snap.year);
+    this.localMonth.set(snap.month);
+    this.balance.set(snap.balance);
+    this.income.set(snap.income > 0 ? snap.income : null);
+    this.contribution.set(snap.contribution ?? null);
+    this.withdrawal.set(snap.expenses > 0 ? snap.expenses : null);
+  }
+
+  protected cancelEdit(): void {
+    this.editingSnapshot.set(null);
+    this.balance.set(null);
+    this.income.set(null);
+    this.contribution.set(null);
+    this.withdrawal.set(null);
+  }
+
+  protected onDelete(id: string): void {
+    this.service.deleteSnapshot(id);
+  }
+
   protected saveBalance(): void {
     const bal = this.balance();
     if (bal === null) { return; }
 
-    this.service.upsertSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth(), bal, 0).subscribe();
+    const inc = this.income() ?? 0;
+    const contrib = this.contribution() ?? 0;
+    const withdrawal = this.withdrawal() ?? 0;
 
+    const existing = this.editingSnapshot();
+    if (existing) {
+      this.service.updateSnapshot(existing.id, {
+        balance: bal,
+        income: inc,
+        contribution: contrib,
+        expenses: withdrawal,
+      });
+      this.cancelEdit();
+    } else {
+      this.service.upsertSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth(), bal, inc, withdrawal, contrib).subscribe();
+    }
+
+    this.income.set(null);
+    this.contribution.set(null);
+    this.withdrawal.set(null);
     this.savedBalance.set(true);
     setTimeout(() => this.savedBalance.set(false), 2000);
   }

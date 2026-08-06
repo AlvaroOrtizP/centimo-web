@@ -2,21 +2,29 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
-import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
+import { MONTH_OPTIONS, YEARS } from '../../../../core/constants/date.constants';
 import { CrowdlendingInvestment } from '../../../../models/crowdlending-investment';
 import { ProjectStatus } from '../../../../models/project-status';
 import { Account } from '../../../../models/account';
+import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
+import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
 
 @Component({
   selector: 'app-equito-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, SnapshotHistoryTableComponent],
   template: `
     <div class="space-y-4">
       <!-- Registrar inversión -->
       <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div class="flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-gray-900">Registrar inversión</h3>
+          <h3 class="text-sm font-semibold text-gray-900">{{ editingInvestment() ? 'Editar inversión' : 'Registrar inversión' }}</h3>
+          @if (editingInvestment()) {
+            <button
+              class="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+              (click)="cancelEditInvestment()"
+            >Cancelar edición</button>
+          }
         </div>
 
         <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -52,6 +60,14 @@ import { Account } from '../../../../models/account';
               [(ngModel)]="startDate"
             />
           </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Fecha de fin <span class="normal-case text-gray-400">(opcional)</span></label>
+            <input
+              type="date"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              [(ngModel)]="endDate"
+            />
+          </div>
         </div>
 
         @if (investedAmount() > 0 && interestRate() > 0) {
@@ -64,9 +80,15 @@ import { Account } from '../../../../models/account';
         <div class="mt-4 flex items-center gap-3">
           <button
             class="rounded-lg bg-orange-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-700 disabled:opacity-50"
-            [disabled]="!projectName || !investedAmount || !interestRate || !startDate"
+            [disabled]="!canSave()"
             (click)="saveInvestment()"
-          >Registrar inversión</button>
+          >{{ editingInvestment() ? 'Actualizar inversión' : 'Registrar inversión' }}</button>
+          @if (editingInvestment()) {
+            <button
+              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              (click)="cancelEditInvestment()"
+            >Cancelar</button>
+          }
           @if (savedInvestment()) {
             <span class="text-sm text-emerald-600">✓ Inversión registrada</span>
           }
@@ -87,6 +109,16 @@ import { Account } from '../../../../models/account';
                 <span class="text-gray-400">{{ inv.termMonths }}m</span>
                 <span class="text-gray-400">{{ inv.startDate }}</span>
                 <span class="ml-auto text-emerald-600 font-medium">+{{ inv.totalReturned.toLocaleString('es-ES') }} €</span>
+                <button
+                  class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-orange-50 hover:text-orange-500"
+                  (click)="onEditInvestment(inv)"
+                  title="Editar inversión"
+                  aria-label="Editar inversión"
+                >
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                  </svg>
+                </button>
                 <button
                   class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                   (click)="deleteInvestment(inv)"
@@ -134,16 +166,51 @@ import { Account } from '../../../../models/account';
           </div>
         }
 
-        <div>
-          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
-          <input
-            type="number"
-            step="any"
-            placeholder="ej: 2500"
-            class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-            [(ngModel)]="balance"
-          />
-          <p class="mt-0.5 text-xs text-gray-400">Valor total en Equito a 31 del mes</p>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 2500"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              [(ngModel)]="balance"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Valor total en Equito a 31 del mes</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses obtenidos este mes (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 15"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              [(ngModel)]="income"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Intereses o rendimientos obtenidos</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 100"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              [(ngModel)]="contribution"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Retirada este mes (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 50"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              [(ngModel)]="withdrawal"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
+          </div>
         </div>
 
         <div class="mt-4 flex items-center gap-3">
@@ -151,26 +218,24 @@ import { Account } from '../../../../models/account';
             class="rounded-lg bg-orange-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-700 disabled:opacity-50"
             [disabled]="!balance()"
             (click)="saveBalance()"
-          >Guardar balance</button>
+          >{{ editingSnapshot() ? 'Actualizar balance' : 'Guardar balance' }}</button>
+          @if (editingSnapshot()) {
+            <button
+              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              (click)="cancelEdit()"
+            >Cancelar</button>
+          }
           @if (savedBalance()) {
             <span class="text-sm text-emerald-600">✓ Guardado</span>
           }
         </div>
       </div>
 
-      @if (balanceHistory().length > 0) {
-        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p class="mb-3 text-xs font-medium uppercase tracking-wider text-gray-500">Historial de balances</p>
-          <div class="space-y-1">
-            @for (h of balanceHistory(); track h.id) {
-              <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
-                <span class="w-20 text-gray-500">{{ getMonthLabel(h.year, h.month) }}</span>
-                <span class="font-semibold text-gray-900">{{ h.balance.toLocaleString('es-ES') }} €</span>
-              </div>
-            }
-          </div>
-        </div>
-      }
+      <app-snapshot-history-table
+        [snapshots]="balanceHistory()"
+        (edit)="onEdit($event)"
+        (delete)="onDelete($event)"
+      />
     </div>
   `,
 })
@@ -183,14 +248,15 @@ export class EquitoFormComponent {
 
   protected readonly months = MONTH_OPTIONS;
   protected readonly years = YEARS;
-  protected readonly getMonthLabel = getMonthLabel;
 
   // --- Inversiones ---
   protected readonly projectName = signal('');
   protected readonly investedAmount = signal(0);
   protected readonly interestRate = signal(0);
   protected readonly startDate = signal('');
+  protected readonly endDate = signal('');
   protected readonly savedInvestment = signal(false);
+  protected readonly editingInvestment = signal<CrowdlendingInvestment | null>(null);
 
   protected readonly investments = computed(() =>
     this.service.getCrowdlendingByPlatform(this.PLATFORM_ID)
@@ -203,11 +269,22 @@ export class EquitoFormComponent {
     return Math.round((amount * rate / 100 / 12) * 100) / 100;
   });
 
+  protected readonly canSave = computed(() =>
+    this.projectName().trim().length > 0 &&
+    this.investedAmount() > 0 &&
+    this.interestRate() > 0 &&
+    this.startDate().trim().length > 0
+  );
+
   // --- Balance mensual ---
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = signal(this.service.currentYear());
   protected readonly balance = signal<number | null>(null);
+  protected readonly income = signal<number | null>(null);
+  protected readonly contribution = signal<number | null>(null);
+  protected readonly withdrawal = signal<number | null>(null);
   protected readonly savedBalance = signal(false);
+  protected readonly editingSnapshot = signal<MonthlySnapshot | null>(null);
 
   private readonly accountId = computed(() => {
     const accs = this.accounts();
@@ -242,32 +319,59 @@ export class EquitoFormComponent {
       const accId = this.accountId();
       if (!accId) { return; }
       const snap = this.service.getSnapshot(accId, this.localYear(), this.localMonth());
+      if (this.editingSnapshot()) { return; }
       this.balance.set(snap?.balance ?? null);
+      this.income.set(snap?.income ?? null);
+      this.contribution.set(snap?.contribution ?? null);
+      this.withdrawal.set(snap?.expenses && snap.expenses > 0 ? snap.expenses : null);
     }, { allowSignalWrites: true });
   }
 
   // --- Inversiones ---
+  protected onEditInvestment(inv: CrowdlendingInvestment): void {
+    this.editingInvestment.set(inv);
+    this.projectName.set(inv.projectName);
+    this.investedAmount.set(inv.investedAmount);
+    this.interestRate.set(inv.interestRate);
+    this.startDate.set(inv.startDate);
+    this.endDate.set(inv.endDate ?? '');
+  }
+
+  protected cancelEditInvestment(): void {
+    this.editingInvestment.set(null);
+    this.projectName.set('');
+    this.investedAmount.set(0);
+    this.interestRate.set(0);
+    this.startDate.set('');
+    this.endDate.set('');
+  }
+
   protected saveInvestment(): void {
     const amount = this.investedAmount();
     const rate = this.interestRate();
     const monthlyReturn = Math.round((amount * rate / 100 / 12) * 100) / 100;
 
-    this.service.addCrowdlendingInvestment({
-      id: `cl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    const editing = this.editingInvestment();
+    const payload: CrowdlendingInvestment = {
+      id: editing?.id ?? `cl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       platformId: this.PLATFORM_ID,
       projectName: this.projectName(),
       investedAmount: amount,
       interestRate: rate,
-      termMonths: 0,
+      termMonths: editing?.termMonths ?? 0,
       startDate: this.startDate(),
+      endDate: this.endDate() || undefined,
       monthlyReturn,
-      totalReturned: 0,
-      status: ProjectStatus.Active,
-    }).subscribe(() => {
-      this.projectName.set('');
-      this.investedAmount.set(0);
-      this.interestRate.set(0);
-      this.startDate.set('');
+      totalReturned: editing?.totalReturned ?? 0,
+      status: editing?.status ?? ProjectStatus.Active,
+    };
+
+    const request = editing
+      ? this.service.updateCrowdlendingInvestment(editing.id, payload)
+      : this.service.addCrowdlendingInvestment(payload);
+
+    request.subscribe(() => {
+      this.cancelEditInvestment();
       this.savedInvestment.set(true);
       setTimeout(() => this.savedInvestment.set(false), 2000);
     });
@@ -278,6 +382,30 @@ export class EquitoFormComponent {
   }
 
   // --- Balance mensual ---
+  protected onEdit(snap: MonthlySnapshot): void {
+    this.localMonth.set(snap.month);
+    this.localYear.set(snap.year);
+    this.balance.set(snap.balance);
+    this.income.set(snap.income ?? null);
+    this.contribution.set(snap.contribution ?? null);
+    this.withdrawal.set(snap.expenses && snap.expenses > 0 ? snap.expenses : null);
+    this.editingSnapshot.set(snap);
+  }
+
+  protected cancelEdit(): void {
+    this.editingSnapshot.set(null);
+    this.income.set(null);
+    this.contribution.set(null);
+    this.withdrawal.set(null);
+  }
+
+  protected onDelete(id: string): void {
+    this.service.deleteSnapshot(id);
+    if (this.editingSnapshot()?.id === id) {
+      this.cancelEdit();
+    }
+  }
+
   protected saveBalance(): void {
     const bal = this.balance();
     if (bal === null) { return; }
@@ -285,8 +413,26 @@ export class EquitoFormComponent {
     const accId = this.accountId();
     if (!accId) { return; }
 
-    this.service.upsertSnapshot(accId, this.localYear(), this.localMonth(), bal, 0).subscribe();
+    const inc = this.income() ?? 0;
+    const contrib = this.contribution() ?? 0;
+    const withdrawal = this.withdrawal() ?? 0;
 
+    const editing = this.editingSnapshot();
+    if (editing) {
+      this.service.updateSnapshot(editing.id, {
+        balance: bal,
+        income: inc,
+        contribution: contrib,
+        expenses: withdrawal,
+      });
+      this.cancelEdit();
+    } else {
+      this.service.upsertSnapshot(accId, this.localYear(), this.localMonth(), bal, inc, withdrawal, contrib).subscribe();
+    }
+
+    this.income.set(null);
+    this.contribution.set(null);
+    this.withdrawal.set(null);
     this.savedBalance.set(true);
     setTimeout(() => this.savedBalance.set(false), 2000);
   }

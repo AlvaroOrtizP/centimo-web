@@ -720,12 +720,28 @@ paths:
       tags: [Expenses]
       operationId: listExpenses
       summary: Listar gastos
+      description: |
+        Lista gastos por instantánea (parámetro `snapshotId`) o por periodo
+        (parámetros `year` y `month`). Si se indica `snapshotId` se filtran por
+        esa instantánea; en caso contrario se requieren `year` y `month`.
       parameters:
         - name: snapshotId
           in: query
-          required: true
+          required: false
           schema:
             type: string
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+        - name: month
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
       responses:
         '200':
           description: Lista de gastos
@@ -1075,6 +1091,27 @@ paths:
   /crowdlending/{id}:
     parameters:
       - $ref: '#/components/parameters/CrowdlendingId'
+    put:
+      tags: [Crowdlending]
+      operationId: updateCrowdlending
+      summary: Actualizar inversión crowdlending
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrowdlendingInvestmentCreate'
+      responses:
+        '200':
+          description: Actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrowdlendingInvestment'
+        '400':
+          description: Error generico 400
+        '404':
+          $ref: '#/components/responses/NotFound'
     delete:
       tags: [Crowdlending]
       operationId: deleteCrowdlending
@@ -1434,7 +1471,7 @@ components:
 
     ExpenseCategory:
       type: string
-      enum: [aseo, coche, comida, discord, ejercicio, hacienda, medicamento, ocio, otros, trabajo]
+      enum: [Aseo, Coche, Comida, Discord, Ejercicio, Hacienda, Medicamento, Ocio, Otros, Trabajo]
 
     AllocationType:
       type: string

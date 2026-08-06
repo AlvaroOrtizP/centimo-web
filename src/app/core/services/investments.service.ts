@@ -86,6 +86,29 @@ export class InvestmentsDataService {
     );
   }
 
+  updateCrowdlendingInvestment(id: string, investment: CrowdlendingInvestment): Observable<CrowdlendingInvestment> {
+    const create: CrowdlendingInvestmentCreate = {
+      platformId: investment.platformId,
+      projectName: investment.projectName,
+      investedAmount: investment.investedAmount,
+      interestRate: investment.interestRate,
+      termMonths: investment.termMonths,
+      startDate: investment.startDate,
+      endDate: investment.endDate ?? null,
+      monthlyReturn: investment.monthlyReturn,
+      totalReturned: investment.totalReturned,
+      status: investment.status,
+    };
+
+    return this.crowdlendingApi.updateCrowdlending(id, create).pipe(
+      map(updated => {
+        const item = this.mapFromApi(updated);
+        this.crowdlending.update(arr => arr.map(c => c.id === item.id ? item : c));
+        return item;
+      }),
+    );
+  }
+
   addHolding(holding: InvestmentHolding): void {
     this.holdings.update(arr => [...arr, holding]);
   }

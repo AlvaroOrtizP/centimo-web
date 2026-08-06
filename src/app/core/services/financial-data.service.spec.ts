@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { FinancialDataService } from './financial-data.service';
 import { MonthlySnapshot } from '../../models/monthly-snapshot';
@@ -6,13 +6,18 @@ import { InvestmentHolding } from '../../models/investment-holding';
 import { Expense } from '../../models/expense';
 import { IncomeSource } from '../../models/income-source';
 import { InvestmentTransaction } from '../../models/investment-transaction';
+import { provideApiMocks } from '../testing/api-mocks';
+import { configureSeedSpies, applyFinancialSeed } from '../testing/test-seed';
 
 describe('FinancialDataService', () => {
   let service: FinancialDataService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(FinancialDataService);
+    TestBed.configureTestingModule({
+      providers: provideApiMocks(),
+    });
+    configureSeedSpies();
+    service = applyFinancialSeed();
   });
 
   it('should be created', () => {
@@ -68,8 +73,8 @@ describe('FinancialDataService', () => {
       const summary = service.getMonthlySummary(2026, 6);
       expect(summary.year).toBe(2026);
       expect(summary.month).toBe(6);
-      expect(summary.totalBalance).toBeGreaterThanOrEqual(0);
-      expect(summary.totalIncome).toBeGreaterThanOrEqual(0);
+      expect(summary.totalBalance).toBe(30800);
+      expect(summary.totalExpenses).toBe(890);
       expect(summary.netSavings).toBe(summary.totalIncome - summary.totalExpenses);
     });
   });
@@ -90,7 +95,7 @@ describe('FinancialDataService', () => {
   });
 
   describe('mutation methods', () => {
-    it('addSnapshot should add a new snapshot', () => {
+    it('addSnapshot should add a new snapshot', fakeAsync(() => {
       const newSnapshot: MonthlySnapshot = {
         id: 'test-acc-2026-07',
         accountId: 'bbva-checking',
@@ -101,10 +106,11 @@ describe('FinancialDataService', () => {
         expenses: 1000,
       };
       service.addSnapshot(newSnapshot);
+      tick();
       const found = service.getSnapshot('bbva-checking', 2026, 7);
       expect(found).toBeDefined();
       expect(found!.balance).toBe(3000);
-    });
+    }));
 
     it('updateSnapshot should modify existing snapshot', () => {
       const existing = service.getSnapshot('bbva-checking', 2026, 6);
@@ -119,7 +125,7 @@ describe('FinancialDataService', () => {
         id: 'hold-test',
         snapshotId: 'bbva-checking-2026-01',
         assetName: 'Test Asset',
-        assetType: 'stock' as any,
+        assetType: 'stock' as never,
         quantity: 10,
         valuePerUnit: 100,
         totalValue: 1000,
@@ -129,20 +135,22 @@ describe('FinancialDataService', () => {
       expect(holdings.some(h => h.id === 'hold-test')).toBeTrue();
     });
 
-    it('addExpense should add an expense', () => {
+    it('addExpense should add an expense', fakeAsync(() => {
       const expense: Expense = {
         id: 'exp-test',
         snapshotId: 'bbva-checking-2026-01',
-        category: 'Comida' as any,
+        category: 'Comida' as never,
         amount: 50,
         date: '2026-01-15',
       };
-      service.addExpense(expense);
+      service.addExpense(expense).subscribe();
+      tick();
       const expenses = service.getExpensesBySnapshot('bbva-checking-2026-01');
-      expect(expenses.some(e => e.id === 'exp-test')).toBeTrue();
-    });
+      expect(expenses.length).toBe(1);
+      expect(expenses[0].amount).toBe(50);
+    }));
 
-    it('addIncome should add an income', () => {
+    it('addIncome should add an income', fakeAsync(() => {
       const income: IncomeSource = {
         id: 'inc-test',
         snapshotId: 'bbva-checking-2026-01',
@@ -151,22 +159,24 @@ describe('FinancialDataService', () => {
         amount: 100,
       };
       service.addIncome(income);
+      tick();
       const incomes = service.getIncomesBySnapshot('bbva-checking-2026-01');
-      expect(incomes.some(i => i.id === 'inc-test')).toBeTrue();
-    });
+      expect(incomes.length).toBe(1);
+      expect(incomes[0].amount).toBe(100);
+    }));
 
     it('addTrade should add a trade', () => {
       const trade: InvestmentTransaction = {
         id: 'trade-test',
         accountId: 'bitvavo-main',
         assetName: 'TestCoin',
-        assetType: 'crypto' as any,
-        type: 'buy' as any,
+        assetType: 'crypto' as never,
+        type: 'buy' as never,
         buyDate: '2026-07-01',
         buyQuantity: 1,
         buyPricePerUnit: 100,
         buyTotalCost: 100,
-        status: 'open' as any,
+        status: 'open' as never,
       };
       service.addTrade(trade);
       const trades = service.getTradesByAccount('bitvavo-main');

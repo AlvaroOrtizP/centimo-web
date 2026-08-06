@@ -1,11 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
+import { provideApiMocks } from '../../core/testing/api-mocks';
 import { TradeLogComponent } from './trade-log.component';
 
 describe('TradeLogComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [TradeLogComponent],
+      providers: provideApiMocks(),
     }).compileComponents();
   });
 

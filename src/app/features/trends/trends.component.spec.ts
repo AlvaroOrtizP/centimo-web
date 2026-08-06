@@ -1,11 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 
+import { provideApiMocks } from '../../core/testing/api-mocks';
 import { TrendsComponent } from './trends.component';
 
 describe('TrendsComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [TrendsComponent],
+      providers: provideApiMocks(),
     }).compileComponents();
   });
 

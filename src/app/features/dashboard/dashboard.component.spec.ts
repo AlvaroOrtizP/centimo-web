@@ -1,9 +1,11 @@
-import { TestBed } from '@angular/core/testing';
+import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { DashboardComponent } from './dashboard.component';
 import { FinancialDataService } from '../../core/services/financial-data.service';
 import { ExpenseCategory } from '../../models/expense-category';
+import { provideApiMocks } from '../../core/testing/api-mocks';
+import { configureSeedSpies, applyFinancialSeed } from '../../core/testing/test-seed';
 
 describe('DashboardComponent', () => {
   let service: FinancialDataService;
@@ -11,9 +13,10 @@ describe('DashboardComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DashboardComponent],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), ...provideApiMocks()],
     }).compileComponents();
-    service = TestBed.inject(FinancialDataService);
+    configureSeedSpies();
+    service = applyFinancialSeed();
   });
 
   it('should create', () => {
@@ -191,7 +194,7 @@ describe('DashboardComponent', () => {
   // FASE 4 + 5 — Datos julio 2026 y verificar dashboard
   // ──────────────────────────────────────────────────────────
   describe('Fase 4+5 — Datos julio 2026 y verificar dashboard', () => {
-    it('should add data for July and verify dashboard reflects changes', () => {
+    it('should add data for July and verify dashboard reflects changes', fakeAsync(() => {
       // ── FASE 4: añadir fondos + balances para julio ──
       service.addMyInvestorFund({
         id: 'mif-phase2-001',
@@ -235,6 +238,7 @@ describe('DashboardComponent', () => {
         { id: 'gastos-main-2026-07', accountId: 'gastos-main', year: 2026, month: 7, balance: 0, income: 0, expenses: 800 },
       ];
       julySnapshots.forEach(s => service.addSnapshot(s));
+      tick();
 
       expect(service.getSnapshotsByMonth(2026, 7).length).toBe(15);
 
@@ -246,7 +250,7 @@ describe('DashboardComponent', () => {
         amount: 450,
         date: '2026-07-10',
         description: 'Supermercado y restaurantes julio',
-      });
+      }).subscribe();
       service.addExpense({
         id: 'exp-coche-jul-001',
         snapshotId: 'gastos-main-2026-07',
@@ -254,9 +258,14 @@ describe('DashboardComponent', () => {
         amount: 350,
         date: '2026-07-20',
         description: 'Gasolina y mantenimiento julio',
-      });
+      }).subscribe();
+      tick();
 
       expect(service.getExpensesBySnapshot('gastos-main-2026-07').length).toBe(2);
+
+      // El efecto solo auto-ajusta una vez: fijar el mes visible a julio
+      service.currentYear.set(2026);
+      service.currentMonth.set(7);
 
       // ── FASE 5: verificar dashboard para julio ──
       const fixture = TestBed.createComponent(DashboardComponent);
@@ -296,7 +305,7 @@ describe('DashboardComponent', () => {
       expect(summary.totalExpenses).toBe(800);
       expect(summary.balanceWithoutExpenses).toBe(46000);
       expect(summary.netSavings).toBe(-600);
-    });
+    }));
   });
 });
 

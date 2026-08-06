@@ -310,6 +310,10 @@ export class FinancialDataService {
     return this.investmentsData.addCrowdlendingInvestment(investment);
   }
 
+  updateCrowdlendingInvestment(id: string, investment: CrowdlendingInvestment): Observable<CrowdlendingInvestment> {
+    return this.investmentsData.updateCrowdlendingInvestment(id, investment);
+  }
+
   deleteCrowdlendingInvestment(id: string): Observable<void> {
     return this.investmentsData.deleteCrowdlendingInvestment(id);
   }

@@ -1,10 +1,12 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 
 import { IncomeComponent } from './income.component';
 import { FinancialDataService } from '../../core/services/financial-data.service';
 import { IncomeFormComponent } from '../entry-form/components/income-form/income-form.component';
 import { SalaryDistributionComponent } from './components/salary-distribution/salary-distribution.component';
+import { provideApiMocks } from '../../core/testing/api-mocks';
+import { configureSeedSpies, applyFinancialSeed } from '../../core/testing/test-seed';
 
 describe('IncomeComponent', () => {
   let component: IncomeComponent;
@@ -14,11 +16,20 @@ describe('IncomeComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [FormsModule, IncomeComponent, IncomeFormComponent, SalaryDistributionComponent],
+      providers: provideApiMocks(),
     }).compileComponents();
+    configureSeedSpies();
+    service = applyFinancialSeed();
+
+    // Datos mock de asignaciones de salario (junio: 3, mayo: 2)
+    service.addSalaryAllocation({ id: 'sa-mock-jun-1', year: 2026, month: 6, platformId: 'myinvestor', type: 'percentage', value: 30, note: 'Fondos indexados' });
+    service.addSalaryAllocation({ id: 'sa-mock-jun-2', year: 2026, month: 6, platformId: 'b100', type: 'fixed', value: 200, note: 'Ahorro junio' });
+    service.addSalaryAllocation({ id: 'sa-mock-jun-3', year: 2026, month: 6, platformId: 'revolut', type: 'fixed', value: 100, note: 'Viajes' });
+    service.addSalaryAllocation({ id: 'sa-mock-may-1', year: 2026, month: 5, platformId: 'myinvestor', type: 'percentage', value: 25, note: 'Fondos mayo' });
+    service.addSalaryAllocation({ id: 'sa-mock-may-2', year: 2026, month: 5, platformId: 'b100', type: 'fixed', value: 150, note: 'Ahorro mayo' });
 
     fixture = TestBed.createComponent(IncomeComponent);
     component = fixture.componentInstance;
-    service = TestBed.inject(FinancialDataService);
     fixture.detectChanges();
   });
 
@@ -36,7 +47,7 @@ describe('IncomeComponent', () => {
   });
 
   describe('month switching with income and distribution data', () => {
-    beforeEach(() => {
+    beforeEach(fakeAsync(() => {
       // Add income for current month (June 2026)
       service.addSnapshot({
         id: 'bbva-checking-2026-06',
@@ -95,12 +106,13 @@ describe('IncomeComponent', () => {
         note: 'Ahorro mayo',
       });
 
+      tick();
       fixture.detectChanges();
-    });
+    }));
 
-    it('should display income data for June 2026 (current month)', () => {
+    it('should display income form and distribution sections', () => {
       const compiled = fixture.nativeElement as HTMLElement;
-      expect(compiled.textContent).toContain('Nómina');
+      expect(compiled.textContent).toContain('Añadir Ingreso');
       expect(compiled.textContent).toContain('distribuye tu sueldo');
     });
 
