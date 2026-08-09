@@ -84,7 +84,7 @@ describe('DashboardComponent', () => {
       setDashboardMonth(fixture.componentInstance, 2026, 6);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
-      const platformBalances = el.querySelectorAll('.text-right .text-sm.font-semibold');
+      const platformBalances = el.querySelectorAll('.text-right .font-semibold');
       const values = Array.from(platformBalances).map(c => c.textContent?.trim());
       expect(values).toContain('8900 €');
     });
@@ -118,7 +118,7 @@ describe('DashboardComponent', () => {
       setDashboardMonth(fixture.componentInstance, 2026, 6);
       fixture.detectChanges();
       const el = fixture.nativeElement as HTMLElement;
-      const cards = el.querySelectorAll('.text-2xl');
+      const cards = el.querySelectorAll('.text-lg.font-bold');
       const values = Array.from(cards).map(c => c.textContent?.trim());
       expect(values).toContain('30.800 €');
       expect(values).toContain('150 €');
@@ -175,7 +175,7 @@ describe('DashboardComponent', () => {
       const el = fixture.nativeElement as HTMLElement;
 
       // MyInvestor: fondos 7700 + metal 1200 + nuevo 4200 = 13100
-      const platformBalances = el.querySelectorAll('.text-right .text-sm.font-semibold');
+      const platformBalances = el.querySelectorAll('.text-right .font-semibold');
       const values = Array.from(platformBalances).map(c => c.textContent?.trim());
       expect(values).toContain('13.100 €');
 
@@ -274,7 +274,7 @@ describe('DashboardComponent', () => {
       const el = fixture.nativeElement as HTMLElement;
 
       // Resumen: totalBalance 46000, income 200, expenses 800, netSavings -600
-      const cards = el.querySelectorAll('.text-2xl');
+      const cards = el.querySelectorAll('.text-lg.font-bold');
       const cardValues = Array.from(cards).map(c => c.textContent?.trim());
       expect(cardValues).toContain('46.000 €');
       expect(cardValues).toContain('200 €');
@@ -282,7 +282,7 @@ describe('DashboardComponent', () => {
       expect(cardValues).toContain('-600 €');
 
       // MyInvestor: fondos 20000 + metal 1500 = 21500
-      const platformBalances = el.querySelectorAll('.text-right .text-sm.font-semibold');
+      const platformBalances = el.querySelectorAll('.text-right .font-semibold');
       const balanceValues = Array.from(platformBalances).map(c => c.textContent?.trim());
       expect(balanceValues).toContain('21.500 €');
 

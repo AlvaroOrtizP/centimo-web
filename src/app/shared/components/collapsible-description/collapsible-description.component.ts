@@ -5,11 +5,15 @@ import { Component, input, signal, effect, OnInit } from '@angular/core';
   standalone: true,
   template: `
     <div class="rounded-xl border border-gray-200/80 bg-gray-50/60 px-4 py-3">
-      <div class="flex items-center justify-between">
-        <p class="text-sm text-gray-600">{{ description() }}</p>
+      <div class="flex items-center justify-between gap-3">
+        @if (!collapsed()) {
+          <p class="text-sm text-gray-600">{{ description() }}</p>
+        } @else {
+          <span aria-hidden="true"></span>
+        }
         <button
           (click)="toggle()"
-          class="ml-3 flex-shrink-0 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-200/60 hover:text-gray-600"
+          class="flex-shrink-0 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-200/60 hover:text-gray-600"
           [attr.aria-label]="collapsed() ? 'Mostrar descripción' : 'Ocultar descripción'"
         >
           @if (collapsed()) {

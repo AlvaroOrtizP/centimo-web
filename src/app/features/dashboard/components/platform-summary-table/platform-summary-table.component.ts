@@ -21,9 +21,9 @@ interface PlatformRow {
   imports: [FormsModule],
   template: `
     <div class="rounded-xl border border-gray-200/80 bg-white shadow-lg transition-shadow duration-200 hover:shadow-xl">
-      <div class="border-b border-gray-100 px-5 py-4">
+      <div class="border-b border-gray-100 px-4 py-3 lg:px-5 lg:py-4">
         <div class="flex items-center justify-between">
-          <h2 class="text-base font-semibold text-gray-900">Plataformas</h2>
+          <h2 class="text-sm font-semibold text-gray-900 sm:text-base">Plataformas</h2>
           <div class="flex items-center gap-3">
             <select
               aria-label="Filtrar plataformas"
@@ -42,38 +42,38 @@ interface PlatformRow {
       <div class="divide-y divide-gray-100">
         @for (row of filteredRows(); track row.platform.id) {
           <div
-            class="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-gray-50/80"
+            class="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50/80 lg:gap-4 lg:px-5 lg:py-3.5"
             [class.cursor-pointer]="row.platform.id !== EXPENSES_PLATFORM_ID"
             [class.ring-2]="selectedPlatformId() === row.platform.id"
             [class.ring-gray-300]="selectedPlatformId() === row.platform.id"
             (click)="row.platform.id !== EXPENSES_PLATFORM_ID && platformClick.emit(row.platform.id)"
           >
-            <span class="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-110" [style.background-color]="row.platform.color + '15'">
+            <span class="relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg transition-transform group-hover:scale-110 lg:h-8 lg:w-8" [style.background-color]="row.platform.color + '15'">
               <span class="h-2.5 w-2.5 rounded-full" [style.background-color]="row.platform.color"></span>
             </span>
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-gray-900">{{ row.platform.name }}</p>
-              <div class="mt-1 h-1.5 w-full max-w-[120px] overflow-hidden rounded-full bg-gray-100">
+              <p class="text-[13px] font-medium text-gray-900 sm:text-sm">{{ row.platform.name }}</p>
+              <div class="mt-1 h-1.5 w-full max-w-[80px] overflow-hidden rounded-full bg-gray-100 sm:max-w-[120px]">
                 <div class="h-full rounded-full transition-all duration-500" [style.width.%]="row.pct" [style.background-color]="row.platform.color"></div>
               </div>
             </div>
             <div class="text-right">
-              <p class="text-sm font-semibold text-gray-900">{{ row.balance.toLocaleString('es-ES') }} €</p>
-              <div class="mt-0.5 flex gap-2 text-xs">
+              <p class="text-[13px] font-semibold text-gray-900 sm:text-sm">{{ row.balance.toLocaleString('es-ES') }} €</p>
+              <div class="mt-0.5 flex gap-2 text-[11px] sm:text-xs">
                 <span class="text-green-600">{{ row.income > 0 ? '+' + row.income.toLocaleString('es-ES') : '-' }}</span>
               </div>
             </div>
           </div>
         }
-        <div class="flex items-center gap-4 px-5 py-3.5">
-          <span class="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-red-50">
+        <div class="flex items-center gap-3 px-4 py-3 lg:gap-4 lg:px-5 lg:py-3.5">
+          <span class="relative flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-red-50 lg:h-8 lg:w-8">
             <span class="h-2.5 w-2.5 rounded-full bg-red-500"></span>
           </span>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-gray-900">Gastos</p>
+            <p class="text-[13px] font-medium text-gray-900 sm:text-sm">Gastos</p>
           </div>
           <div class="text-right">
-            <p class="text-sm font-semibold text-red-600">{{ totalExpenses().toLocaleString('es-ES') }} €</p>
+            <p class="text-[13px] font-semibold text-red-600 sm:text-sm">{{ totalExpenses().toLocaleString('es-ES') }} €</p>
           </div>
         </div>
       </div>

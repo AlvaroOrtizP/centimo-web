@@ -1,9 +1,24 @@
 <div class="flex h-screen bg-gray-50">
-  <app-sidebar />
+  @if (sidebarOpen()) {
+    <div
+      class="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
+      (click)="closeSidebar()"
+    ></div>
+  }
 
-  <main class="flex-1 overflow-y-auto">
-    <div class="mx-auto max-w-6xl px-6 py-8">
-      <router-outlet />
+  <aside
+    class="fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 lg:static lg:z-auto lg:w-auto lg:transform-none"
+    [class.-translate-x-full]="!sidebarOpen()"
+  >
+    <app-sidebar (navigate)="closeSidebar()" (close)="closeSidebar()" />
+  </aside>
+
+  <main class="flex min-w-0 flex-1 flex-col">
+    <app-header (menuClick)="toggleSidebar()" />
+    <div class="flex-1 overflow-y-auto">
+      <div class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
+        <router-outlet />
+      </div>
     </div>
   </main>
 </div>

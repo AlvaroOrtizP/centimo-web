@@ -19,9 +19,9 @@ import { CollapsibleDescriptionComponent } from '../../shared/components/collaps
 
       <!-- Tabs -->
       <div class="border-b border-gray-200">
-        <nav aria-label="Navegación de ingresos" class="-mb-px flex gap-6">
+        <nav aria-label="Navegación de ingresos" class="-mb-px flex gap-4 overflow-x-auto sm:gap-6">
           <button
-            class="border-b-2 px-1 py-2 text-sm font-medium transition-colors"
+            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium transition-colors"
             [class.border-green-600]="activeTab() === 'income'"
             [class.text-green-600]="activeTab() === 'income'"
             [class.border-transparent]="activeTab() !== 'income'"
@@ -31,7 +31,7 @@ import { CollapsibleDescriptionComponent } from '../../shared/components/collaps
             (click)="activeTab.set('income')"
           >Distribución Mensual</button>
           <button
-            class="border-b-2 px-1 py-2 text-sm font-medium transition-colors"
+            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium transition-colors"
             [class.border-green-600]="activeTab() === 'config'"
             [class.text-green-600]="activeTab() === 'config'"
             [class.border-transparent]="activeTab() !== 'config'"
@@ -41,7 +41,7 @@ import { CollapsibleDescriptionComponent } from '../../shared/components/collaps
             (click)="activeTab.set('config')"
           >Planificación</button>
           <button
-            class="border-b-2 px-1 py-2 text-sm font-medium transition-colors"
+            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium transition-colors"
             [class.border-green-600]="activeTab() === 'commitments'"
             [class.text-green-600]="activeTab() === 'commitments'"
             [class.border-transparent]="activeTab() !== 'commitments'"

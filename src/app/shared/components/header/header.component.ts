@@ -20,7 +20,9 @@ import { MonthPickerComponent } from '../month-picker/month-picker.component';
         </button>
         <div class="flex items-center gap-3">
           <div class="hidden h-6 w-0.5 bg-gray-200 lg:block"></div>
-          <h1 class="text-lg font-semibold text-gray-900">Centimo - Control Financiero</h1>
+          <h1 class="text-lg font-semibold text-gray-900">
+            Centimo<span class="hidden lg:inline"> - Control Financiero</span>
+          </h1>
         </div>
       </div>
       <div class="flex items-center gap-3">
