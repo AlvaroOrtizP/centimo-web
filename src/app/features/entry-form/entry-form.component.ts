@@ -45,10 +45,10 @@ interface TabConfig {
 
       <div class="overflow-hidden rounded-xl border border-gray-200/80 bg-white shadow-sm">
         <div class="bg-gray-50/60 px-4 pt-3">
-          <div class="flex gap-1">
+          <div class="flex gap-1 overflow-x-auto">
             @for (tab of tabs; track tab.key) {
               <button
-                class="relative flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all duration-200"
+                class="relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all duration-200"
                 [style.background-color]="activeTab() === tab.key ? tab.color : 'transparent'"
                 [class.text-white]="activeTab() === tab.key"
                 [class.text-gray-500]="activeTab() !== tab.key"
@@ -93,31 +93,45 @@ interface TabConfig {
         <div class="p-5">
           @switch (activeTab()) {
             @case ('banks') {
-              <app-collapsible-description description="Actualiza el saldo y los ingresos de las cuentas bancarias (BBVA, CaixaBank) para el mes seleccionado. Estos datos alimentan el resumen del Dashboard." storageKey="desc-entry-banks" />
+              <div class="mb-3">
+                <app-collapsible-description description="Actualiza el saldo y los ingresos de las cuentas bancarias (BBVA, CaixaBank) para el mes seleccionado. Estos datos alimentan el resumen del Dashboard." storageKey="desc-entry-banks" />
+              </div>
               <app-banks-form [accounts]="allAccounts()" />
             }
             @case ('revolut') {
-              <app-collapsible-description description="Registra el saldo de tus cuentas Revolut (principal, ahorro, metal) y los ingresos generados este mes." storageKey="desc-entry-revolut" />
+              <div class="mb-3">
+                <app-collapsible-description description="Registra el saldo de tus cuentas Revolut (principal, ahorro, metal) y los ingresos generados este mes." storageKey="desc-entry-revolut" />
+              </div>
               <app-revolut-form [accounts]="allAccounts()" />
             }
             @case ('b100') {
-              <app-collapsible-description description="Actualiza saldos e intereses de tus cuentas B100 (corriente, ahorro, inversión). Los intereses se suman automáticamente al balance." storageKey="desc-entry-b100" />
+              <div class="mb-3">
+                <app-collapsible-description description="Actualiza saldos e intereses de tus cuentas B100 (corriente, ahorro, inversión). Los intereses se suman automáticamente al balance." storageKey="desc-entry-b100" />
+              </div>
               <app-b100-form [accounts]="allAccounts()" />
             }
             @case ('myinvestor') {
-              <app-collapsible-description description="Registra saldos de cuentas MyInvestor y actualiza el valor de tus fondos indexados. Los balances de fondos se muestran en el gráfico de evolución." storageKey="desc-entry-myinvestor" />
+              <div class="mb-3">
+                <app-collapsible-description description="Registra saldos de cuentas MyInvestor y actualiza el valor de tus fondos indexados. Los balances de fondos se muestran en el gráfico de evolución." storageKey="desc-entry-myinvestor" />
+              </div>
               <app-myinvestor-form [accounts]="allAccounts()" />
             }
             @case ('mintos') {
-              <app-collapsible-description description="Registra el saldo y los intereses devengados en Mintos este mes. Los datos se reflejan en el resumen de inversiones fijas." storageKey="desc-entry-mintos" />
+              <div class="mb-3">
+                <app-collapsible-description description="Registra el saldo y los intereses devengados en Mintos este mes. Los datos se reflejan en el resumen de inversiones fijas." storageKey="desc-entry-mintos" />
+              </div>
               <app-mintos-form [accounts]="allAccounts()" />
             }
             @case ('equito') {
-              <app-collapsible-description description="Registra el saldo e intereses de tus préstamos en Equito. Los intereses se suman al balance de la plataforma." storageKey="desc-entry-equito" />
+              <div class="mb-3">
+                <app-collapsible-description description="Registra el saldo e intereses de tus préstamos en Equito. Los intereses se suman al balance de la plataforma." storageKey="desc-entry-equito" />
+              </div>
               <app-equito-form [accounts]="allAccounts()" />
             }
             @case ('urbanitae') {
-              <app-collapsible-description description="Registra el saldo e intereses de tus inversiones en Urbanitae (crowdlending inmobiliario). Los datos se reflejan en el resumen de inversiones fijas." storageKey="desc-entry-urbanitae" />
+              <div class="mb-3">
+                <app-collapsible-description description="Registra el saldo e intereses de tus inversiones en Urbanitae (crowdlending inmobiliario). Los datos se reflejan en el resumen de inversiones fijas." storageKey="desc-entry-urbanitae" />
+              </div>
               <app-urbanitae-form />
             }
           }
