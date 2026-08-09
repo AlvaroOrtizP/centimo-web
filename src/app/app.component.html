@@ -22,3 +22,14 @@
     </div>
   </main>
 </div>
+
+@if (updateAvailable()) {
+  <div class="fixed inset-x-0 bottom-4 z-[60] mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 shadow-lg">
+    <p class="text-sm text-blue-800">Nueva versión disponible</p>
+    <button
+      type="button"
+      (click)="applyUpdate()"
+      class="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+    >Actualizar</button>
+  </div>
+}
