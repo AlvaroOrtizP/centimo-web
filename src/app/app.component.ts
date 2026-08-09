@@ -1,5 +1,6 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { SwUpdate } from '@angular/service-worker';
 
 import { HeaderComponent } from './shared/components/header/header.component';
 import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
@@ -11,10 +12,24 @@ import { SidebarComponent } from './shared/components/sidebar/sidebar.component'
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'centimo';
 
+  private readonly swUpdate = inject(SwUpdate);
+
   protected readonly sidebarOpen = signal(false);
+  protected readonly updateAvailable = signal(false);
+
+  ngOnInit(): void {
+    if (!this.swUpdate.isEnabled) { return; }
+
+    this.swUpdate.versionUpdates.subscribe((event) => {
+      if (event.type === 'VERSION_READY') {
+        this.updateAvailable.set(true);
+      }
+    });
+    this.swUpdate.checkForUpdate();
+  }
 
   protected toggleSidebar(): void {
     this.sidebarOpen.update((open) => !open);
@@ -22,5 +37,10 @@ export class AppComponent {
 
   protected closeSidebar(): void {
     this.sidebarOpen.set(false);
+  }
+
+  protected async applyUpdate(): Promise<void> {
+    await this.swUpdate.activateUpdate();
+    location.reload();
   }
 }
