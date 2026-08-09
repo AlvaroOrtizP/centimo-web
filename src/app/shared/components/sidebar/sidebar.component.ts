@@ -19,6 +19,15 @@ interface NavItem {
           C
         </div>
         <span class="text-lg font-bold tracking-tight text-gray-900">Centimo</span>
+        <button
+          aria-label="Cerrar menú"
+          class="ml-auto flex h-9 w-9 items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-100 lg:hidden"
+          (click)="close.emit()"
+        >
+          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M6 18L18 6" />
+          </svg>
+        </button>
       </div>
 
       <nav aria-label="Menú principal" class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
@@ -52,6 +61,7 @@ interface NavItem {
 export class SidebarComponent {
   readonly compact = input(false);
   readonly navigate = output<void>();
+  readonly close = output<void>();
 
   protected readonly navItems: NavItem[] = [
     {
@@ -83,6 +93,8 @@ export class SidebarComponent {
       path: '/entry/bbva',
       label: 'Entrada Datos',
       icon: `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
+      // TODO: eliminar la línea verde (done) una vez entregado
+      done: true,
     },
     {
       path: '/expenses',

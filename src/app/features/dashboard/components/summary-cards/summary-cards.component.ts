@@ -13,28 +13,28 @@ interface CardConfig {
   selector: 'app-summary-cards',
   standalone: true,
   template: `
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
       @for (card of cards; track card.label) {
-        <div class="group relative overflow-hidden rounded-xl border border-gray-200/80 bg-white p-5 shadow-lg transition-all duration-200 hover:shadow-xl">
+        <div class="group relative overflow-hidden rounded-xl border border-gray-200/80 bg-white p-4 shadow-lg transition-all duration-200 hover:shadow-xl lg:p-5">
           <div class="absolute right-0 top-0 h-24 w-24 translate-x-6 -translate-y-6 rounded-full opacity-10 transition-all duration-300 group-hover:opacity-20" [style.background]="card.gradient"></div>
           <div class="flex items-start justify-between">
             <div>
-              <p class="text-xs font-medium uppercase tracking-wider text-gray-500">{{ card.label }}</p>
-              <p class="mt-1.5 text-2xl font-bold tracking-tight text-gray-900">{{ card.value }}</p>
+              <p class="text-[11px] font-medium uppercase tracking-wider text-gray-500 sm:text-xs">{{ card.label }}</p>
+              <p class="mt-1 text-lg font-bold tracking-tight text-gray-900 sm:mt-1.5 sm:text-xl lg:text-2xl">{{ card.value }}</p>
             </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg" [style.background]="card.accent + '15'">
+            <div class="flex h-9 w-9 items-center justify-center rounded-lg lg:h-10 lg:w-10" [style.background]="card.accent + '15'">
               <span [innerHTML]="card.icon" [style.color]="card.accent"></span>
             </div>
           </div>
           @if (card.change !== null) {
-            <div class="mt-3 flex items-center gap-1">
-              <span [class.text-green-600]="card.change >= 0" [class.text-red-600]="card.change < 0" class="flex items-center text-sm font-medium">
+            <div class="mt-2 flex items-center gap-1 sm:mt-3">
+              <span [class.text-green-600]="card.change >= 0" [class.text-red-600]="card.change < 0" class="flex items-center text-xs font-medium">
                 <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mr-0.5">
                   <polyline [attr.points]="card.change >= 0 ? '18 15 12 9 6 15' : '6 9 12 15 18 9'"/>
                 </svg>
                 {{ card.change >= 0 ? '+' : '' }}{{ card.change }}%
               </span>
-              <span class="text-xs text-gray-400">vs mes anterior</span>
+              <span class="text-[11px] text-gray-400">vs mes anterior</span>
             </div>
           }
         </div>

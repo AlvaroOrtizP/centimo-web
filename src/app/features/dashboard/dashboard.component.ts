@@ -20,13 +20,13 @@ type ExpensesMode = 'acumulado' | 'mensual';
   standalone: true,
   imports: [FormsModule, CollapsibleDescriptionComponent, SummaryCardsComponent, PlatformSummaryTableComponent, NetWorthChartComponent, ExpensesChartComponent, MonthPickerComponent],
   template: `
-    <div class="space-y-6">
+    <div class="space-y-4 lg:space-y-6">
       <app-collapsible-description description="Resumen general de tu patrimonio, distribución por plataformas y evolución en los últimos meses." storageKey="desc-dashboard" />
       <div class="flex justify-end">
         <app-month-picker />
       </div>
       <app-summary-cards [summary]="currentSummary()" [previousSummary]="previousSummary()" />
-      <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6">
         <app-platform-summary-table
           [platforms]="service.platforms()"
           [accounts]="service.accounts()"
@@ -34,7 +34,7 @@ type ExpensesMode = 'acumulado' | 'mensual';
           [selectedPlatformId]="selectedPlatformId()"
           (platformClick)="onPlatformClick($event)"
         />
-        <div class="space-y-6">
+        <div class="space-y-4 lg:space-y-6">
           <app-net-worth-chart
             [labels]="chartLabels()"
             [datasets]="chartDatasets()"
