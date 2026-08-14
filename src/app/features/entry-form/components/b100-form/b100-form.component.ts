@@ -60,7 +60,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             <p class="mt-0.5 text-xs text-gray-400">Valor total en Cuenta Ahorro</p>
           </div>
           <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses este mes (€)</label>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses este mes (€) <span class="text-amber-600">· neto 19% Hacienda</span></label>
             <input
               type="number"
               step="any"
@@ -69,7 +69,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               [ngModel]="savingsInterest.display()"
               (ngModelChange)="savingsInterest.userValue.set($event)"
             />
-            <p class="mt-0.5 text-xs text-gray-400">Intereses obtenidos este mes</p>
+            <p class="mt-0.5 text-xs text-gray-400">Intereses tras retener el 19% de Hacienda</p>
           </div>
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
@@ -137,7 +137,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             <p class="mt-0.5 text-xs text-gray-400">Valor total en Bolsillo Inversión</p>
           </div>
           <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses este mes (€)</label>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses este mes (€) <span class="text-amber-600">· neto 19% Hacienda</span></label>
             <input
               type="number"
               step="any"
@@ -146,7 +146,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               [ngModel]="investmentInterest.display()"
               (ngModelChange)="investmentInterest.userValue.set($event)"
             />
-            <p class="mt-0.5 text-xs text-gray-400">Intereses obtenidos este mes</p>
+            <p class="mt-0.5 text-xs text-gray-400">Intereses tras retener el 19% de Hacienda</p>
           </div>
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
