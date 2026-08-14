@@ -15,6 +15,8 @@ export * from './monthly-summary';
 export * from './myinvestor-fund';
 export * from './platform';
 export * from './platform-type';
+export * from './platform-monthly-balance';
+export * from './platform-monthly-balance-entry';
 export * from './project-status';
 export * from './salary-allocation';
 export * from './trade-status';

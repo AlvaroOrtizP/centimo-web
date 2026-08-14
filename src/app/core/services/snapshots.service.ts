@@ -15,6 +15,8 @@ export class SnapshotsDataService {
   private readonly snapshotsApi = inject(SnapshotsService);
   private readonly logger = inject(LoggerService);
 
+  private static readonly SNAPSHOTS_CACHE_KEY = 'centimo:snapshots';
+
   readonly snapshots = signal<MonthlySnapshot[]>([]);
 
   getSnapshotsByAccount(accountId: string): MonthlySnapshot[] {
@@ -42,7 +44,18 @@ export class SnapshotsDataService {
     );
   }
 
-  loadAllSnapshots(): void {
+  loadAllSnapshots(force = false): void {
+    if (force) {
+      this.clearSnapshotsCache();
+    } else if (this.snapshots().length > 0) {
+      return;
+    } else {
+      const cached = this.loadSnapshotsCache();
+      if (cached.length > 0) {
+        this.snapshots.set(cached);
+        return;
+      }
+    }
     this.snapshotsApi.listSnapshots().pipe(
       map(list => list.map(s => ({
         id: s.id,
@@ -62,8 +75,38 @@ export class SnapshotsDataService {
       }),
     ).subscribe(snapshots => {
       this.snapshots.set(snapshots);
+      this.saveSnapshotsCache(snapshots);
     });
   }
+
+  private loadSnapshotsCache(): MonthlySnapshot[] {
+    try {
+      if (typeof localStorage === 'undefined') { return []; }
+      const raw = localStorage.getItem(SnapshotsDataService.SNAPSHOTS_CACHE_KEY);
+      return raw ? JSON.parse(raw) as MonthlySnapshot[] : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private saveSnapshotsCache(snapshots: MonthlySnapshot[]): void {
+    try {
+      if (typeof localStorage === 'undefined') { return; }
+      localStorage.setItem(SnapshotsDataService.SNAPSHOTS_CACHE_KEY, JSON.stringify(snapshots));
+    } catch (err) {
+      this.logger.error('SnapshotsData', 'saveSnapshotsCache error', err);
+    }
+  }
+
+  private clearSnapshotsCache(): void {
+    try {
+      if (typeof localStorage === 'undefined') { return; }
+      localStorage.removeItem(SnapshotsDataService.SNAPSHOTS_CACHE_KEY);
+    } catch (err) {
+      this.logger.error('SnapshotsData', 'clearSnapshotsCache error', err);
+    }
+  }
+
 
   addSnapshot(snapshot: MonthlySnapshot): void {
     const create: MonthlySnapshotCreate = {
@@ -89,11 +132,13 @@ export class SnapshotsDataService {
         notes: created.notes ?? undefined,
         checklistItems: created.checklistItems ?? undefined,
       }]);
+      this.saveSnapshotsCache(this.snapshots());
     });
   }
 
   updateSnapshot(id: string, data: Partial<MonthlySnapshot>): void {
     this.snapshots.update(arr => arr.map(s => s.id === id ? { ...s, ...data } : s));
+    this.saveSnapshotsCache(this.snapshots());
   }
 
   upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number): Observable<SnapshotResponse> {
@@ -128,6 +173,7 @@ export class SnapshotsDataService {
         } else {
           this.snapshots.update(arr => [...arr, snapshot]);
         }
+        this.saveSnapshotsCache(this.snapshots());
         return result;
       }),
     );
@@ -143,11 +189,13 @@ export class SnapshotsDataService {
         ),
       };
     }));
+    this.saveSnapshotsCache(this.snapshots());
   }
 
   deleteSnapshot(id: string): void {
     this.snapshotsApi.deleteSnapshot(id).subscribe(() => {
       this.snapshots.update(arr => arr.filter(s => s.id !== id));
+      this.saveSnapshotsCache(this.snapshots());
     });
   }
 

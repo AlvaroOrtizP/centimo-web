@@ -1298,6 +1298,48 @@ paths:
   #  RESÚMENES
   # ════════════════════════════════════════════
 
+  /summaries:
+    get:
+      tags: [Summaries]
+      operationId: getMonthlySummaries
+      summary: Resúmenes mensuales en rango
+      description: |
+        Devuelve los resúmenes de los últimos `months` meses, terminando en el mes
+        indicado por `year`/`month` (inclusive). Equivale a llamar getMonthlySummary
+        para cada mes del rango pero en una sola petición.
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+        - name: months
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Lista de resúmenes mensuales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MonthlySummary'
+        '400':
+          description: Parámetros de fecha inválidos
+        '404':
+          description: Error generico 404
+
   /summaries/{year}/{month}:
     parameters:
       - name: year
@@ -1348,6 +1390,49 @@ paths:
                   $ref: '#/components/schemas/YearMonth'
         '400':
           description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /summaries/platform-balances:
+    get:
+      tags: [Summaries]
+      operationId: getPlatformBalances
+      summary: Saldos mensuales por plataforma (sin gastos)
+      description: |
+        Devuelve, para cada plataforma (excepto la de gastos), la serie mensual de
+        saldos de sus cuentas en los últimos `months` meses terminando en `year`/`month`
+        (inclusive). Los meses van de más antiguo a más reciente. Útil para gráficos
+        de evolución en el dashboard.
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+        - name: months
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Saldos mensuales por plataforma
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlatformMonthlyBalance'
+        '400':
+          description: Parámetros de fecha inválidos
         '404':
           description: Error generico 404
 
@@ -2359,6 +2444,39 @@ components:
           type: number
           format: float
         netSavings:
+          type: number
+          format: float
+
+    PlatformMonthlyBalance:
+      type: object
+      required: [platformId, platformName, type, color, icon, balances]
+      properties:
+        platformId:
+          type: string
+        platformName:
+          type: string
+        type:
+          $ref: '#/components/schemas/PlatformType'
+        color:
+          type: string
+        icon:
+          type: string
+        balances:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlatformMonthlyBalanceEntry'
+
+    PlatformMonthlyBalanceEntry:
+      type: object
+      required: [year, month, balance]
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        balance:
           type: number
           format: float
 

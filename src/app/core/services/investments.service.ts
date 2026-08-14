@@ -46,6 +46,7 @@ export class InvestmentsDataService {
     return this.crowdlending().filter(c => c.platformId === platformId);
   }
 
+  /** @deprecated El endpoint /crowdlending ya no se carga al iniciar la web. Solo se usa al entrar datos (entry-form). */
   loadAllCrowdlending(): void {
     this.crowdlendingApi.listCrowdlending().pipe(
       map(list => list.map(this.mapFromApi)),
@@ -162,6 +163,7 @@ export class InvestmentsDataService {
     );
   }
 
+  /** @deprecated El endpoint /myinvestor-funds ya no se carga al iniciar la web. Solo se usa al entrar datos (entry-form). */
   loadAllMyInvestorFunds(): void {
     this.myInvestorFundsApi.listMyInvestorFunds().pipe(
       catchError(err => {

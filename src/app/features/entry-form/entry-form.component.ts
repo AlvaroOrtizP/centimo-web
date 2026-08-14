@@ -130,6 +130,11 @@ export class EntryFormComponent {
   protected readonly service = inject(FinancialDataService);
   protected readonly activeTab = signal<Tab>('banks');
 
+  constructor() {
+    this.service.loadAllCrowdlending();
+    this.service.loadAllMyInvestorFunds();
+  }
+
   protected readonly tabs: TabConfig[] = [
     { key: 'banks', label: 'Bancos', color: '#004481', done: true },
     { key: 'revolut', label: 'Revolut', color: '#EB008B', done: true },

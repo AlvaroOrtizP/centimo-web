@@ -22,7 +22,19 @@ type ExpensesMode = 'acumulado' | 'mensual';
   template: `
     <div class="space-y-6">
       <app-collapsible-description description="Resumen general de tu patrimonio, distribución por plataformas y evolución en los últimos meses." storageKey="desc-dashboard" />
-      <div class="flex justify-end">
+      <div class="flex justify-end items-center gap-3">
+        <button
+          type="button"
+          title="resetear datos cache"
+          class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100"
+          (click)="service.refreshCachedData()"
+        >Resetear cache</button>
+        <button
+          type="button"
+          title="buscar saldos por plataforma del año y mes seleccionados"
+          class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100"
+          (click)="searchPlatformBalances()"
+        >Buscar saldos</button>
         <app-month-picker />
       </div>
       <app-summary-cards [summary]="currentSummary()" [previousSummary]="previousSummary()" />
@@ -31,6 +43,9 @@ type ExpensesMode = 'acumulado' | 'mensual';
           [platforms]="service.platforms()"
           [accounts]="service.accounts()"
           [snapshots]="currentSnapshots()"
+          [platformMonthlyBalances]="service.platformMonthlyBalances()"
+          [year]="viewYear()"
+          [month]="viewMonth()"
           [selectedPlatformId]="selectedPlatformId()"
           (platformClick)="onPlatformClick($event)"
         />
@@ -201,6 +216,16 @@ export class DashboardComponent {
 
   onPlatformClick(platformId: string): void {
     this.selectedPlatformId.update(current => current === platformId ? null : platformId);
+  }
+
+  protected readonly balancesMonths = 6;
+
+  searchPlatformBalances(): void {
+    const year = this.service.currentYear();
+    const month = this.service.currentMonth();
+    this.viewYear.set(year);
+    this.viewMonth.set(month);
+    this.service.loadPlatformMonthlyBalances(year, month, this.balancesMonths, true);
   }
 
   private getPlatformBalanceForMonth(platformId: string, year: number, month: number): number {

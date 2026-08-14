@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 
 import { Platform } from '../../../../models/platform';
 import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
+import { PlatformMonthlyBalance } from '../../../../models/platform-monthly-balance';
 import { EXPENSES_PLATFORM_ID, PLATFORM_GROUPS } from '../../../../core/constants/platform.constants';
 import { Account } from '../../../../models/account';
 
@@ -87,6 +88,9 @@ export class PlatformSummaryTableComponent {
   readonly accounts = input.required<Account[]>();
   readonly snapshots = input.required<MonthlySnapshot[]>();
   readonly selectedPlatformId = input<string | null>(null);
+  readonly platformMonthlyBalances = input<PlatformMonthlyBalance[]>([]);
+  readonly year = input.required<number>();
+  readonly month = input.required<number>();
 
   readonly platformClick = output<string>();
 
@@ -95,6 +99,17 @@ export class PlatformSummaryTableComponent {
   protected readonly totalExpenses = computed(() =>
     this.snapshots().reduce((sum, s) => sum + s.expenses, 0)
   );
+
+  protected readonly balanceLookup = computed(() => {
+    const map = new Map<string, number>();
+    const year = this.year();
+    const month = this.month();
+    for (const p of this.platformMonthlyBalances()) {
+      const entry = p.balances.find(b => b.year === year && b.month === month);
+      if (entry) { map.set(p.platformId, entry.balance); }
+    }
+    return map;
+  });
 
   protected readonly filteredRows = computed(() => {
     const allRows = this.rows();
@@ -116,7 +131,7 @@ export class PlatformSummaryTableComponent {
 
       return {
         platform,
-        balance: platformSnapshots.reduce((sum, s) => sum + s.balance, 0),
+        balance: this.balanceLookup().get(platform.id) ?? platformSnapshots.reduce((sum, s) => sum + s.balance, 0),
         income: platformSnapshots.reduce((sum, s) => sum + s.income, 0),
         pct: 0,
       };

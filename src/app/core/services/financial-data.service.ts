@@ -23,6 +23,7 @@ import {
   MonthlySummary,
   SalaryAllocation,
   Commitment,
+  PlatformMonthlyBalance,
 } from '../../models';
 import { EXPENSES_PLATFORM_ID } from '../constants/platform.constants';
 
@@ -56,6 +57,8 @@ export class FinancialDataService {
 
   readonly currentYear = signal(new Date().getFullYear());
   readonly currentMonth = signal(new Date().getMonth() + 1);
+
+  readonly platformMonthlyBalances = this.summaryData.platformMonthlyBalances;
 
   private autoAdjustedToData = false;
 
@@ -108,20 +111,35 @@ export class FinancialDataService {
     return this.snapshotsData.fetchSnapshotFromBackend(accountId, year, month);
   }
 
-  loadAllSnapshots(): void {
-    this.snapshotsData.loadAllSnapshots();
+  loadAllSnapshots(force = false): void {
+    this.snapshotsData.loadAllSnapshots(force);
   }
 
-  loadAllPlatforms(): void {
-    this.platformsData.loadAllPlatforms();
+  loadAllPlatforms(force = false): void {
+    this.platformsData.loadAllPlatforms(force);
   }
 
-  loadAllAccounts(): void {
-    this.platformsData.loadAllAccounts();
+  /** Fuerza la recarga de todos los endpoints con cache (/platforms, /accounts y /snapshots). */
+  refreshCachedData(): void {
+    this.platformsData.loadAllPlatforms(true);
+    this.platformsData.loadAllAccounts(true);
+    this.snapshotsData.loadAllSnapshots(true);
+  }
+
+  loadAllAccounts(force = false): void {
+    this.platformsData.loadAllAccounts(force);
   }
 
   loadMonthlySummary(year: number, month: number): void {
     this.summaryData.loadMonthlySummary(year, month);
+  }
+
+  loadMonthlySummariesRange(year: number, month: number, months: number, force = false): void {
+    this.summaryData.loadMonthlySummariesRange(year, month, months, force);
+  }
+
+  loadPlatformMonthlyBalances(year: number, month: number, months: number, force = false): void {
+    this.summaryData.loadPlatformMonthlyBalances(year, month, months, force);
   }
 
   fetchNominaFromBackend(year: number, month: number): Observable<NominaResponse | null> {
@@ -318,6 +336,7 @@ export class FinancialDataService {
     return this.investmentsData.deleteCrowdlendingInvestment(id);
   }
 
+  /** @deprecated El endpoint /crowdlending ya no se carga al iniciar la web. Solo se usa al entrar datos. */
   loadAllCrowdlending(): void {
     this.investmentsData.loadAllCrowdlending();
   }
@@ -342,6 +361,7 @@ export class FinancialDataService {
     return this.investmentsData.deleteMyInvestorFund(id);
   }
 
+  /** @deprecated El endpoint /myinvestor-funds ya no se carga al iniciar la web. Solo se usa al entrar datos. */
   loadAllMyInvestorFunds(): void {
     this.investmentsData.loadAllMyInvestorFunds();
   }
