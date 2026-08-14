@@ -6,12 +6,13 @@ import './core/chart-init';
 import { routes } from './app.routes';
 import { provideApi } from './api/generated/provide-api';
 import { errorInterceptor } from './core/interceptors/error.interceptor';
+import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes, withPreloading(PreloadAllModules)),
-    provideHttpClient(withInterceptors([errorInterceptor])),
+    provideHttpClient(withInterceptors([errorInterceptor, authInterceptor])),
     provideApi(environment.apiUrl),
   ]
 };

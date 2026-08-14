@@ -1,10 +1,18 @@
 import { Routes } from '@angular/router';
 
 import { initDataResolver } from './core/resolvers/init-data.resolver';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
+  { path: 'login', loadComponent: () => import('./features/login/login.component').then(m => m.LoginComponent) },
+  {
+    path: 'setup-2fa',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/setup-2fa/setup-2fa.component').then(m => m.Setup2faComponent),
+  },
   {
     path: '',
+    canActivate: [authGuard],
     resolve: { _: initDataResolver },
     children: [
       { path: '', loadComponent: () => import('./features/dashboard').then(m => m.DashboardComponent) },
