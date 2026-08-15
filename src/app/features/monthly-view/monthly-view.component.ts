@@ -66,15 +66,17 @@ export class MonthlyViewComponent {
 
   protected readonly service = inject(FinancialDataService);
 
-  private readonly parsedYear = computed(() => parseInt(this.year(), 10));
-  private readonly parsedMonth = computed(() => parseInt(this.month(), 10));
+  private readonly parsedYear = computed(() => this.service.currentYear());
+  private readonly parsedMonth = computed(() => this.service.currentMonth());
 
   constructor() {
     effect(() => {
-      this.service.currentYear.set(this.parsedYear());
-    }, { allowSignalWrites: true });
-    effect(() => {
-      this.service.currentMonth.set(this.parsedMonth());
+      const y = parseInt(this.year(), 10);
+      const m = parseInt(this.month(), 10);
+      if (!isNaN(y) && !isNaN(m)) {
+        this.service.currentYear.set(y);
+        this.service.currentMonth.set(m);
+      }
     }, { allowSignalWrites: true });
   }
 

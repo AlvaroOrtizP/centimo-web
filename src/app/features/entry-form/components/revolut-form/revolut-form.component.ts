@@ -43,7 +43,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
         </div>
       }
 
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div>
           <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
           <input
@@ -57,16 +57,27 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
           <p class="mt-0.5 text-xs text-gray-400">Valor total en Revolut a 31 del mes</p>
         </div>
         <div>
-          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses C. remunerada (€)</label>
+          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses este mes (€) <span class="text-amber-600">· neto 19% Hacienda</span></label>
           <input
             type="number"
             step="any"
             placeholder="ej: 15"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
             [ngModel]="interest.display()"
-            (ngModelChange)="interest.userValue.set($event)"
+            (ngModelChange)="onInterest($event)"
           />
-          <p class="mt-0.5 text-xs text-gray-400">Intereses obtenidos este mes</p>
+          <p class="mt-0.5 text-xs text-gray-400">Intereses tras retener el 19% de Hacienda</p>
+        </div>
+        <div>
+          <label class="block text-xs font-medium uppercase tracking-wider text-amber-600">Hacienda retenida (€)</label>
+          <input
+            type="number"
+            step="any"
+            placeholder="ej: 3"
+            class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            [(ngModel)]="tax"
+          />
+          <p class="mt-0.5 text-xs text-gray-400">19% retenido (auto, editable)</p>
         </div>
         <div>
           <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
@@ -133,8 +144,18 @@ export class RevolutFormComponent {
   protected readonly tae = signal<number | null>(null);
   protected readonly contribution = signal<number | null>(null);
   protected readonly withdrawal = signal<number | null>(null);
+  protected readonly tax = signal<number | null>(null);
   protected readonly saved = signal(false);
   protected readonly editingSnapshot = signal<MonthlySnapshot | null>(null);
+
+  private static readonly HACIENDA_RATE = 0.19;
+
+  private static computeHacienda(netInterest: number): number {
+    if (!netInterest) { return 0; }
+    const gross = netInterest / (1 - RevolutFormComponent.HACIENDA_RATE);
+    const tax = gross * RevolutFormComponent.HACIENDA_RATE;
+    return Math.round(tax * 100) / 100;
+  }
 
   protected readonly balance = createSnapshotField(this.service, this.ACCOUNT_ID, () => this.localYear(), () => this.localMonth());
   protected readonly interest = createSnapshotField(this.service, this.ACCOUNT_ID, () => this.localYear(), () => this.localMonth(), 'income');
@@ -166,12 +187,24 @@ export class RevolutFormComponent {
       resetSnapshotFields(this.balance, this.interest);
       this.contribution.set(null);
       this.withdrawal.set(null);
+
+      const snap = this.service.getSnapshotsByAccount(this.ACCOUNT_ID)
+        .find(s => s.year === this.localYear() && s.month === this.localMonth());
+      this.tax.set(
+        snap ? (snap.tax != null ? snap.tax : RevolutFormComponent.computeHacienda(snap.income ?? 0)) : null
+      );
     }, { allowSignalWrites: true });
   }
 
   protected onBalanceChange(value: number | null): void {
     this.balance.userValue.set(value);
     this.balance.hasUserValue.set(true);
+  }
+
+  protected onInterest(value: number | null): void {
+    this.interest.userValue.set(value);
+    this.interest.hasUserValue.set(true);
+    this.tax.set(value != null ? RevolutFormComponent.computeHacienda(value) : null);
   }
 
   protected onEdit(snap: MonthlySnapshot): void {
@@ -184,6 +217,7 @@ export class RevolutFormComponent {
     this.interest.hasUserValue.set(true);
     this.contribution.set(snap.contribution ?? null);
     this.withdrawal.set(snap.expenses > 0 ? snap.expenses : null);
+    this.tax.set(snap.tax ?? null);
   }
 
   protected cancelEdit(): void {
@@ -191,6 +225,7 @@ export class RevolutFormComponent {
     resetSnapshotFields(this.balance, this.interest);
     this.contribution.set(null);
     this.withdrawal.set(null);
+    this.tax.set(null);
   }
 
   protected onDelete(id: string): void {
@@ -204,6 +239,7 @@ export class RevolutFormComponent {
     const inter = this.interest.display() ?? 0;
     const contrib = this.contribution() ?? 0;
     const withdrawal = this.withdrawal() ?? 0;
+    const tax = this.tax() ?? 0;
 
     const existing = this.editingSnapshot();
     if (existing) {
@@ -212,10 +248,11 @@ export class RevolutFormComponent {
         income: inter,
         contribution: contrib,
         expenses: withdrawal,
+        tax,
       });
       this.cancelEdit();
     } else {
-      this.service.upsertSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth(), bal, inter, withdrawal, contrib).subscribe();
+      this.service.upsertSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth(), bal, inter, withdrawal, contrib, tax).subscribe();
     }
 
     this.contribution.set(null);

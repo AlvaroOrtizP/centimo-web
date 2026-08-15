@@ -120,7 +120,7 @@ export class DashboardComponent {
   protected readonly selectedPlatformId = signal<string | null>(null);
   protected readonly chartMode = signal<ChartMode>('total');
   protected readonly chartGroupFilter = signal<PlatformGroup>('all');
-  protected readonly expensesMode = signal<ExpensesMode>('acumulado');
+  protected readonly expensesMode = signal<ExpensesMode>('mensual');
 
   protected readonly currentSnapshots = computed(() =>
     this.service.getSnapshotsByMonth(this.viewYear(), this.viewMonth())
