@@ -1,12 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { HttpErrorResponse } from '@angular/common/http';
 
 import { SnapshotsService } from '../../api/generated/api/snapshots.service';
 import { SnapshotResponse } from '../../api/generated/model/snapshotResponse';
 import { SnapshotUpsert } from '../../api/generated/model/snapshotUpsert';
 import { MonthlySnapshotCreate } from '../../api/generated/model/monthlySnapshotCreate';
+import { MonthlySnapshotUpdate } from '../../api/generated/model/monthlySnapshotUpdate';
 import { MonthlySnapshot } from '../../models';
 import { LoggerService } from './logger.service';
 
@@ -33,15 +33,6 @@ export class SnapshotsDataService {
     const y = Number(year);
     const m = Number(month);
     return this.snapshots().find(s => s.accountId === accountId && s.year === y && s.month === m);
-  }
-
-  fetchSnapshotFromBackend(accountId: string, year: number, month: number): Observable<SnapshotResponse | null> {
-    return this.snapshotsApi.getSnapshotByAccountAndDate(accountId, year, month).pipe(
-      map(response => response as SnapshotResponse),
-      catchError((error: HttpErrorResponse) => {
-        return error.status === 404 ? of(null) : of(null);
-      }),
-    );
   }
 
   loadAllSnapshots(force = false): void {
@@ -140,8 +131,31 @@ export class SnapshotsDataService {
   }
 
   updateSnapshot(id: string, data: Partial<MonthlySnapshot>): void {
-    this.snapshots.update(arr => arr.map(s => s.id === id ? { ...s, ...data } : s));
-    this.saveSnapshotsCache(this.snapshots());
+    const update: MonthlySnapshotUpdate = {
+      balance: data.balance,
+      income: data.income,
+      expenses: data.expenses,
+      contribution: data.contribution ?? null,
+      tax: data.tax ?? null,
+      notes: data.notes ?? null,
+    };
+    this.snapshotsApi.updateSnapshot(id, update).subscribe(updated => {
+      const snapshot: MonthlySnapshot = {
+        id: updated.id,
+        accountId: updated.accountId,
+        year: updated.year,
+        month: updated.month,
+        balance: updated.balance,
+        income: updated.income,
+        expenses: updated.expenses,
+        contribution: updated.contribution ?? undefined,
+        tax: updated.tax ?? undefined,
+        notes: updated.notes ?? undefined,
+        checklistItems: updated.checklistItems ?? undefined,
+      };
+      this.snapshots.update(arr => arr.map(s => s.id === id ? snapshot : s));
+      this.saveSnapshotsCache(this.snapshots());
+    });
   }
 
   upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number, tax?: number): Observable<SnapshotResponse> {

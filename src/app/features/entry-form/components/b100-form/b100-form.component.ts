@@ -19,20 +19,20 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
         <select
           aria-label="Mes"
           class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          [(ngModel)]="localMonth"
+          [ngModel]="localMonth()" (ngModelChange)="localMonth.set($event)"
         >
-          @for (m of months; track m.value) {
-            <option [value]="m.value">{{ m.label }}</option>
-          }
+            @for (m of months; track m.value) {
+              <option [ngValue]="m.value">{{ m.label }}</option>
+            }
         </select>
         <select
           aria-label="Año"
           class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          [(ngModel)]="localYear"
+          [ngModel]="localYear()" (ngModelChange)="localYear.set($event)"
         >
-          @for (y of years; track y) {
-            <option [value]="y">{{ y }}</option>
-          }
+            @for (y of years; track y) {
+              <option [ngValue]="y">{{ y }}</option>
+            }
         </select>
       </div>
 
@@ -347,12 +347,22 @@ export class B100FormComponent {
 
       const savingsSnap = this.service.getSnapshotsByAccount(this.SAVINGS_ID)
         .find(s => s.year === year && s.month === month);
+      if (savingsSnap) {
+        this.editingSavings.set(savingsSnap);
+        this.savingsContribution.set(savingsSnap.contribution ?? null);
+        this.savingsWithdrawal.set(savingsSnap.expenses > 0 ? savingsSnap.expenses : null);
+      }
       this.savingsTax.set(
         savingsSnap ? (savingsSnap.tax != null ? savingsSnap.tax : B100FormComponent.computeHacienda(savingsSnap.income ?? 0)) : null
       );
 
       const investmentSnap = this.service.getSnapshotsByAccount(this.INVESTMENT_ID)
         .find(s => s.year === year && s.month === month);
+      if (investmentSnap) {
+        this.editingInvestment.set(investmentSnap);
+        this.investmentContribution.set(investmentSnap.contribution ?? null);
+        this.investmentWithdrawal.set(investmentSnap.expenses > 0 ? investmentSnap.expenses : null);
+      }
       this.investmentTax.set(
         investmentSnap ? (investmentSnap.tax != null ? investmentSnap.tax : B100FormComponent.computeHacienda(investmentSnap.income ?? 0)) : null
       );

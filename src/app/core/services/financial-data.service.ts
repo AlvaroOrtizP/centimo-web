@@ -107,10 +107,6 @@ export class FinancialDataService {
     return this.snapshotsData.getSnapshot(accountId, year, month);
   }
 
-  fetchSnapshotFromBackend(accountId: string, year: number, month: number): Observable<SnapshotResponse | null> {
-    return this.snapshotsData.fetchSnapshotFromBackend(accountId, year, month);
-  }
-
   loadAllSnapshots(force = false): void {
     this.snapshotsData.loadAllSnapshots(force);
   }
