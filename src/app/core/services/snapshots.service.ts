@@ -66,6 +66,7 @@ export class SnapshotsDataService {
         income: s.income,
         expenses: s.expenses,
         contribution: s.contribution ?? undefined,
+        tax: s.tax ?? undefined,
         notes: s.notes ?? undefined,
         checklistItems: s.checklistItems ?? undefined,
       }))),
@@ -117,6 +118,7 @@ export class SnapshotsDataService {
       income: snapshot.income,
       expenses: snapshot.expenses,
       contribution: snapshot.contribution ?? null,
+      tax: snapshot.tax ?? null,
       notes: snapshot.notes ?? null,
     };
     this.snapshotsApi.createSnapshot(create).subscribe(created => {
@@ -129,6 +131,7 @@ export class SnapshotsDataService {
         income: created.income,
         expenses: created.expenses,
         contribution: created.contribution ?? undefined,
+        tax: created.tax ?? undefined,
         notes: created.notes ?? undefined,
         checklistItems: created.checklistItems ?? undefined,
       }]);
@@ -141,7 +144,7 @@ export class SnapshotsDataService {
     this.saveSnapshotsCache(this.snapshots());
   }
 
-  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number): Observable<SnapshotResponse> {
+  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number, tax?: number): Observable<SnapshotResponse> {
     const body: SnapshotUpsert = {
       accountId,
       year,
@@ -150,6 +153,7 @@ export class SnapshotsDataService {
       incomeDelta,
       expenses,
       contribution,
+      tax,
     };
     return this.snapshotsApi.upsertSnapshot(body).pipe(
       map(result => {
@@ -162,6 +166,7 @@ export class SnapshotsDataService {
           income: result.income,
           expenses: result.expenses,
           contribution: result.contribution ?? undefined,
+          tax: result.tax ?? undefined,
           notes: result.notes ?? undefined,
           checklistItems: result.checklistItems ?? undefined,
         };

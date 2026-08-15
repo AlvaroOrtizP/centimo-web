@@ -1920,6 +1920,11 @@ components:
           type: number
           format: decimal
           nullable: true
+        tax:
+          type: number
+          format: decimal
+          nullable: true
+          description: Retención de Hacienda (19%) aplicada a los intereses
         notes:
           type: string
           nullable: true
@@ -1952,6 +1957,11 @@ components:
           type: number
           format: float
           nullable: true
+        tax:
+          type: number
+          format: float
+          nullable: true
+          description: Retención de Hacienda (19%) aplicada a los intereses
         notes:
           type: string
           nullable: true
@@ -1977,6 +1987,11 @@ components:
           type: number
           format: float
           nullable: true
+        tax:
+          type: number
+          format: float
+          nullable: true
+          description: Retención de Hacienda (19%) aplicada a los intereses
         notes:
           type: string
           nullable: true
@@ -2011,6 +2026,11 @@ components:
           type: number
           format: float
           description: Aportación del mes (opcional)
+          nullable: true
+        tax:
+          type: number
+          format: float
+          description: Retención de Hacienda (19%) aplicada a los intereses (opcional)
           nullable: true
 
     ChecklistItem:

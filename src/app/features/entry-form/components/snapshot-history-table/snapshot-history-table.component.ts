@@ -31,13 +31,14 @@ import { MONTHS } from '../../../../core/constants/date.constants';
               <th class="px-4 py-3 text-right">Ingresos</th>
               <th class="px-4 py-3 text-right">Retiradas</th>
               <th class="px-4 py-3 text-right">Aportación</th>
+              <th class="px-4 py-3 text-right">Hacienda</th>
               <th class="px-4 py-3 text-center">Acciones</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             @if (snapshots().length === 0) {
               <tr>
-                <td colspan="6" class="px-4 py-8 text-center text-sm text-gray-400">Sin registros todavía. Guarda un balance para este mes.</td>
+                <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-400">Sin registros todavía. Guarda un balance para este mes.</td>
               </tr>
             } @else {
               @for (snap of snapshots(); track snap.id) {
@@ -46,7 +47,8 @@ import { MONTHS } from '../../../../core/constants/date.constants';
                   <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ snap.balance.toLocaleString('es-ES') }} €</td>
                   <td class="px-4 py-3 text-right font-medium text-emerald-600">{{ snap.income > 0 ? '+' + snap.income.toLocaleString('es-ES') : '-' }}</td>
                   <td class="px-4 py-3 text-right font-medium text-red-600">{{ snap.expenses > 0 ? snap.expenses.toLocaleString('es-ES') + ' €' : '-' }}</td>
-                  <td class="px-4 py-3 text-right text-gray-500">{{ snap.contribution ? snap.contribution.toLocaleString('es-ES') + ' €' : '-' }}</td>
+                   <td class="px-4 py-3 text-right text-gray-500">{{ snap.contribution ? snap.contribution.toLocaleString('es-ES') + ' €' : '-' }}</td>
+                   <td class="px-4 py-3 text-right font-medium text-amber-600">{{ snap.tax ? snap.tax.toLocaleString('es-ES') + ' €' : '-' }}</td>
                   <td class="px-4 py-3 text-center">
                     <div class="flex items-center justify-center gap-1">
                       <button

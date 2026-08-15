@@ -9,6 +9,7 @@ export interface MonthlySnapshot {
   income: number;
   expenses: number;
   contribution?: number;
+  tax?: number;
   notes?: string;
   checklistItems?: ChecklistItem[];
 }

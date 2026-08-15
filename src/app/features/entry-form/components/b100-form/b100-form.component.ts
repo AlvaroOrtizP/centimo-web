@@ -46,7 +46,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
           </div>
         }
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
             <input
@@ -67,9 +67,20 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               placeholder="ej: 12"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               [ngModel]="savingsInterest.display()"
-              (ngModelChange)="savingsInterest.userValue.set($event)"
+              (ngModelChange)="onSavingsInterest($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Intereses tras retener el 19% de Hacienda</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-amber-600">Hacienda retenida (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 3"
+              class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              [(ngModel)]="savingsTax"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">19% retenido (auto, editable)</p>
           </div>
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
@@ -123,7 +134,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
           </div>
         }
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
             <input
@@ -144,9 +155,20 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               placeholder="ej: 20"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               [ngModel]="investmentInterest.display()"
-              (ngModelChange)="investmentInterest.userValue.set($event)"
+              (ngModelChange)="onInvestmentInterest($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Intereses tras retener el 19% de Hacienda</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-amber-600">Hacienda retenida (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 5"
+              class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              [(ngModel)]="investmentTax"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">19% retenido (auto, editable)</p>
           </div>
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
@@ -240,6 +262,7 @@ export class B100FormComponent {
   protected readonly savingsInterest = createSnapshotField(this.service, this.SAVINGS_ID, () => this.localYear(), () => this.localMonth(), 'income');
   protected readonly savingsContribution = signal<number | null>(null);
   protected readonly savingsWithdrawal = signal<number | null>(null);
+  protected readonly savingsTax = signal<number | null>(null);
   protected readonly savingsTae = signal<number | null>(null);
   protected readonly savedSavings = signal(false);
 
@@ -247,6 +270,7 @@ export class B100FormComponent {
   protected readonly investmentInterest = createSnapshotField(this.service, this.INVESTMENT_ID, () => this.localYear(), () => this.localMonth(), 'income');
   protected readonly investmentContribution = signal<number | null>(null);
   protected readonly investmentWithdrawal = signal<number | null>(null);
+  protected readonly investmentTax = signal<number | null>(null);
   protected readonly investmentTae = signal<number | null>(null);
   protected readonly savedInvestment = signal(false);
 
@@ -290,10 +314,29 @@ export class B100FormComponent {
       .slice(0, 2)
   );
 
+  private static readonly HACIENDA_RATE = 0.19;
+
+  private static computeHacienda(netInterest: number): number {
+    if (!netInterest) { return 0; }
+    const gross = netInterest / (1 - B100FormComponent.HACIENDA_RATE);
+    const tax = gross * B100FormComponent.HACIENDA_RATE;
+    return Math.round(tax * 100) / 100;
+  }
+
+  protected onSavingsInterest(value: number | null): void {
+    this.savingsInterest.userValue.set(value);
+    this.savingsTax.set(value != null ? B100FormComponent.computeHacienda(value) : null);
+  }
+
+  protected onInvestmentInterest(value: number | null): void {
+    this.investmentInterest.userValue.set(value);
+    this.investmentTax.set(value != null ? B100FormComponent.computeHacienda(value) : null);
+  }
+
   constructor() {
     effect(() => {
-      this.localYear();
-      this.localMonth();
+      const year = this.localYear();
+      const month = this.localMonth();
       this.editingSavings.set(null);
       this.editingInvestment.set(null);
       resetSnapshotFields(this.savingsBalance, this.savingsInterest, this.investmentBalance, this.investmentInterest);
@@ -301,6 +344,18 @@ export class B100FormComponent {
       this.savingsWithdrawal.set(null);
       this.investmentContribution.set(null);
       this.investmentWithdrawal.set(null);
+
+      const savingsSnap = this.service.getSnapshotsByAccount(this.SAVINGS_ID)
+        .find(s => s.year === year && s.month === month);
+      this.savingsTax.set(
+        savingsSnap ? (savingsSnap.tax != null ? savingsSnap.tax : B100FormComponent.computeHacienda(savingsSnap.income ?? 0)) : null
+      );
+
+      const investmentSnap = this.service.getSnapshotsByAccount(this.INVESTMENT_ID)
+        .find(s => s.year === year && s.month === month);
+      this.investmentTax.set(
+        investmentSnap ? (investmentSnap.tax != null ? investmentSnap.tax : B100FormComponent.computeHacienda(investmentSnap.income ?? 0)) : null
+      );
     }, { allowSignalWrites: true });
   }
 
@@ -314,6 +369,7 @@ export class B100FormComponent {
     this.savingsInterest.hasUserValue.set(true);
     this.savingsContribution.set(snap.contribution ?? null);
     this.savingsWithdrawal.set(snap.expenses > 0 ? snap.expenses : null);
+    this.savingsTax.set(snap.tax ?? null);
   }
 
   protected cancelEditSavings(): void {
@@ -324,6 +380,7 @@ export class B100FormComponent {
     this.savingsInterest.hasUserValue.set(false);
     this.savingsContribution.set(null);
     this.savingsWithdrawal.set(null);
+    this.savingsTax.set(null);
   }
 
   protected onDeleteSavings(id: string): void {
@@ -340,6 +397,7 @@ export class B100FormComponent {
     this.investmentInterest.hasUserValue.set(true);
     this.investmentContribution.set(snap.contribution ?? null);
     this.investmentWithdrawal.set(snap.expenses > 0 ? snap.expenses : null);
+    this.investmentTax.set(snap.tax ?? null);
   }
 
   protected cancelEditInvestment(): void {
@@ -350,6 +408,7 @@ export class B100FormComponent {
     this.investmentInterest.hasUserValue.set(false);
     this.investmentContribution.set(null);
     this.investmentWithdrawal.set(null);
+    this.investmentTax.set(null);
   }
 
   protected onDeleteInvestment(id: string): void {
@@ -363,6 +422,7 @@ export class B100FormComponent {
     const inter = this.savingsInterest.display() ?? 0;
     const contrib = this.savingsContribution() ?? 0;
     const withdrawal = this.savingsWithdrawal() ?? 0;
+    const tax = this.savingsTax() ?? 0;
 
     const existing = this.editingSavings();
     if (existing) {
@@ -371,10 +431,11 @@ export class B100FormComponent {
         income: inter,
         contribution: contrib,
         expenses: withdrawal,
+        tax,
       });
       this.cancelEditSavings();
     } else {
-      this.service.upsertSnapshot(this.SAVINGS_ID, this.localYear(), this.localMonth(), bal, inter, withdrawal, contrib).subscribe();
+      this.service.upsertSnapshot(this.SAVINGS_ID, this.localYear(), this.localMonth(), bal, inter, withdrawal, contrib, tax).subscribe();
     }
 
     this.savedSavings.set(true);
@@ -388,6 +449,7 @@ export class B100FormComponent {
     const inter = this.investmentInterest.display() ?? 0;
     const contrib = this.investmentContribution() ?? 0;
     const withdrawal = this.investmentWithdrawal() ?? 0;
+    const tax = this.investmentTax() ?? 0;
 
     const existing = this.editingInvestment();
     if (existing) {
@@ -396,10 +458,11 @@ export class B100FormComponent {
         income: inter,
         contribution: contrib,
         expenses: withdrawal,
+        tax,
       });
       this.cancelEditInvestment();
     } else {
-      this.service.upsertSnapshot(this.INVESTMENT_ID, this.localYear(), this.localMonth(), bal, inter, withdrawal, contrib).subscribe();
+      this.service.upsertSnapshot(this.INVESTMENT_ID, this.localYear(), this.localMonth(), bal, inter, withdrawal, contrib, tax).subscribe();
     }
 
     this.savedInvestment.set(true);

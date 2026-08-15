@@ -244,8 +244,8 @@ export class FinancialDataService {
     this.snapshotsData.updateSnapshot(id, data);
   }
 
-  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number): Observable<SnapshotResponse> {
-    return this.snapshotsData.upsertSnapshot(accountId, year, month, balance, incomeDelta, expenses, contribution);
+  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number, tax?: number): Observable<SnapshotResponse> {
+    return this.snapshotsData.upsertSnapshot(accountId, year, month, balance, incomeDelta, expenses, contribution, tax);
   }
 
   toggleChecklistItem(snapshotId: string, itemId: string): void {
