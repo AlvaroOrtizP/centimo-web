@@ -15,7 +15,6 @@ import {
   Platform,
   Account,
   MonthlySnapshot,
-  InvestmentHolding,
   InvestmentTransaction,
   CrowdlendingInvestment,
   MintosAnnualInterest,
@@ -49,7 +48,6 @@ export class FinancialDataService {
   readonly platforms = computed(() => this.platformsData.platforms());
   readonly accounts = computed(() => this.platformsData.accounts());
   readonly snapshots = computed(() => this.snapshotsData.snapshots());
-  readonly holdings = computed(() => this.investmentsData.holdings());
   readonly trades = computed(() => this.investmentsData.trades());
   readonly crowdlending = computed(() => this.investmentsData.crowdlending());
   readonly myInvestorFunds = computed(() => this.investmentsData.myInvestorFunds());
@@ -157,10 +155,6 @@ export class FinancialDataService {
     return this.incomesData.createNomina(nomina);
   }
 
-  getHoldingsBySnapshot(snapshotId: string): InvestmentHolding[] {
-    return this.investmentsData.getHoldingsBySnapshot(snapshotId);
-  }
-
   getTradesByAccount(accountId: string): InvestmentTransaction[] {
     return this.investmentsData.getTradesByAccount(accountId);
   }
@@ -246,10 +240,6 @@ export class FinancialDataService {
 
   toggleChecklistItem(snapshotId: string, itemId: string): void {
     this.snapshotsData.toggleChecklistItem(snapshotId, itemId);
-  }
-
-  addHolding(holding: InvestmentHolding): void {
-    this.investmentsData.addHolding(holding);
   }
 
   addExpense(expense: Expense): Observable<Expense> {
@@ -339,10 +329,6 @@ export class FinancialDataService {
 
   deleteSnapshot(id: string): void {
     this.snapshotsData.deleteSnapshot(id);
-  }
-
-  deleteHolding(id: string): void {
-    this.investmentsData.deleteHolding(id);
   }
 
   addMyInvestorFund(fund: MyInvestorFund): Observable<MyInvestorFund> {

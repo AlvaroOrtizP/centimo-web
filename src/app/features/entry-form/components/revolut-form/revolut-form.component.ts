@@ -21,7 +21,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
         <select
           aria-label="Mes"
           class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-          [ngModel]="localMonth"
+          [ngModel]="localMonth()"
           (ngModelChange)="localMonth.set($event)"
         >
           @for (m of months; track m.value) {
@@ -68,8 +68,8 @@ import { roundMoney } from '../../../../core/utils/money.util';
             step="any"
             placeholder="ej: 3"
             class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-            [ngModel]="tax"
-            (ngModelChange)="tax.set($event)"
+              [ngModel]="tax()"
+              (ngModelChange)="tax.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">19% retenido (auto, editable)</p>
         </div>
@@ -80,8 +80,8 @@ import { roundMoney } from '../../../../core/utils/money.util';
             step="any"
             placeholder="ej: 100"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-            [ngModel]="contribution"
-            (ngModelChange)="contribution.set($event)"
+              [ngModel]="contribution()"
+              (ngModelChange)="contribution.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
         </div>
@@ -92,8 +92,8 @@ import { roundMoney } from '../../../../core/utils/money.util';
             step="any"
             placeholder="ej: 50"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-            [ngModel]="withdrawal"
-            (ngModelChange)="withdrawal.set($event)"
+              [ngModel]="withdrawal()"
+              (ngModelChange)="withdrawal.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
         </div>

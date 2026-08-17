@@ -18,14 +18,14 @@ import { IncomeSource } from '../../../../models/income-source';
         <input
           type="number" placeholder="Cantidad (€)" aria-label="Cantidad"
           class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
-          [ngModel]="amount"
+          [ngModel]="amount()"
           (ngModelChange)="amount.set($event)"
         />
 
         <input
           type="text" placeholder="Note" aria-label="Note"
           class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
-          [ngModel]="note"
+          [ngModel]="note()"
           (ngModelChange)="note.set($event)"
         />
 

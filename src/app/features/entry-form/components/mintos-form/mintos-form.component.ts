@@ -43,8 +43,8 @@ import { roundMoney } from '../../../../core/utils/money.util';
             step="any"
             placeholder="ej: 1250"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            [ngModel]="balance"
-            (ngModelChange)="balance.set($event)"
+              [ngModel]="balance()"
+              (ngModelChange)="balance.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Valor total en Mintos a 31 del mes</p>
         </div>
@@ -55,8 +55,8 @@ import { roundMoney } from '../../../../core/utils/money.util';
             step="any"
             placeholder="ej: 150"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            [ngModel]="income"
-            (ngModelChange)="income.set($event)"
+              [ngModel]="income()"
+              (ngModelChange)="income.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Total de intereses generados ese mes (Retorno aplicación)</p>
         </div>
@@ -67,8 +67,8 @@ import { roundMoney } from '../../../../core/utils/money.util';
             step="any"
             placeholder="ej: 50"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            [ngModel]="contribution"
-            (ngModelChange)="contribution.set($event)"
+              [ngModel]="contribution()"
+              (ngModelChange)="contribution.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
         </div>
@@ -79,8 +79,8 @@ import { roundMoney } from '../../../../core/utils/money.util';
             step="any"
             placeholder="ej: 100"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            [ngModel]="withdrawal"
-            (ngModelChange)="withdrawal.set($event)"
+              [ngModel]="withdrawal()"
+              (ngModelChange)="withdrawal.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
         </div>
@@ -119,8 +119,8 @@ import { roundMoney } from '../../../../core/utils/money.util';
                 step="any"
                 placeholder="ej: 1800"
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                [ngModel]="annualAmount"
-                (ngModelChange)="annualAmount.set($event)"
+                 [ngModel]="annualAmount()"
+                 (ngModelChange)="annualAmount.set($event)"
               />
             </div>
             <div>
@@ -130,8 +130,8 @@ import { roundMoney } from '../../../../core/utils/money.util';
                 step="any"
                 placeholder="ej: 90"
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                [ngModel]="annualTaxWithholding"
-                (ngModelChange)="annualTaxWithholding.set($event)"
+                 [ngModel]="annualTaxWithholding()"
+                 (ngModelChange)="annualTaxWithholding.set($event)"
               />
             </div>
             <div>
@@ -141,8 +141,8 @@ import { roundMoney } from '../../../../core/utils/money.util';
                 step="any"
                 placeholder="ej: 19"
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                [ngModel]="annualTaxRate"
-                (ngModelChange)="annualTaxRate.set($event)"
+                 [ngModel]="annualTaxRate()"
+                 (ngModelChange)="annualTaxRate.set($event)"
               />
             </div>
             <div>
@@ -152,8 +152,8 @@ import { roundMoney } from '../../../../core/utils/money.util';
                 step="any"
                 placeholder="ej: 1710"
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                [ngModel]="annualNetAmount"
-                (ngModelChange)="annualNetAmount.set($event)"
+                 [ngModel]="annualNetAmount()"
+                 (ngModelChange)="annualNetAmount.set($event)"
               />
             </div>
           </div>

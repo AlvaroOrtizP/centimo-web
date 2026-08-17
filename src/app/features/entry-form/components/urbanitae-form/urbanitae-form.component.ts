@@ -27,7 +27,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
             <input
               type="text" placeholder="ej: Vivienda Madrid"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [ngModel]="projectName"
+              [ngModel]="projectName()"
               (ngModelChange)="projectName.set($event)"
             />
           </div>
@@ -36,7 +36,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
             <input
               type="number" step="any" placeholder="ej: 1000"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [ngModel]="investedAmount"
+              [ngModel]="investedAmount()"
               (ngModelChange)="investedAmount.set($event)"
             />
           </div>
@@ -45,7 +45,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
             <input
               type="number" step="any" placeholder="ej: 8.5"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [ngModel]="interestRate"
+              [ngModel]="interestRate()"
               (ngModelChange)="interestRate.set($event)"
             />
           </div>
@@ -54,7 +54,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
             <input
               type="number" step="1" placeholder="ej: 12"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [ngModel]="termMonths"
+              [ngModel]="termMonths()"
               (ngModelChange)="termMonths.set($event)"
             />
           </div>
@@ -63,7 +63,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
             <input
               type="date"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [ngModel]="startDate"
+              [ngModel]="startDate()"
               (ngModelChange)="startDate.set($event)"
             />
           </div>
@@ -72,7 +72,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
             <input
               type="date"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [ngModel]="endDate"
+              [ngModel]="endDate()"
               (ngModelChange)="endDate.set($event)"
             />
           </div>
@@ -135,7 +135,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
           <select
             aria-label="Mes"
             class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-            [ngModel]="localMonth"
+            [ngModel]="localMonth()"
             (ngModelChange)="localMonth.set($event)"
           >
             @for (m of months; track m.value) {
@@ -158,7 +158,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
               step="any"
               placeholder="ej: 3000"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [ngModel]="balance"
+              [ngModel]="balance()"
               (ngModelChange)="balance.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Valor total en Urbanitae a 31 del mes</p>
@@ -170,7 +170,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
               step="any"
               placeholder="ej: 12"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [ngModel]="income"
+              [ngModel]="income()"
               (ngModelChange)="income.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Intereses o rendimientos obtenidos</p>
@@ -182,7 +182,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
               step="any"
               placeholder="ej: 100"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [ngModel]="contribution"
+              [ngModel]="contribution()"
               (ngModelChange)="contribution.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
@@ -194,7 +194,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
               step="any"
               placeholder="ej: 50"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [ngModel]="withdrawal"
+              [ngModel]="withdrawal()"
               (ngModelChange)="withdrawal.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>

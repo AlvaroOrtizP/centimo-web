@@ -48,7 +48,6 @@ import { CollapsibleDescriptionComponent } from '../../shared/components/collaps
             [platforms]="service.platforms()"
             [accounts]="service.accounts()"
             [snapshots]="snapshots()"
-            [holdings]="holdings()"
             [expenses]="expenses()"
           />
         </div>
@@ -91,11 +90,6 @@ export class MonthlyViewComponent {
   protected readonly currentSummary = computed(() =>
     this.service.getMonthlySummary(this.parsedYear(), this.parsedMonth())
   );
-
-  protected readonly holdings = computed(() => {
-    const snapshotIds = this.snapshots().map(s => s.id);
-    return this.service.holdings().filter(h => snapshotIds.includes(h.snapshotId));
-  });
 
   protected readonly expenses = computed(() => {
     const snapshotIds = this.snapshots().map(s => s.id);

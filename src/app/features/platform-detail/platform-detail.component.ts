@@ -13,7 +13,7 @@ import { CollapsibleDescriptionComponent } from '../../shared/components/collaps
   template: `
     @if (platform(); as p) {
       <div class="space-y-6">
-        <app-collapsible-description description="Detalle de cuenta con historial de saldos, posiciones abiertas y operaciones recientes." storageKey="desc-platform" />
+        <app-collapsible-description description="Detalle de cuenta con historial de saldos y operaciones recientes." storageKey="desc-platform" />
 
         <div class="flex items-center gap-4 rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl" [style.background-color]="p.color + '15'">
@@ -39,36 +39,6 @@ import { CollapsibleDescriptionComponent } from '../../shared/components/collaps
 
         @if (isInvestmentPlatform()) {
           <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <div class="rounded-xl border border-gray-200/80 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
-              <div class="border-b border-gray-100 px-5 py-4">
-                <div class="flex items-center justify-between">
-                  <h2 class="text-base font-semibold text-gray-900">Holdings</h2>
-                  @if (holdings().length > 0) {
-                    <span class="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">{{ holdings().length }}</span>
-                  }
-                </div>
-              </div>
-              @if (holdings().length === 0) {
-                <div class="flex flex-col items-center gap-2 py-10 text-sm text-gray-400">
-                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                  </svg>
-                  Sin holdings registrados
-                </div>
-              } @else {
-                <div class="divide-y divide-gray-100">
-                  @for (h of holdings(); track h.id) {
-                    <div class="flex items-center gap-3 px-5 py-3.5 text-sm transition-colors hover:bg-gray-50/50">
-                      <span class="flex-1 font-medium text-gray-900">{{ h.assetName }}</span>
-                      <span class="w-20 text-right text-gray-500">{{ h.quantity }}</span>
-                      <span class="w-24 text-right text-gray-500">{{ h.valuePerUnit.toLocaleString('es-ES') }} €</span>
-                      <span class="w-24 text-right font-semibold text-gray-900">{{ h.totalValue.toLocaleString('es-ES') }} €</span>
-                    </div>
-                  }
-                </div>
-              }
-            </div>
-
             <div class="rounded-xl border border-gray-200/80 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
               <div class="border-b border-gray-100 px-5 py-4">
                 <div class="flex items-center justify-between">
@@ -172,12 +142,6 @@ export class PlatformDetailComponent {
   protected readonly isInvestmentPlatform = computed(() =>
     this.accounts().some(a => a.type === 'investment')
   );
-
-  protected readonly holdings = computed(() => {
-    const latestSnapshot = this.snapshots()[this.snapshots().length - 1];
-    if (!latestSnapshot) { return []; }
-    return this.service.holdings().filter(h => h.snapshotId === latestSnapshot.id);
-  });
 
   protected readonly trades = computed(() =>
     this.accounts().flatMap(a => this.service.getTradesByAccount(a.id))

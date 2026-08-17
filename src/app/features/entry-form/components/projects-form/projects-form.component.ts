@@ -1,9 +1,7 @@
-import { Component, computed, inject, input, signal, effect } from '@angular/core';
+import { Component, computed, input, signal, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AccountType } from '../../../../models/account-type';
-import { AssetType } from '../../../../models/asset-type';
-import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { Account } from '../../../../models/account';
 
 interface ProjectEntry {
@@ -91,8 +89,6 @@ interface ProjectEntry {
   `,
 })
 export class ProjectsFormComponent {
-  private readonly service = inject(FinancialDataService);
-
   readonly accounts = input.required<Account[]>();
   readonly year = input.required<number>();
   readonly month = input.required<number>();
@@ -106,16 +102,10 @@ export class ProjectsFormComponent {
 
   constructor() {
     effect(() => {
-      const invAccs = this.investmentAccounts();
-      const y = this.year();
-      const m = this.month();
-      const map: Record<string, ProjectEntry[]> = {};
-      for (const acc of invAccs) {
-        const snapshotId = `${acc.id}-${y}-${String(m).padStart(2, '0')}`;
-        const holdings = this.service.holdings().filter(h => h.snapshotId === snapshotId);
-        map[acc.id] = holdings.map(h => ({ name: h.assetName, value: h.totalValue }));
-      }
-      this.projectsMap.set(map);
+      this.investmentAccounts();
+      this.year();
+      this.month();
+      this.projectsMap.set({});
     }, { allowSignalWrites: true });
   }
 
@@ -138,31 +128,6 @@ export class ProjectsFormComponent {
   }
 
   protected saveAll(): void {
-    const y = this.year();
-    const m = this.month();
-
-    for (const acc of this.investmentAccounts()) {
-      const snapshotId = `${acc.id}-${y}-${String(m).padStart(2, '0')}`;
-      const projects = this.projectsMap()[acc.id] ?? [];
-
-      for (const h of this.service.holdings().filter(h => h.snapshotId === snapshotId)) {
-        this.service.deleteHolding(h.id);
-      }
-
-      for (const proj of projects) {
-        if (!proj.name) { continue; }
-        this.service.addHolding({
-          id: `hold-${snapshotId}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          snapshotId,
-          assetName: proj.name,
-          assetType: AssetType.Crowdlending,
-          quantity: 1,
-          valuePerUnit: proj.value,
-          totalValue: proj.value,
-        });
-      }
-    }
-
     this.saved.set(true);
     setTimeout(() => this.saved.set(false), 2000);
   }

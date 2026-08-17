@@ -70,7 +70,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
               step="any"
               placeholder="ej: 3"
               class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              [ngModel]="savingsTax"
+              [ngModel]="savingsTax()"
               (ngModelChange)="savingsTax.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">19% retenido (auto, editable)</p>
@@ -82,7 +82,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
               step="any"
               placeholder="ej: 100"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [ngModel]="savingsContribution"
+              [ngModel]="savingsContribution()"
               (ngModelChange)="savingsContribution.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
@@ -94,7 +94,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
               step="any"
               placeholder="ej: 50"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [ngModel]="savingsWithdrawal"
+              [ngModel]="savingsWithdrawal()"
               (ngModelChange)="savingsWithdrawal.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
@@ -161,7 +161,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
               step="any"
               placeholder="ej: 5"
               class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              [ngModel]="investmentTax"
+              [ngModel]="investmentTax()"
               (ngModelChange)="investmentTax.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">19% retenido (auto, editable)</p>
@@ -173,7 +173,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
               step="any"
               placeholder="ej: 200"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [ngModel]="investmentContribution"
+              [ngModel]="investmentContribution()"
               (ngModelChange)="investmentContribution.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
@@ -185,7 +185,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
               step="any"
               placeholder="ej: 100"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [ngModel]="investmentWithdrawal"
+              [ngModel]="investmentWithdrawal()"
               (ngModelChange)="investmentWithdrawal.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>

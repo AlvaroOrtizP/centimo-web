@@ -22,7 +22,7 @@ import { ProjectStatus } from '../../../../models/project-status';
             <input
               type="text" placeholder="ej: Préstamo personal Letonia"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              [ngModel]="projectName"
+              [ngModel]="projectName()"
               (ngModelChange)="projectName.set($event)"
             />
           </div>
@@ -31,7 +31,7 @@ import { ProjectStatus } from '../../../../models/project-status';
             <input
               type="number" step="any" placeholder="ej: 1000"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              [ngModel]="investedAmount"
+              [ngModel]="investedAmount()"
               (ngModelChange)="investedAmount.set($event)"
             />
           </div>
@@ -40,7 +40,7 @@ import { ProjectStatus } from '../../../../models/project-status';
             <input
               type="number" step="any" placeholder="ej: 8.5"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              [ngModel]="interestRate"
+              [ngModel]="interestRate()"
               (ngModelChange)="interestRate.set($event)"
             />
           </div>
@@ -49,7 +49,7 @@ import { ProjectStatus } from '../../../../models/project-status';
             <input
               type="number" step="1" placeholder="ej: 12"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              [ngModel]="termMonths"
+              [ngModel]="termMonths()"
               (ngModelChange)="termMonths.set($event)"
             />
           </div>
@@ -58,7 +58,7 @@ import { ProjectStatus } from '../../../../models/project-status';
             <input
               type="date"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              [ngModel]="startDate"
+              [ngModel]="startDate()"
               (ngModelChange)="startDate.set($event)"
             />
           </div>

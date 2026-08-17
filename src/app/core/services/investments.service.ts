@@ -13,7 +13,6 @@ import { FundBalanceCreate } from '../../api/generated/model/fundBalanceCreate';
 import { FundBalanceUpdate } from '../../api/generated/model/fundBalanceUpdate';
 
 import {
-  InvestmentHolding,
   InvestmentTransaction,
   CrowdlendingInvestment,
   MyInvestorFund,
@@ -28,15 +27,10 @@ export class InvestmentsDataService {
   private readonly fundBalancesApi = inject(FundBalancesService);
   private readonly logger = inject(LoggerService);
 
-  readonly holdings = signal<InvestmentHolding[]>([]);
   readonly trades = signal<InvestmentTransaction[]>([]);
   readonly crowdlending = signal<CrowdlendingInvestment[]>([]);
   readonly myInvestorFunds = signal<MyInvestorFund[]>([]);
   readonly fundBalances = signal<FundBalance[]>([]);
-
-  getHoldingsBySnapshot(snapshotId: string): InvestmentHolding[] {
-    return this.holdings().filter(h => h.snapshotId === snapshotId);
-  }
 
   getTradesByAccount(accountId: string): InvestmentTransaction[] {
     return this.trades().filter(t => t.accountId === accountId);
@@ -115,14 +109,6 @@ export class InvestmentsDataService {
         return item;
       }),
     );
-  }
-
-  addHolding(holding: InvestmentHolding): void {
-    this.holdings.update(arr => [...arr, holding]);
-  }
-
-  deleteHolding(id: string): void {
-    this.holdings.update(arr => arr.filter(h => h.id !== id));
   }
 
   addTrade(trade: InvestmentTransaction): void {

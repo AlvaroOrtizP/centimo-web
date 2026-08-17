@@ -7,7 +7,6 @@ import { CommitmentsService } from '../../api/generated/api/commitments.service'
 import { CrowdlendingService } from '../../api/generated/api/crowdlending.service';
 import { ExpensesService } from '../../api/generated/api/expenses.service';
 import { FundBalancesService } from '../../api/generated/api/fundBalances.service';
-import { HoldingsService } from '../../api/generated/api/holdings.service';
 import { IncomesService } from '../../api/generated/api/incomes.service';
 import { MyInvestorFundsService } from '../../api/generated/api/myInvestorFunds.service';
 import { NominaService } from '../../api/generated/api/nomina.service';
@@ -34,7 +33,6 @@ export function provideApiMocks(): Provider[] {
     { provide: CrowdlendingService, useValue: apiMock(CrowdlendingService) },
     { provide: ExpensesService, useValue: apiMock(ExpensesService) },
     { provide: FundBalancesService, useValue: apiMock(FundBalancesService) },
-    { provide: HoldingsService, useValue: apiMock(HoldingsService) },
     { provide: IncomesService, useValue: apiMock(IncomesService) },
     { provide: MyInvestorFundsService, useValue: apiMock(MyInvestorFundsService) },
     { provide: NominaService, useValue: apiMock(NominaService) },

@@ -8,7 +8,6 @@ export * from './expense';
 export * from './expense-category';
 export * from './fund-balance';
 export * from './income-source';
-export * from './investment-holding';
 export * from './investment-transaction';
 export * from './monthly-snapshot';
 export * from './mintos-annual-interest';

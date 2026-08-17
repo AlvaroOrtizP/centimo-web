@@ -2,7 +2,6 @@ import { Component, inject, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
-import { PlatformType } from '../../models/platform-type';
 import { TradeSummaryComponent, TradeTotals } from './components/trade-summary/trade-summary.component';
 import { TradeTableComponent } from './components/trade-table/trade-table.component';
 import { TradeFormComponent } from '../entry-form/components/trade-form/trade-form.component';
@@ -42,8 +41,8 @@ interface TabConfig {
         <div class="p-5">
           @switch (activeTab()) {
             @case ('entrada') {
-              <app-collapsible-description description="Registra compras y ventas de activos (acciones, ETFs, criptomonedas). Define precio, cantidad, fecha y estado de la operación." storageKey="desc-trades-entry" />
-              <app-trade-form [accounts]="tradeAccounts()" />
+              <app-collapsible-description description="Registra compras de cripto en Bitvavo. Define el activo, precio, cantidad y fecha de la operación." storageKey="desc-trades-entry" />
+              <app-trade-form />
             }
             @case ('historial') {
               <div class="space-y-4">
@@ -124,16 +123,6 @@ export class TradeLogComponent {
   protected readonly filterPlatform = signal('');
 
   protected readonly allTrades = computed(() => this.service.trades());
-
-  protected readonly tradeAccounts = computed(() => {
-    const tradeTypes = new Set([PlatformType.Investment, PlatformType.Crypto]);
-    const tradePlatformIds = new Set(
-      this.service.platforms()
-        .filter(p => tradeTypes.has(p.type))
-        .map(p => p.id)
-    );
-    return this.service.accounts().filter(a => tradePlatformIds.has(a.platformId));
-  });
 
   protected readonly availableAssets = computed(() => {
     const assets = new Set(this.allTrades().map(t => t.assetName));

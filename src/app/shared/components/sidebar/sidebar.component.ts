@@ -5,7 +5,6 @@ interface NavItem {
   path: string;
   label: string;
   icon: string;
-  done?: boolean;
 }
 
 @Component({
@@ -35,9 +34,6 @@ interface NavItem {
             <span class="flex-shrink-0" [innerHTML]="item.icon"></span>
             @if (!compact()) {
               <span>{{ item.label }}</span>
-            }
-            @if (item.done) {
-              <span aria-hidden="true" class="pointer-events-none absolute inset-x-3 bottom-0.5 h-0.5 rounded-full bg-green-500"></span>
             }
           </a>
         }
@@ -88,8 +84,6 @@ export class SidebarComponent {
       path: '/expenses',
       label: 'Gastos',
       icon: `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
-      // TODO: eliminar la línea verde (done) una vez entregado
-      done: true,
     },
   ];
 }

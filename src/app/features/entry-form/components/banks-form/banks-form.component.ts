@@ -20,7 +20,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
         <select
           aria-label="Mes"
           class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          [ngModel]="localMonth"
+          [ngModel]="localMonth()"
           (ngModelChange)="localMonth.set($event)"
         >
           @for (m of months; track m.value) {

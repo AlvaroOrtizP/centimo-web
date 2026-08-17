@@ -2,7 +2,6 @@ import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { FinancialDataService } from './financial-data.service';
 import { MonthlySnapshot } from '../../models/monthly-snapshot';
-import { InvestmentHolding } from '../../models/investment-holding';
 import { Expense } from '../../models/expense';
 import { IncomeSource } from '../../models/income-source';
 import { InvestmentTransaction } from '../../models/investment-transaction';
@@ -118,21 +117,6 @@ describe('FinancialDataService', () => {
       service.updateSnapshot(existing!.id, { balance: 9999 });
       const updated = service.getSnapshot('bbva-checking', 2026, 6);
       expect(updated!.balance).toBe(9999);
-    });
-
-    it('addHolding should add a holding', () => {
-      const holding: InvestmentHolding = {
-        id: 'hold-test',
-        snapshotId: 'bbva-checking-2026-01',
-        assetName: 'Test Asset',
-        assetType: 'stock' as never,
-        quantity: 10,
-        valuePerUnit: 100,
-        totalValue: 1000,
-      };
-      service.addHolding(holding);
-      const holdings = service.getHoldingsBySnapshot('bbva-checking-2026-01');
-      expect(holdings.some(h => h.id === 'hold-test')).toBeTrue();
     });
 
     it('addExpense should add an expense', fakeAsync(() => {

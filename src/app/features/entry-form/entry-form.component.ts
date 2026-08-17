@@ -11,15 +11,15 @@ import { RevolutFormComponent } from './components/revolut-form/revolut-form.com
 import { B100FormComponent } from './components/b100-form/b100-form.component';
 import { BanksFormComponent } from './components/banks-form/banks-form.component';
 import { MyInvestorFormComponent } from './components/myinvestor-form/myinvestor-form.component';
+import { BitvavoFormComponent } from './components/bitvavo-form/bitvavo-form.component';
 import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 
-type Tab = 'banks' | 'revolut' | 'b100' | 'myinvestor' | 'mintos' | 'equito' | 'urbanitae';
+type Tab = 'banks' | 'revolut' | 'b100' | 'myinvestor' | 'mintos' | 'equito' | 'urbanitae' | 'bitvavo';
 
 interface TabConfig {
   key: Tab;
   label: string;
   color: string;
-  done?: boolean;
 }
 
 const TAB_ACCOUNT_IDS: Partial<Record<Tab, string[]>> = {
@@ -29,6 +29,7 @@ const TAB_ACCOUNT_IDS: Partial<Record<Tab, string[]>> = {
   myinvestor: ['myinvestor-fondo'],
   mintos: ['mintos-main'],
   urbanitae: ['urbanitae'],
+  bitvavo: ['bitvavo-main'],
 };
 
 const TAB_PLATFORMS: Record<Tab, string[]> = {
@@ -39,6 +40,7 @@ const TAB_PLATFORMS: Record<Tab, string[]> = {
   mintos: ['mintos'],
   equito: ['equito'],
   urbanitae: ['urbanitae'],
+  bitvavo: ['bitvavo'],
 };
 
 @Component({
@@ -47,7 +49,7 @@ const TAB_PLATFORMS: Record<Tab, string[]> = {
   imports: [
     FormsModule,
     CollapsibleDescriptionComponent,
-    CrowdlendingFormComponent, MintosFormComponent, EquitoFormComponent, UrbanitaeFormComponent, RevolutFormComponent, B100FormComponent, BanksFormComponent, MyInvestorFormComponent,
+    CrowdlendingFormComponent, MintosFormComponent, EquitoFormComponent, UrbanitaeFormComponent, RevolutFormComponent, B100FormComponent, BanksFormComponent, MyInvestorFormComponent, BitvavoFormComponent,
   ],
   template: `
     <div class="space-y-6">
@@ -106,15 +108,14 @@ const TAB_PLATFORMS: Record<Tab, string[]> = {
                       <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
                     } @else if (tab.key === 'equito') {
                       <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                    } @else if (tab.key === 'bitvavo') {
+                      <path d="M11.76 0H8.32a.32.32 0 0 0-.32.32v3.2H4.8a.32.32 0 0 0-.32.32v3.2c0 .177.143.32.32.32h3.2v3.2H4.8a.32.32 0 0 0-.32.32v3.2c0 .177.143.32.32.32h3.2v3.2c0 .177.143.32.32.32h3.44a.32.32 0 0 0 .32-.32v-3.2h3.2a.32.32 0 0 0 .32-.32v-3.2a.32.32 0 0 0-.32-.32h-3.2v-3.2h3.2a.32.32 0 0 0 .32-.32v-3.2a.32.32 0 0 0-.32-.32h-3.2V.32a.32.32 0 0 0-.32-.32z"/>
                     } @else {
                       <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
                     }
                   </svg>
                 </span>
                 {{ tab.label }}
-                @if (tab.done) {
-                  <span aria-hidden="true" class="pointer-events-none absolute inset-x-2 bottom-0.5 h-0.5 rounded-full bg-green-500"></span>
-                }
               </button>
             }
           </div>
@@ -150,6 +151,10 @@ const TAB_PLATFORMS: Record<Tab, string[]> = {
               <app-collapsible-description description="Registra el saldo e intereses de tus inversiones en Urbanitae (crowdlending inmobiliario). Los datos se reflejan en el resumen de inversiones fijas." storageKey="desc-entry-urbanitae" />
               <app-urbanitae-form />
             }
+            @case ('bitvavo') {
+              <app-collapsible-description description="Registra el balance mensual de tu cuenta Bitvavo (cripto): saldo, ingresos, gastos y aportación." storageKey="desc-entry-bitvavo" />
+              <app-bitvavo-form [accounts]="allAccounts()" />
+            }
           }
         </div>
       </div>
@@ -184,13 +189,14 @@ export class EntryFormComponent {
   }
 
   protected readonly tabs: TabConfig[] = [
-    { key: 'banks', label: 'Bancos', color: '#004481', done: true },
-    { key: 'revolut', label: 'Revolut', color: '#EB008B', done: true },
-    { key: 'b100', label: 'B100', color: '#6C3FD1', done: true },
+    { key: 'banks', label: 'Bancos', color: '#004481' },
+    { key: 'revolut', label: 'Revolut', color: '#EB008B' },
+    { key: 'b100', label: 'B100', color: '#6C3FD1' },
     { key: 'myinvestor', label: 'MyInvestor', color: '#00A3E0' },
-    { key: 'mintos', label: 'Mintos', color: '#00BFA5', done: true },
-    { key: 'equito', label: 'Equito', color: '#FF6B35', done: true },
-    { key: 'urbanitae', label: 'Urbanitae', color: '#E63946', done: true },
+    { key: 'mintos', label: 'Mintos', color: '#00BFA5' },
+    { key: 'equito', label: 'Equito', color: '#FF6B35' },
+    { key: 'urbanitae', label: 'Urbanitae', color: '#E63946' },
+    { key: 'bitvavo', label: 'Bitvavo', color: '#1E3A5F' },
   ];
 
   protected readonly activeTabColor = computed(() => {
