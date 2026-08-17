@@ -4,7 +4,6 @@ import { FinancialDataService } from './financial-data.service';
 import { MonthlySnapshot } from '../../models/monthly-snapshot';
 import { Expense } from '../../models/expense';
 import { IncomeSource } from '../../models/income-source';
-import { InvestmentTransaction } from '../../models/investment-transaction';
 import { provideApiMocks } from '../testing/api-mocks';
 import { configureSeedSpies, applyFinancialSeed } from '../testing/test-seed';
 
@@ -148,23 +147,5 @@ describe('FinancialDataService', () => {
       expect(incomes.length).toBe(1);
       expect(incomes[0].amount).toBe(100);
     }));
-
-    it('addTrade should add a trade', () => {
-      const trade: InvestmentTransaction = {
-        id: 'trade-test',
-        accountId: 'bitvavo-main',
-        assetName: 'TestCoin',
-        assetType: 'crypto' as never,
-        type: 'buy' as never,
-        buyDate: '2026-07-01',
-        buyQuantity: 1,
-        buyPricePerUnit: 100,
-        buyTotalCost: 100,
-        status: 'open' as never,
-      };
-      service.addTrade(trade);
-      const trades = service.getTradesByAccount('bitvavo-main');
-      expect(trades.some(t => t.id === 'trade-test')).toBeTrue();
-    });
   });
 });

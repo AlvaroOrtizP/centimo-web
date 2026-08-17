@@ -15,7 +15,6 @@ import {
   Platform,
   Account,
   MonthlySnapshot,
-  InvestmentTransaction,
   CrowdlendingInvestment,
   MintosAnnualInterest,
   MyInvestorFund,
@@ -48,7 +47,6 @@ export class FinancialDataService {
   readonly platforms = computed(() => this.platformsData.platforms());
   readonly accounts = computed(() => this.platformsData.accounts());
   readonly snapshots = computed(() => this.snapshotsData.snapshots());
-  readonly trades = computed(() => this.investmentsData.trades());
   readonly crowdlending = computed(() => this.investmentsData.crowdlending());
   readonly myInvestorFunds = computed(() => this.investmentsData.myInvestorFunds());
   readonly fundBalances = computed(() => this.investmentsData.fundBalances());
@@ -153,10 +151,6 @@ export class FinancialDataService {
 
   createNomina(nomina: NominaCreate): Observable<NominaResponse | null> {
     return this.incomesData.createNomina(nomina);
-  }
-
-  getTradesByAccount(accountId: string): InvestmentTransaction[] {
-    return this.investmentsData.getTradesByAccount(accountId);
   }
 
   getCrowdlendingByPlatform(platformId: string): CrowdlendingInvestment[] {
@@ -300,14 +294,6 @@ export class FinancialDataService {
 
   deleteCommitment(id: string): void {
     this.salaryData.deleteCommitment(id);
-  }
-
-  addTrade(trade: InvestmentTransaction): void {
-    this.investmentsData.addTrade(trade);
-  }
-
-  deleteTrade(id: string): void {
-    this.investmentsData.deleteTrade(id);
   }
 
   addCrowdlendingInvestment(investment: CrowdlendingInvestment): Observable<CrowdlendingInvestment> {

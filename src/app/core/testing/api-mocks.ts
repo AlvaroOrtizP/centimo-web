@@ -14,7 +14,6 @@ import { PlatformsService } from '../../api/generated/api/platforms.service';
 import { SalaryAllocationsService } from '../../api/generated/api/salaryAllocations.service';
 import { SnapshotsService } from '../../api/generated/api/snapshots.service';
 import { SummariesService } from '../../api/generated/api/summaries.service';
-import { TradesService } from '../../api/generated/api/trades.service';
 
 export function apiMock<T>(serviceClass: new (...args: any[]) => T, name: string = serviceClass.name): jasmine.SpyObj<T> {
   const methods = Object.getOwnPropertyNames(serviceClass.prototype).filter(m => m !== 'constructor');
@@ -40,6 +39,5 @@ export function provideApiMocks(): Provider[] {
     { provide: SalaryAllocationsService, useValue: apiMock(SalaryAllocationsService) },
     { provide: SnapshotsService, useValue: apiMock(SnapshotsService) },
     { provide: SummariesService, useValue: apiMock(SummariesService) },
-    { provide: TradesService, useValue: apiMock(TradesService) },
   ];
 }
