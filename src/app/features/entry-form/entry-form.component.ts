@@ -1,7 +1,8 @@
-import { Component, inject, computed, signal } from '@angular/core';
+import { Component, inject, computed, signal, effect } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
-import { MonthPickerComponent } from '../../shared/components/month-picker/month-picker.component';
+import { YEARS } from '../../core/constants/date.constants';
 import { CrowdlendingFormComponent } from './components/crowdlending-form/crowdlending-form.component';
 import { MintosFormComponent } from './components/mintos-form/mintos-form.component';
 import { EquitoFormComponent } from './components/equito-form/equito-form.component';
@@ -21,11 +22,31 @@ interface TabConfig {
   done?: boolean;
 }
 
+const TAB_ACCOUNT_IDS: Partial<Record<Tab, string[]>> = {
+  banks: ['bbva-checking', 'caixa-main'],
+  revolut: ['revolut-main'],
+  b100: ['b100-save', 'b100-heal'],
+  myinvestor: ['myinvestor-fondo'],
+  mintos: ['mintos-main'],
+  urbanitae: ['urbanitae'],
+};
+
+const TAB_PLATFORMS: Record<Tab, string[]> = {
+  banks: ['bbva', 'caixabank'],
+  revolut: ['revolut'],
+  b100: ['b100'],
+  myinvestor: ['myinvestor'],
+  mintos: ['mintos'],
+  equito: ['equito'],
+  urbanitae: ['urbanitae'],
+};
+
 @Component({
   selector: 'app-entry-form',
   standalone: true,
   imports: [
-    MonthPickerComponent, CollapsibleDescriptionComponent,
+    FormsModule,
+    CollapsibleDescriptionComponent,
     CrowdlendingFormComponent, MintosFormComponent, EquitoFormComponent, UrbanitaeFormComponent, RevolutFormComponent, B100FormComponent, BanksFormComponent, MyInvestorFormComponent,
   ],
   template: `
@@ -37,7 +58,16 @@ interface TabConfig {
           <div class="flex-1 min-w-[200px]">
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Período</label>
             <div class="mt-1.5">
-              <app-month-picker />
+              <select
+                aria-label="Seleccionar año"
+                class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                [ngModel]="service.currentYear()"
+                (ngModelChange)="onYearChange($event)"
+              >
+                @for (y of availableYears(); track y) {
+                  <option [ngValue]="y">{{ y }}</option>
+                }
+              </select>
             </div>
           </div>
         </div>
@@ -131,8 +161,26 @@ export class EntryFormComponent {
   protected readonly activeTab = signal<Tab>('banks');
 
   constructor() {
-    this.service.loadAllCrowdlending();
-    this.service.loadAllMyInvestorFunds();
+    // Por defecto el periodo es el año actual al abrir "Entrada de datos".
+    // El usuario puede cambiarlo luego con el selector.
+    this.service.currentYear.set(new Date().getFullYear());
+
+    // Al entrar en cada pestaña (o cambiar el año) se recargan desde el backend
+    // solo las instantáneas de las cuentas de esa pestaña para el año indicado,
+    // alimentando así el historial con los resultados deseados.
+    effect(() => {
+      const tab = this.activeTab();
+      const year = this.service.currentYear();
+      const accountIds = TAB_ACCOUNT_IDS[tab]
+        ?? this.allAccounts()
+          .filter(a => TAB_PLATFORMS[tab].includes(a.platformId))
+          .map(a => a.id);
+      if (accountIds.length === 0) {
+        this.service.loadSnapshotsByYear(year);
+      } else {
+        accountIds.forEach(id => this.service.loadSnapshotsByYear(year, id));
+      }
+    });
   }
 
   protected readonly tabs: TabConfig[] = [
@@ -151,4 +199,14 @@ export class EntryFormComponent {
   });
 
   protected readonly allAccounts = computed(() => this.service.accounts());
+
+  protected readonly availableYears = computed<number[]>(() => {
+    const set = new Set<number>(YEARS);
+    this.service.snapshots().forEach(s => set.add(s.year));
+    return [...set].sort((a, b) => b - a);
+  });
+
+  protected onYearChange(year: number): void {
+    this.service.currentYear.set(year);
+  }
 }

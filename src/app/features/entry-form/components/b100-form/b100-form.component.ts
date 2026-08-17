@@ -7,6 +7,7 @@ import { Account } from '../../../../models/account';
 import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
 import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.helper';
 import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
+import { roundMoney } from '../../../../core/utils/money.util';
 
 @Component({
   selector: 'app-b100-form',
@@ -21,20 +22,11 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
           class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           [ngModel]="localMonth()" (ngModelChange)="localMonth.set($event)"
         >
-            @for (m of months; track m.value) {
+          @for (m of months; track m.value) {
               <option [ngValue]="m.value">{{ m.label }}</option>
             }
-        </select>
-        <select
-          aria-label="Año"
-          class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          [ngModel]="localYear()" (ngModelChange)="localYear.set($event)"
-        >
-            @for (y of years; track y) {
-              <option [ngValue]="y">{{ y }}</option>
-            }
-        </select>
-      </div>
+          </select>
+        </div>
 
       <!-- Cuenta Ahorro -->
       <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -78,7 +70,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               step="any"
               placeholder="ej: 3"
               class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              [(ngModel)]="savingsTax"
+              [ngModel]="savingsTax"
+              (ngModelChange)="savingsTax.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">19% retenido (auto, editable)</p>
           </div>
@@ -89,7 +82,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               step="any"
               placeholder="ej: 100"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [(ngModel)]="savingsContribution"
+              [ngModel]="savingsContribution"
+              (ngModelChange)="savingsContribution.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
           </div>
@@ -100,7 +94,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               step="any"
               placeholder="ej: 50"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [(ngModel)]="savingsWithdrawal"
+              [ngModel]="savingsWithdrawal"
+              (ngModelChange)="savingsWithdrawal.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
           </div>
@@ -166,7 +161,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               step="any"
               placeholder="ej: 5"
               class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              [(ngModel)]="investmentTax"
+              [ngModel]="investmentTax"
+              (ngModelChange)="investmentTax.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">19% retenido (auto, editable)</p>
           </div>
@@ -177,7 +173,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               step="any"
               placeholder="ej: 200"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [(ngModel)]="investmentContribution"
+              [ngModel]="investmentContribution"
+              (ngModelChange)="investmentContribution.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
           </div>
@@ -188,7 +185,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               step="any"
               placeholder="ej: 100"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [(ngModel)]="investmentWithdrawal"
+              [ngModel]="investmentWithdrawal"
+              (ngModelChange)="investmentWithdrawal.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
           </div>
@@ -253,7 +251,7 @@ export class B100FormComponent {
   protected readonly getMonthLabel = getMonthLabel;
 
   protected readonly localMonth = signal(this.service.currentMonth());
-  protected readonly localYear = signal(this.service.currentYear());
+  protected readonly localYear = computed(() => this.service.currentYear());
 
   protected readonly editingSavings = signal<MonthlySnapshot | null>(null);
   protected readonly editingInvestment = signal<MonthlySnapshot | null>(null);
@@ -304,13 +302,15 @@ export class B100FormComponent {
 
   protected readonly historySavings = computed(() =>
     this.service.getSnapshotsByAccount(this.SAVINGS_ID)
-      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+      .filter(s => s.year === this.localYear())
+      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + b.month))
       .slice(0, 2)
   );
 
   protected readonly historyInvestment = computed(() =>
     this.service.getSnapshotsByAccount(this.INVESTMENT_ID)
-      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+      .filter(s => s.year === this.localYear())
+      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + b.month))
       .slice(0, 2)
   );
 
@@ -371,7 +371,7 @@ export class B100FormComponent {
 
   protected onEditSavings(snap: MonthlySnapshot): void {
     this.editingSavings.set(snap);
-    this.localYear.set(snap.year);
+    this.service.currentYear.set(snap.year);
     this.localMonth.set(snap.month);
     this.savingsBalance.userValue.set(snap.balance);
     this.savingsBalance.hasUserValue.set(true);
@@ -399,7 +399,7 @@ export class B100FormComponent {
 
   protected onEditInvestment(snap: MonthlySnapshot): void {
     this.editingInvestment.set(snap);
-    this.localYear.set(snap.year);
+    this.service.currentYear.set(snap.year);
     this.localMonth.set(snap.month);
     this.investmentBalance.userValue.set(snap.balance);
     this.investmentBalance.hasUserValue.set(true);
@@ -426,13 +426,13 @@ export class B100FormComponent {
   }
 
   protected saveSavings(): void {
-    const bal = this.savingsBalance.display();
+    const bal = roundMoney(this.savingsBalance.display() ?? 0) ?? 0;
     if (bal === null) { return; }
 
-    const inter = this.savingsInterest.display() ?? 0;
-    const contrib = this.savingsContribution() ?? 0;
-    const withdrawal = this.savingsWithdrawal() ?? 0;
-    const tax = this.savingsTax() ?? 0;
+    const inter = roundMoney(this.savingsInterest.display() ?? 0) ?? 0;
+    const contrib = roundMoney(this.savingsContribution() ?? 0) ?? 0;
+    const withdrawal = roundMoney(this.savingsWithdrawal() ?? 0) ?? 0;
+    const tax = roundMoney(this.savingsTax() ?? 0) ?? 0;
 
     const existing = this.editingSavings();
     if (existing) {
@@ -453,13 +453,13 @@ export class B100FormComponent {
   }
 
   protected saveInvestment(): void {
-    const bal = this.investmentBalance.display();
+    const bal = roundMoney(this.investmentBalance.display() ?? 0) ?? 0;
     if (bal === null) { return; }
 
-    const inter = this.investmentInterest.display() ?? 0;
-    const contrib = this.investmentContribution() ?? 0;
-    const withdrawal = this.investmentWithdrawal() ?? 0;
-    const tax = this.investmentTax() ?? 0;
+    const inter = roundMoney(this.investmentInterest.display() ?? 0) ?? 0;
+    const contrib = roundMoney(this.investmentContribution() ?? 0) ?? 0;
+    const withdrawal = roundMoney(this.investmentWithdrawal() ?? 0) ?? 0;
+    const tax = roundMoney(this.investmentTax() ?? 0) ?? 0;
 
     const existing = this.editingInvestment();
     if (existing) {

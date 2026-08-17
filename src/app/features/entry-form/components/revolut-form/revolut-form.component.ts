@@ -7,6 +7,7 @@ import { Account } from '../../../../models/account';
 import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
 import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.helper';
 import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
+import { roundMoney } from '../../../../core/utils/money.util';
 
 @Component({
   selector: 'app-revolut-form',
@@ -20,19 +21,11 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
         <select
           aria-label="Mes"
           class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-          [(ngModel)]="localMonth"
+          [ngModel]="localMonth"
+          (ngModelChange)="localMonth.set($event)"
         >
           @for (m of months; track m.value) {
             <option [value]="m.value">{{ m.label }}</option>
-          }
-        </select>
-        <select
-          aria-label="Año"
-          class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-          [(ngModel)]="localYear"
-        >
-          @for (y of years; track y) {
-            <option [value]="y">{{ y }}</option>
           }
         </select>
       </div>
@@ -75,7 +68,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             step="any"
             placeholder="ej: 3"
             class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-            [(ngModel)]="tax"
+            [ngModel]="tax"
+            (ngModelChange)="tax.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">19% retenido (auto, editable)</p>
         </div>
@@ -86,7 +80,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             step="any"
             placeholder="ej: 100"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-            [(ngModel)]="contribution"
+            [ngModel]="contribution"
+            (ngModelChange)="contribution.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
         </div>
@@ -97,7 +92,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             step="any"
             placeholder="ej: 50"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-            [(ngModel)]="withdrawal"
+            [ngModel]="withdrawal"
+            (ngModelChange)="withdrawal.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
         </div>
@@ -140,7 +136,7 @@ export class RevolutFormComponent {
   protected readonly getMonthLabel = getMonthLabel;
 
   protected readonly localMonth = signal(this.service.currentMonth());
-  protected readonly localYear = signal(this.service.currentYear());
+  protected readonly localYear = computed(() => this.service.currentYear());
   protected readonly tae = signal<number | null>(null);
   protected readonly contribution = signal<number | null>(null);
   protected readonly withdrawal = signal<number | null>(null);
@@ -176,7 +172,8 @@ export class RevolutFormComponent {
 
   protected readonly history = computed(() =>
     this.service.getSnapshotsByAccount(this.ACCOUNT_ID)
-      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+      .filter(s => s.year === this.localYear())
+      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + b.month))
   );
 
   constructor() {
@@ -209,7 +206,7 @@ export class RevolutFormComponent {
 
   protected onEdit(snap: MonthlySnapshot): void {
     this.editingSnapshot.set(snap);
-    this.localYear.set(snap.year);
+    this.service.currentYear.set(snap.year);
     this.localMonth.set(snap.month);
     this.balance.userValue.set(snap.balance);
     this.balance.hasUserValue.set(true);
@@ -233,13 +230,13 @@ export class RevolutFormComponent {
   }
 
   protected save(): void {
-    const bal = this.balance.display();
+    const bal = roundMoney(this.balance.display() ?? 0) ?? 0;
     if (bal === null) { return; }
 
-    const inter = this.interest.display() ?? 0;
-    const contrib = this.contribution() ?? 0;
-    const withdrawal = this.withdrawal() ?? 0;
-    const tax = this.tax() ?? 0;
+    const inter = roundMoney(this.interest.display() ?? 0) ?? 0;
+    const contrib = roundMoney(this.contribution() ?? 0) ?? 0;
+    const withdrawal = roundMoney(this.withdrawal() ?? 0) ?? 0;
+    const tax = roundMoney(this.tax() ?? 0) ?? 0;
 
     const existing = this.editingSnapshot();
     if (existing) {

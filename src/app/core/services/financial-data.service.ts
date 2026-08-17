@@ -8,6 +8,8 @@ import { IncomesDataService } from './incomes.service';
 import { SalaryDataService } from './salary.service';
 import { InvestmentsDataService } from './investments.service';
 import { SummaryDataService } from './summary.service';
+import { MintosInterestDataService } from './mintos-interest.service';
+import { roundMoney } from '../utils/money.util';
 
 import {
   Platform,
@@ -16,6 +18,7 @@ import {
   InvestmentHolding,
   InvestmentTransaction,
   CrowdlendingInvestment,
+  MintosAnnualInterest,
   MyInvestorFund,
   FundBalance,
   Expense,
@@ -41,6 +44,7 @@ export class FinancialDataService {
   private readonly salaryData = inject(SalaryDataService);
   private readonly investmentsData = inject(InvestmentsDataService);
   private readonly summaryData = inject(SummaryDataService);
+  private readonly mintosInterestData = inject(MintosInterestDataService);
 
   readonly platforms = computed(() => this.platformsData.platforms());
   readonly accounts = computed(() => this.platformsData.accounts());
@@ -66,20 +70,23 @@ export class FinancialDataService {
     effect(() => {
       const snapshots = this.snapshots();
       if (this.autoAdjustedToData || snapshots.length === 0) { return; }
+      this.autoAdjustedToData = true;
 
-      const latest = this.latestMonthWithData();
-      if (!latest) { return; }
-
+      const year = this.currentYear();
+      const month = this.currentMonth();
       const hasDataForCurrentMonth = snapshots.some(s =>
-        s.year === this.currentYear() && s.month === this.currentMonth() &&
+        s.year === year && s.month === month &&
         (s.balance !== 0 || s.income !== 0 || s.expenses !== 0)
       );
+      if (hasDataForCurrentMonth) { return; }
 
-      if (!hasDataForCurrentMonth) {
-        this.currentYear.set(latest.year);
-        this.currentMonth.set(latest.month);
+      // Ajusta únicamente el mes al último con datos de ESTE año, sin salir del año actual.
+      const latestMonthThisYear = snapshots
+        .filter(s => s.year === year && (s.balance !== 0 || s.income !== 0 || s.expenses !== 0))
+        .reduce((max, s) => (s.month > max ? s.month : max), 0);
+      if (latestMonthThisYear > 0) {
+        this.currentMonth.set(latestMonthThisYear);
       }
-      this.autoAdjustedToData = true;
     }, { allowSignalWrites: true });
   }
 
@@ -109,6 +116,10 @@ export class FinancialDataService {
 
   loadAllSnapshots(force = false): void {
     this.snapshotsData.loadAllSnapshots(force);
+  }
+
+  loadSnapshotsByYear(year: number, accountId?: string): void {
+    this.snapshotsData.loadSnapshotsByYear(year, accountId);
   }
 
   loadAllPlatforms(force = false): void {
@@ -192,12 +203,12 @@ export class FinancialDataService {
     }
 
     const snapshots = this.getSnapshotsByMonth(year, month);
-    const totalBalance = snapshots.reduce((sum, s) => sum + s.balance, 0);
-    const totalIncome = snapshots.reduce((sum, s) => sum + s.income, 0);
-    const totalExpenses = snapshots.reduce((sum, s) => sum + s.expenses, 0);
-    const balanceWithoutExpenses = snapshots
+    const totalBalance = roundMoney(snapshots.reduce((sum, s) => sum + (s.balance ?? 0), 0)) ?? 0;
+    const totalIncome = roundMoney(snapshots.reduce((sum, s) => sum + (s.income ?? 0), 0)) ?? 0;
+    const totalExpenses = roundMoney(snapshots.reduce((sum, s) => sum + (s.expenses ?? 0), 0)) ?? 0;
+    const balanceWithoutExpenses = roundMoney(snapshots
       .filter(s => this.platformsData.getAccountPlatformId(s.accountId) !== EXPENSES_PLATFORM_ID)
-      .reduce((sum, s) => sum + s.balance, 0);
+      .reduce((sum, s) => sum + (s.balance ?? 0), 0)) ?? 0;
 
     return {
       year,
@@ -219,17 +230,6 @@ export class FinancialDataService {
 
   getAvailableMonths(): { year: number; month: number }[] {
     return this.snapshotsData.getAvailableMonths();
-  }
-
-  private latestMonthWithData(): { year: number; month: number } | null {
-    const months = this.getAvailableMonths();
-    for (let i = months.length - 1; i >= 0; i--) {
-      const { year, month } = months[i];
-      const hasData = this.getSnapshotsByMonth(year, month)
-        .some(s => s.balance !== 0 || s.income !== 0 || s.expenses !== 0);
-      if (hasData) { return { year, month }; }
-    }
-    return null;
   }
 
   addSnapshot(snapshot: MonthlySnapshot): void {
@@ -388,5 +388,13 @@ export class FinancialDataService {
 
   deleteFundBalance(id: string): Observable<void> {
     return this.investmentsData.deleteFundBalance(id);
+  }
+
+  getMintosAnnualInterest(year: number): Observable<MintosAnnualInterest | null> {
+    return this.mintosInterestData.getByYear(year);
+  }
+
+  saveMintosAnnualInterest(interest: MintosAnnualInterest): Observable<MintosAnnualInterest> {
+    return this.mintosInterestData.save(interest);
   }
 }

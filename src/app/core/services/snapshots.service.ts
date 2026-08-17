@@ -8,14 +8,13 @@ import { SnapshotUpsert } from '../../api/generated/model/snapshotUpsert';
 import { MonthlySnapshotCreate } from '../../api/generated/model/monthlySnapshotCreate';
 import { MonthlySnapshotUpdate } from '../../api/generated/model/monthlySnapshotUpdate';
 import { MonthlySnapshot } from '../../models';
+import { roundMoney } from '../utils/money.util';
 import { LoggerService } from './logger.service';
 
 @Injectable({ providedIn: 'root' })
 export class SnapshotsDataService {
   private readonly snapshotsApi = inject(SnapshotsService);
   private readonly logger = inject(LoggerService);
-
-  private static readonly SNAPSHOTS_CACHE_KEY = 'centimo:snapshots';
 
   readonly snapshots = signal<MonthlySnapshot[]>([]);
 
@@ -37,15 +36,9 @@ export class SnapshotsDataService {
 
   loadAllSnapshots(force = false): void {
     if (force) {
-      this.clearSnapshotsCache();
+      this.snapshots.set([]);
     } else if (this.snapshots().length > 0) {
       return;
-    } else {
-      const cached = this.loadSnapshotsCache();
-      if (cached.length > 0) {
-        this.snapshots.set(cached);
-        return;
-      }
     }
     this.snapshotsApi.listSnapshots().pipe(
       map(list => list.map(s => ({
@@ -53,11 +46,11 @@ export class SnapshotsDataService {
         accountId: s.accountId,
         year: s.year,
         month: s.month,
-        balance: s.balance,
-        income: s.income,
-        expenses: s.expenses,
-        contribution: s.contribution ?? undefined,
-        tax: s.tax ?? undefined,
+        balance: roundMoney(s.balance ?? 0) ?? 0,
+        income: roundMoney(s.income ?? 0) ?? 0,
+        expenses: roundMoney(s.expenses ?? 0) ?? 0,
+        contribution: s.contribution != null ? roundMoney(s.contribution) ?? undefined : undefined,
+        tax: s.tax != null ? roundMoney(s.tax) ?? undefined : undefined,
         notes: s.notes ?? undefined,
         checklistItems: s.checklistItems ?? undefined,
       }))),
@@ -67,36 +60,37 @@ export class SnapshotsDataService {
       }),
     ).subscribe(snapshots => {
       this.snapshots.set(snapshots);
-      this.saveSnapshotsCache(snapshots);
     });
   }
 
-  private loadSnapshotsCache(): MonthlySnapshot[] {
-    try {
-      if (typeof localStorage === 'undefined') { return []; }
-      const raw = localStorage.getItem(SnapshotsDataService.SNAPSHOTS_CACHE_KEY);
-      return raw ? JSON.parse(raw) as MonthlySnapshot[] : [];
-    } catch {
-      return [];
-    }
-  }
-
-  private saveSnapshotsCache(snapshots: MonthlySnapshot[]): void {
-    try {
-      if (typeof localStorage === 'undefined') { return; }
-      localStorage.setItem(SnapshotsDataService.SNAPSHOTS_CACHE_KEY, JSON.stringify(snapshots));
-    } catch (err) {
-      this.logger.error('SnapshotsData', 'saveSnapshotsCache error', err);
-    }
-  }
-
-  private clearSnapshotsCache(): void {
-    try {
-      if (typeof localStorage === 'undefined') { return; }
-      localStorage.removeItem(SnapshotsDataService.SNAPSHOTS_CACHE_KEY);
-    } catch (err) {
-      this.logger.error('SnapshotsData', 'clearSnapshotsCache error', err);
-    }
+  /** Carga instantáneas desde el backend filtradas por año (y opcionalmente cuenta) y las fusiona. */
+  loadSnapshotsByYear(year: number, accountId?: string): void {
+    this.snapshotsApi.listSnapshots(year, accountId).pipe(
+      map(list => list.map(s => ({
+        id: s.id,
+        accountId: s.accountId,
+        year: s.year,
+        month: s.month,
+        balance: roundMoney(s.balance ?? 0) ?? 0,
+        income: roundMoney(s.income ?? 0) ?? 0,
+        expenses: roundMoney(s.expenses ?? 0) ?? 0,
+        contribution: s.contribution != null ? roundMoney(s.contribution) ?? undefined : undefined,
+        tax: s.tax != null ? roundMoney(s.tax) ?? undefined : undefined,
+        notes: s.notes ?? undefined,
+        checklistItems: s.checklistItems ?? undefined,
+      }))),
+      catchError((err) => {
+        this.logger.error('SnapshotsData', 'loadSnapshotsByYear error', err);
+        return of([]);
+      }),
+    ).subscribe(snapshots => {
+      this.snapshots.update(current => {
+        const others = accountId
+          ? current.filter(s => !(s.year === year && s.accountId === accountId))
+          : current.filter(s => s.year !== year);
+        return [...others, ...snapshots];
+      });
+    });
   }
 
 
@@ -118,15 +112,14 @@ export class SnapshotsDataService {
         accountId: created.accountId,
         year: created.year,
         month: created.month,
-        balance: created.balance,
-        income: created.income,
-        expenses: created.expenses,
-        contribution: created.contribution ?? undefined,
-        tax: created.tax ?? undefined,
+        balance: roundMoney(created.balance ?? 0) ?? 0,
+        income: roundMoney(created.income ?? 0) ?? 0,
+        expenses: roundMoney(created.expenses ?? 0) ?? 0,
+        contribution: created.contribution != null ? roundMoney(created.contribution) ?? undefined : undefined,
+        tax: created.tax != null ? roundMoney(created.tax) ?? undefined : undefined,
         notes: created.notes ?? undefined,
         checklistItems: created.checklistItems ?? undefined,
       }]);
-      this.saveSnapshotsCache(this.snapshots());
     });
   }
 
@@ -145,16 +138,15 @@ export class SnapshotsDataService {
         accountId: updated.accountId,
         year: updated.year,
         month: updated.month,
-        balance: updated.balance,
-        income: updated.income,
-        expenses: updated.expenses,
-        contribution: updated.contribution ?? undefined,
-        tax: updated.tax ?? undefined,
+        balance: roundMoney(updated.balance ?? 0) ?? 0,
+        income: roundMoney(updated.income ?? 0) ?? 0,
+        expenses: roundMoney(updated.expenses ?? 0) ?? 0,
+        contribution: updated.contribution != null ? roundMoney(updated.contribution) ?? undefined : undefined,
+        tax: updated.tax != null ? roundMoney(updated.tax) ?? undefined : undefined,
         notes: updated.notes ?? undefined,
         checklistItems: updated.checklistItems ?? undefined,
       };
       this.snapshots.update(arr => arr.map(s => s.id === id ? snapshot : s));
-      this.saveSnapshotsCache(this.snapshots());
     });
   }
 
@@ -176,11 +168,11 @@ export class SnapshotsDataService {
           accountId: result.accountId,
           year: result.year,
           month: result.month,
-          balance: result.balance,
-          income: result.income,
-          expenses: result.expenses,
-          contribution: result.contribution ?? undefined,
-          tax: result.tax ?? undefined,
+          balance: roundMoney(result.balance ?? 0) ?? 0,
+          income: roundMoney(result.income ?? 0) ?? 0,
+          expenses: roundMoney(result.expenses ?? 0) ?? 0,
+          contribution: result.contribution != null ? roundMoney(result.contribution) ?? undefined : undefined,
+          tax: result.tax != null ? roundMoney(result.tax) ?? undefined : undefined,
           notes: result.notes ?? undefined,
           checklistItems: result.checklistItems ?? undefined,
         };
@@ -192,7 +184,6 @@ export class SnapshotsDataService {
         } else {
           this.snapshots.update(arr => [...arr, snapshot]);
         }
-        this.saveSnapshotsCache(this.snapshots());
         return result;
       }),
     );
@@ -208,13 +199,11 @@ export class SnapshotsDataService {
         ),
       };
     }));
-    this.saveSnapshotsCache(this.snapshots());
   }
 
   deleteSnapshot(id: string): void {
     this.snapshotsApi.deleteSnapshot(id).subscribe(() => {
       this.snapshots.update(arr => arr.filter(s => s.id !== id));
-      this.saveSnapshotsCache(this.snapshots());
     });
   }
 

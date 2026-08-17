@@ -11,6 +11,7 @@ export * from './income-source';
 export * from './investment-holding';
 export * from './investment-transaction';
 export * from './monthly-snapshot';
+export * from './mintos-annual-interest';
 export * from './monthly-summary';
 export * from './myinvestor-fund';
 export * from './platform';

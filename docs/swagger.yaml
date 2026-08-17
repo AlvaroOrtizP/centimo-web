@@ -612,6 +612,19 @@ paths:
       tags: [Snapshots]
       operationId: listSnapshots
       summary: Listar todas las instantaneas
+      parameters:
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Filtrar las instantaneas por año
+        - name: accountId
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtrar las instantaneas por cuenta
       responses:
         '200':
           description: Lista de instantaneas
@@ -1122,6 +1135,86 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  # ── Mintos intereses anuales ──
+  /mintos/intereses-anuales:
+    get:
+      tags: [MintosInteresesAnuales]
+      operationId: listMintosInteresesAnuales
+      summary: Listar intereses anuales de Mintos
+      parameters:
+        - name: anio
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de intereses anuales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MintosInterestAnnual'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [MintosInteresesAnuales]
+      operationId: createMintosInteresAnual
+      summary: Crear intereses anuales de Mintos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MintosInterestAnnualCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MintosInterestAnnual'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /mintos/intereses-anuales/{id}:
+    parameters:
+      - $ref: '#/components/parameters/MintosInterestAnnualId'
+    put:
+      tags: [MintosInteresesAnuales]
+      operationId: updateMintosInteresAnual
+      summary: Actualizar intereses anuales de Mintos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MintosInterestAnnualCreate'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MintosInterestAnnual'
+        '400':
+          description: Error generico 400
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [MintosInteresesAnuales]
+      operationId: deleteMintosInteresAnual
+      summary: Eliminar intereses anuales de Mintos
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   # ── MyInvestor Funds ──
   /myinvestor-funds:
     get:
@@ -1514,6 +1607,12 @@ components:
       schema:
         type: string
     FundBalanceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    MintosInterestAnnualId:
       name: id
       in: path
       required: true
@@ -2339,6 +2438,55 @@ components:
           format: float
         status:
           $ref: '#/components/schemas/ProjectStatus'
+
+    # ═══════════ MintosInterestAnnual ═══════════
+    MintosInterestAnnual:
+      type: object
+      required: [id, year, amount, taxWithholding, taxRate, netAmount]
+      properties:
+        id:
+          type: string
+        year:
+          type: integer
+        amount:
+          type: number
+          format: float
+          description: Cantidad
+        taxWithholding:
+          type: number
+          format: float
+          description: Retencion de impuestos
+        taxRate:
+          type: number
+          format: float
+          description: Tipo impositivo
+        netAmount:
+          type: number
+          format: float
+          description: Importe despues de los impuestos
+
+    MintosInterestAnnualCreate:
+      type: object
+      required: [year, amount, taxWithholding, taxRate, netAmount]
+      properties:
+        year:
+          type: integer
+        amount:
+          type: number
+          format: float
+          description: Cantidad
+        taxWithholding:
+          type: number
+          format: float
+          description: Retencion de impuestos
+        taxRate:
+          type: number
+          format: float
+          description: Tipo impositivo
+        netAmount:
+          type: number
+          format: float
+          description: Importe despues de los impuestos
 
     # ═══════════ MyInvestorFund ═══════════
     MyInvestorFund:

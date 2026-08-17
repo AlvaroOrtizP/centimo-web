@@ -24,7 +24,8 @@ import { ASSET_SUGGESTIONS } from '../../../../core/constants/trade.constants';
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div>
           <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Cuenta</label>
-          <select class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500" [(ngModel)]="selectedAccountId">
+          <select class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500" [ngModel]="selectedAccountId"
+ (ngModelChange)="selectedAccountId.set($event)">
             <option value="">Selecciona cuenta</option>
             @for (acc of accounts(); track acc.id) {
               <option [value]="acc.id">{{ acc.name }}</option>
@@ -52,7 +53,8 @@ import { ASSET_SUGGESTIONS } from '../../../../core/constants/trade.constants';
 
         <div>
           <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Clase de activo</label>
-          <select class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500" [(ngModel)]="assetType">
+          <select class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500" [ngModel]="assetType"
+ (ngModelChange)="assetType.set($event)">
             <option value="crypto">Crypto</option>
             <option value="stock">Acción</option>
             <option value="etf">ETF</option>
@@ -67,7 +69,8 @@ import { ASSET_SUGGESTIONS } from '../../../../core/constants/trade.constants';
           type="text"
           placeholder="Busca o escribe el activo..."
           class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
-          [(ngModel)]="assetName"
+          [ngModel]="assetName"
+          (ngModelChange)="assetName.set($event)"
         />
         @if (suggestions().length > 0 && !assetName()) {
           <div class="mt-2 flex flex-wrap gap-1.5">
@@ -92,7 +95,8 @@ import { ASSET_SUGGESTIONS } from '../../../../core/constants/trade.constants';
             step="any"
             placeholder="ej: 0.5"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
-            [(ngModel)]="quantity"
+            [ngModel]="quantity"
+            (ngModelChange)="quantity.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Unidades compradas o vendidas</p>
         </div>
@@ -103,13 +107,15 @@ import { ASSET_SUGGESTIONS } from '../../../../core/constants/trade.constants';
             step="any"
             placeholder="ej: 30000"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500"
-            [(ngModel)]="price"
+            [ngModel]="price"
+            (ngModelChange)="price.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Precio por cada unidad</p>
         </div>
         <div>
           <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Fecha</label>
-          <input type="date" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500" [(ngModel)]="date" />
+          <input type="date" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500" [ngModel]="date"
+ (ngModelChange)="date.set($event)" />
         </div>
       </div>
 

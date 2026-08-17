@@ -29,12 +29,16 @@ type ExpensesMode = 'acumulado' | 'mensual';
           class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100"
           (click)="service.refreshCachedData()"
         >Resetear cache</button>
-        <button
-          type="button"
-          title="buscar saldos por plataforma del año y mes seleccionados"
-          class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100"
-          (click)="searchPlatformBalances()"
-        >Buscar saldos</button>
+        @if (selectedPlatformId()) {
+          <div class="flex items-center gap-1.5 rounded-lg border border-[#00A3E0] bg-[#00A3E0]/5 px-2.5 py-1 text-xs font-medium text-[#00A3E0]">
+            <span class="max-w-[140px] truncate">{{ selectedPlatformName() }}</span>
+            <button
+              type="button"
+              class="font-semibold underline-offset-2 hover:underline"
+              (click)="resetView()"
+            >Ver todo</button>
+          </div>
+        }
         <app-month-picker />
       </div>
       <app-summary-cards [summary]="currentSummary()" [previousSummary]="previousSummary()" />
@@ -218,14 +222,9 @@ export class DashboardComponent {
     this.selectedPlatformId.update(current => current === platformId ? null : platformId);
   }
 
-  protected readonly balancesMonths = 6;
-
-  searchPlatformBalances(): void {
-    const year = this.service.currentYear();
-    const month = this.service.currentMonth();
-    this.viewYear.set(year);
-    this.viewMonth.set(month);
-    this.service.loadPlatformMonthlyBalances(year, month, this.balancesMonths, true);
+  resetView(): void {
+    this.selectedPlatformId.set(null);
+    this.chartMode.set('total');
   }
 
   private getPlatformBalanceForMonth(platformId: string, year: number, month: number): number {

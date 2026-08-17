@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../core/services/financial-data.service';
@@ -13,32 +13,45 @@ import { MONTHS, YEARS } from '../../../core/constants/date.constants';
       <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1 text-gray-400 flex-shrink-0">
         <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>
       </svg>
-      <select
-        aria-label="Seleccionar mes"
-        class="appearance-none bg-transparent px-1 py-1 text-sm font-medium text-gray-700 outline-none"
-        [ngModel]="service.currentMonth()"
-        (ngModelChange)="service.currentMonth.set(+$event)"
-      >
-        @for (m of months; track $index) {
-          <option [value]="$index + 1">{{ m }}</option>
-        }
-      </select>
-      <span class="text-gray-300">|</span>
-      <select
-        aria-label="Seleccionar año"
-        class="appearance-none bg-transparent px-1 py-1 text-sm font-medium text-gray-700 outline-none"
-        [ngModel]="service.currentYear()"
-        (ngModelChange)="service.currentYear.set(+$event)"
-      >
-        @for (y of years; track y) {
-          <option [value]="y">{{ y }}</option>
-        }
-      </select>
+      @if (showMonth()) {
+        <select
+          aria-label="Seleccionar mes"
+          class="appearance-none bg-transparent px-1 py-1 text-sm font-medium text-gray-700 outline-none"
+          [ngModel]="service.currentMonth()"
+          [compareWith]="compareWithFn"
+          (ngModelChange)="service.currentMonth.set(+$event)"
+        >
+          @for (m of months; track $index) {
+            <option [value]="$index + 1">{{ m }}</option>
+          }
+        </select>
+      }
+      @if (showMonth() && showYear()) {
+        <span class="text-gray-300">|</span>
+      }
+      @if (showYear()) {
+        <select
+          aria-label="Seleccionar año"
+          class="appearance-none bg-transparent px-1 py-1 text-sm font-medium text-gray-700 outline-none"
+          [ngModel]="service.currentYear()"
+          [compareWith]="compareWithFn"
+          (ngModelChange)="service.currentYear.set(+$event)"
+        >
+          @for (y of years(); track y) {
+            <option [value]="y">{{ y }}</option>
+          }
+        </select>
+      }
     </div>
   `,
 })
 export class MonthPickerComponent {
+  readonly showMonth = input(true);
+  readonly showYear = input(true);
+  readonly years = input<number[]>(YEARS);
+
   protected readonly service = inject(FinancialDataService);
   protected readonly months = MONTHS;
-  protected readonly years = YEARS;
+
+  protected readonly compareWithFn = (a: unknown, b: unknown): boolean => String(a) === String(b);
 }
