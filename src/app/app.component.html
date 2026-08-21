@@ -1,33 +1,35 @@
-@if (!isLoginRoute()) {
-  <div class="flex h-screen bg-gray-50">
-    <app-sidebar />
+<div class="flex h-screen bg-gray-50">
+  @if (sidebarOpen()) {
+    <div
+      class="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
+      (click)="closeSidebar()"
+    ></div>
+  }
 
-    <div class="flex flex-1 flex-col overflow-hidden">
-      <header class="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3">
-        <span class="text-sm font-semibold text-gray-700">Centimo</span>
-        <nav class="flex items-center gap-4">
-          <a class="text-sm text-indigo-600 hover:underline" routerLink="/setup-2fa">
-            Configurar 2FA
-          </a>
-          @if (isAuthenticated()) {
-            <button
-              type="button"
-              class="rounded-md bg-gray-100 px-3 py-1 text-sm text-gray-700 hover:bg-gray-200"
-              (click)="logout()"
-            >
-              Cerrar sesión
-            </button>
-          }
-        </nav>
-      </header>
+  <aside
+    class="fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 lg:static lg:z-auto lg:w-auto lg:transform-none"
+    [class.-translate-x-full]="!sidebarOpen()"
+  >
+    <app-sidebar (navigate)="closeSidebar()" (close)="closeSidebar()" />
+  </aside>
 
-      <main class="flex-1 overflow-y-auto">
-        <div class="mx-auto max-w-6xl px-6 py-8">
-          <router-outlet />
-        </div>
-      </main>
+  <main class="flex min-w-0 flex-1 flex-col">
+    <app-header (menuClick)="toggleSidebar()" />
+    <div class="flex-1 overflow-y-auto">
+      <div class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
+        <router-outlet />
+      </div>
     </div>
+  </main>
+</div>
+
+@if (updateAvailable()) {
+  <div class="fixed inset-x-0 bottom-4 z-[60] mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 shadow-lg">
+    <p class="text-sm text-blue-800">Nueva versión disponible</p>
+    <button
+      type="button"
+      (click)="applyUpdate()"
+      class="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+    >Actualizar</button>
   </div>
-} @else {
-  <router-outlet />
 }

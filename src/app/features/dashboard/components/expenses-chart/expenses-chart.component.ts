@@ -6,9 +6,9 @@ import { BaseChartComponent } from '../../../../shared/components/base-chart/bas
   selector: 'app-expenses-chart',
   standalone: true,
   template: `
-    <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-lg">
-      <div class="mb-4 flex items-center justify-between">
-        <h2 class="text-base font-semibold text-gray-900">
+    <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-lg lg:p-5">
+      <div class="mb-3 flex items-center justify-between sm:mb-4">
+        <h2 class="text-sm font-semibold text-gray-900 sm:text-base">
           {{ selectedPlatformName() || title() }}
         </h2>
         <div class="flex items-center gap-2">
@@ -18,7 +18,7 @@ import { BaseChartComponent } from '../../../../shared/components/base-chart/bas
           <ng-content select="[actions]"></ng-content>
         </div>
       </div>
-      <div class="relative h-72">
+      <div class="relative h-56 sm:h-64 lg:h-72">
         <canvas aria-label="Gráfico de gastos acumulados" role="img" #canvas></canvas>
       </div>
     </div>
