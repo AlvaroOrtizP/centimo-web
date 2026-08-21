@@ -327,11 +327,9 @@ describe('DashboardComponent', () => {
 
 function setDashboardMonth(component: DashboardComponent, year: number, month: number): void {
   (component as unknown as {
-    viewYear: { set(value: number): void };
-    viewMonth: { set(value: number): void };
-  }).viewYear.set(year);
+    service: { currentYear: { set(value: number): void }; currentMonth: { set(value: number): void } };
+  }).service.currentYear.set(year);
   (component as unknown as {
-    viewYear: { set(value: number): void };
-    viewMonth: { set(value: number): void };
-  }).viewMonth.set(month);
+    service: { currentYear: { set(value: number): void }; currentMonth: { set(value: number): void } };
+  }).service.currentMonth.set(month);
 }
