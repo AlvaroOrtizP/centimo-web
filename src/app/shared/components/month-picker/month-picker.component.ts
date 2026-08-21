@@ -30,7 +30,7 @@ import { MONTHS, YEARS } from '../../../core/constants/date.constants';
         [ngModel]="service.currentYear()"
         (ngModelChange)="service.currentYear.set(+$event)"
       >
-        @for (y of years; track y) {
+        @for (y of years(); track y) {
           <option [value]="y">{{ y }}</option>
         }
       </select>

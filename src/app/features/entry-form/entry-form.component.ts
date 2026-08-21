@@ -20,6 +20,7 @@ interface TabConfig {
   key: Tab;
   label: string;
   color: string;
+  done: boolean;
 }
 
 const TAB_ACCOUNT_IDS: Partial<Record<Tab, string[]>> = {

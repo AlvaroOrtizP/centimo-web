@@ -5,6 +5,7 @@ interface NavItem {
   path: string;
   label: string;
   icon: string;
+  done?: boolean;
 }
 
 @Component({
