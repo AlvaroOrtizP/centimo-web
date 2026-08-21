@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../core/services/financial-data.service';
@@ -38,7 +38,12 @@ import { MONTHS, YEARS } from '../../../core/constants/date.constants';
   `,
 })
 export class MonthPickerComponent {
+  readonly showMonth = input(true);
+  readonly showYear = input(true);
+  readonly years = input<number[]>(YEARS);
+
   protected readonly service = inject(FinancialDataService);
   protected readonly months = MONTHS;
-  protected readonly years = YEARS;
+
+  protected readonly compareWithFn = (a: unknown, b: unknown): boolean => String(a) === String(b);
 }

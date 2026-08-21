@@ -13,8 +13,6 @@ import { FundBalanceCreate } from '../../api/generated/model/fundBalanceCreate';
 import { FundBalanceUpdate } from '../../api/generated/model/fundBalanceUpdate';
 
 import {
-  InvestmentHolding,
-  InvestmentTransaction,
   CrowdlendingInvestment,
   MyInvestorFund,
   FundBalance,
@@ -28,24 +26,15 @@ export class InvestmentsDataService {
   private readonly fundBalancesApi = inject(FundBalancesService);
   private readonly logger = inject(LoggerService);
 
-  readonly holdings = signal<InvestmentHolding[]>([]);
-  readonly trades = signal<InvestmentTransaction[]>([]);
   readonly crowdlending = signal<CrowdlendingInvestment[]>([]);
   readonly myInvestorFunds = signal<MyInvestorFund[]>([]);
   readonly fundBalances = signal<FundBalance[]>([]);
-
-  getHoldingsBySnapshot(snapshotId: string): InvestmentHolding[] {
-    return this.holdings().filter(h => h.snapshotId === snapshotId);
-  }
-
-  getTradesByAccount(accountId: string): InvestmentTransaction[] {
-    return this.trades().filter(t => t.accountId === accountId);
-  }
 
   getCrowdlendingByPlatform(platformId: string): CrowdlendingInvestment[] {
     return this.crowdlending().filter(c => c.platformId === platformId);
   }
 
+  /** @deprecated El endpoint /crowdlending ya no se carga al iniciar la web. Solo se usa al entrar datos (entry-form). */
   loadAllCrowdlending(): void {
     this.crowdlendingApi.listCrowdlending().pipe(
       map(list => list.map(this.mapFromApi)),
@@ -116,22 +105,6 @@ export class InvestmentsDataService {
     );
   }
 
-  addHolding(holding: InvestmentHolding): void {
-    this.holdings.update(arr => [...arr, holding]);
-  }
-
-  deleteHolding(id: string): void {
-    this.holdings.update(arr => arr.filter(h => h.id !== id));
-  }
-
-  addTrade(trade: InvestmentTransaction): void {
-    this.trades.update(arr => [...arr, trade]);
-  }
-
-  deleteTrade(id: string): void {
-    this.trades.update(arr => arr.filter(t => t.id !== id));
-  }
-
   addMyInvestorFund(fund: MyInvestorFund): Observable<MyInvestorFund> {
     const create: MyInvestorFundCreate = {
       id: fund.id,
@@ -162,6 +135,7 @@ export class InvestmentsDataService {
     );
   }
 
+  /** @deprecated El endpoint /myinvestor-funds ya no se carga al iniciar la web. Solo se usa al entrar datos (entry-form). */
   loadAllMyInvestorFunds(): void {
     this.myInvestorFundsApi.listMyInvestorFunds().pipe(
       catchError(err => {

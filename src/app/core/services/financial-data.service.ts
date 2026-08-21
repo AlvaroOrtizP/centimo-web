@@ -8,14 +8,15 @@ import { IncomesDataService } from './incomes.service';
 import { SalaryDataService } from './salary.service';
 import { InvestmentsDataService } from './investments.service';
 import { SummaryDataService } from './summary.service';
+import { MintosInterestDataService } from './mintos-interest.service';
+import { roundMoney } from '../utils/money.util';
 
 import {
   Platform,
   Account,
   MonthlySnapshot,
-  InvestmentHolding,
-  InvestmentTransaction,
   CrowdlendingInvestment,
+  MintosAnnualInterest,
   MyInvestorFund,
   FundBalance,
   Expense,
@@ -23,6 +24,7 @@ import {
   MonthlySummary,
   SalaryAllocation,
   Commitment,
+  PlatformMonthlyBalance,
 } from '../../models';
 import { EXPENSES_PLATFORM_ID } from '../constants/platform.constants';
 
@@ -40,12 +42,11 @@ export class FinancialDataService {
   private readonly salaryData = inject(SalaryDataService);
   private readonly investmentsData = inject(InvestmentsDataService);
   private readonly summaryData = inject(SummaryDataService);
+  private readonly mintosInterestData = inject(MintosInterestDataService);
 
   readonly platforms = computed(() => this.platformsData.platforms());
   readonly accounts = computed(() => this.platformsData.accounts());
   readonly snapshots = computed(() => this.snapshotsData.snapshots());
-  readonly holdings = computed(() => this.investmentsData.holdings());
-  readonly trades = computed(() => this.investmentsData.trades());
   readonly crowdlending = computed(() => this.investmentsData.crowdlending());
   readonly myInvestorFunds = computed(() => this.investmentsData.myInvestorFunds());
   readonly fundBalances = computed(() => this.investmentsData.fundBalances());
@@ -57,26 +58,31 @@ export class FinancialDataService {
   readonly currentYear = signal(new Date().getFullYear());
   readonly currentMonth = signal(new Date().getMonth() + 1);
 
+  readonly platformMonthlyBalances = this.summaryData.platformMonthlyBalances;
+
   private autoAdjustedToData = false;
 
   constructor() {
     effect(() => {
       const snapshots = this.snapshots();
       if (this.autoAdjustedToData || snapshots.length === 0) { return; }
+      this.autoAdjustedToData = true;
 
-      const latest = this.latestMonthWithData();
-      if (!latest) { return; }
-
+      const year = this.currentYear();
+      const month = this.currentMonth();
       const hasDataForCurrentMonth = snapshots.some(s =>
-        s.year === this.currentYear() && s.month === this.currentMonth() &&
+        s.year === year && s.month === month &&
         (s.balance !== 0 || s.income !== 0 || s.expenses !== 0)
       );
+      if (hasDataForCurrentMonth) { return; }
 
-      if (!hasDataForCurrentMonth) {
-        this.currentYear.set(latest.year);
-        this.currentMonth.set(latest.month);
+      // Ajusta únicamente el mes al último con datos de ESTE año, sin salir del año actual.
+      const latestMonthThisYear = snapshots
+        .filter(s => s.year === year && (s.balance !== 0 || s.income !== 0 || s.expenses !== 0))
+        .reduce((max, s) => (s.month > max ? s.month : max), 0);
+      if (latestMonthThisYear > 0) {
+        this.currentMonth.set(latestMonthThisYear);
       }
-      this.autoAdjustedToData = true;
     }, { allowSignalWrites: true });
   }
 
@@ -104,24 +110,39 @@ export class FinancialDataService {
     return this.snapshotsData.getSnapshot(accountId, year, month);
   }
 
-  fetchSnapshotFromBackend(accountId: string, year: number, month: number): Observable<SnapshotResponse | null> {
-    return this.snapshotsData.fetchSnapshotFromBackend(accountId, year, month);
+  loadAllSnapshots(force = false): void {
+    this.snapshotsData.loadAllSnapshots(force);
   }
 
-  loadAllSnapshots(): void {
-    this.snapshotsData.loadAllSnapshots();
+  loadSnapshotsByYear(year: number, accountId?: string): void {
+    this.snapshotsData.loadSnapshotsByYear(year, accountId);
   }
 
-  loadAllPlatforms(): void {
-    this.platformsData.loadAllPlatforms();
+  loadAllPlatforms(force = false): void {
+    this.platformsData.loadAllPlatforms(force);
   }
 
-  loadAllAccounts(): void {
-    this.platformsData.loadAllAccounts();
+  /** Fuerza la recarga de todos los endpoints con cache (/platforms, /accounts y /snapshots). */
+  refreshCachedData(): void {
+    this.platformsData.loadAllPlatforms(true);
+    this.platformsData.loadAllAccounts(true);
+    this.snapshotsData.loadAllSnapshots(true);
+  }
+
+  loadAllAccounts(force = false): void {
+    this.platformsData.loadAllAccounts(force);
   }
 
   loadMonthlySummary(year: number, month: number): void {
     this.summaryData.loadMonthlySummary(year, month);
+  }
+
+  loadMonthlySummariesRange(year: number, month: number, months: number, force = false): void {
+    this.summaryData.loadMonthlySummariesRange(year, month, months, force);
+  }
+
+  loadPlatformMonthlyBalances(year: number, month: number, months: number, force = false): void {
+    this.summaryData.loadPlatformMonthlyBalances(year, month, months, force);
   }
 
   fetchNominaFromBackend(year: number, month: number): Observable<NominaResponse | null> {
@@ -130,14 +151,6 @@ export class FinancialDataService {
 
   createNomina(nomina: NominaCreate): Observable<NominaResponse | null> {
     return this.incomesData.createNomina(nomina);
-  }
-
-  getHoldingsBySnapshot(snapshotId: string): InvestmentHolding[] {
-    return this.investmentsData.getHoldingsBySnapshot(snapshotId);
-  }
-
-  getTradesByAccount(accountId: string): InvestmentTransaction[] {
-    return this.investmentsData.getTradesByAccount(accountId);
   }
 
   getCrowdlendingByPlatform(platformId: string): CrowdlendingInvestment[] {
@@ -178,12 +191,12 @@ export class FinancialDataService {
     }
 
     const snapshots = this.getSnapshotsByMonth(year, month);
-    const totalBalance = snapshots.reduce((sum, s) => sum + s.balance, 0);
-    const totalIncome = snapshots.reduce((sum, s) => sum + s.income, 0);
-    const totalExpenses = snapshots.reduce((sum, s) => sum + s.expenses, 0);
-    const balanceWithoutExpenses = snapshots
+    const totalBalance = roundMoney(snapshots.reduce((sum, s) => sum + (s.balance ?? 0), 0)) ?? 0;
+    const totalIncome = roundMoney(snapshots.reduce((sum, s) => sum + (s.income ?? 0), 0)) ?? 0;
+    const totalExpenses = roundMoney(snapshots.reduce((sum, s) => sum + (s.expenses ?? 0), 0)) ?? 0;
+    const balanceWithoutExpenses = roundMoney(snapshots
       .filter(s => this.platformsData.getAccountPlatformId(s.accountId) !== EXPENSES_PLATFORM_ID)
-      .reduce((sum, s) => sum + s.balance, 0);
+      .reduce((sum, s) => sum + (s.balance ?? 0), 0)) ?? 0;
 
     return {
       year,
@@ -207,17 +220,6 @@ export class FinancialDataService {
     return this.snapshotsData.getAvailableMonths();
   }
 
-  private latestMonthWithData(): { year: number; month: number } | null {
-    const months = this.getAvailableMonths();
-    for (let i = months.length - 1; i >= 0; i--) {
-      const { year, month } = months[i];
-      const hasData = this.getSnapshotsByMonth(year, month)
-        .some(s => s.balance !== 0 || s.income !== 0 || s.expenses !== 0);
-      if (hasData) { return { year, month }; }
-    }
-    return null;
-  }
-
   addSnapshot(snapshot: MonthlySnapshot): void {
     this.snapshotsData.addSnapshot(snapshot);
   }
@@ -226,16 +228,12 @@ export class FinancialDataService {
     this.snapshotsData.updateSnapshot(id, data);
   }
 
-  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number): Observable<SnapshotResponse> {
-    return this.snapshotsData.upsertSnapshot(accountId, year, month, balance, incomeDelta, expenses, contribution);
+  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number, tax?: number): Observable<SnapshotResponse> {
+    return this.snapshotsData.upsertSnapshot(accountId, year, month, balance, incomeDelta, expenses, contribution, tax);
   }
 
   toggleChecklistItem(snapshotId: string, itemId: string): void {
     this.snapshotsData.toggleChecklistItem(snapshotId, itemId);
-  }
-
-  addHolding(holding: InvestmentHolding): void {
-    this.investmentsData.addHolding(holding);
   }
 
   addExpense(expense: Expense): Observable<Expense> {
@@ -298,14 +296,6 @@ export class FinancialDataService {
     this.salaryData.deleteCommitment(id);
   }
 
-  addTrade(trade: InvestmentTransaction): void {
-    this.investmentsData.addTrade(trade);
-  }
-
-  deleteTrade(id: string): void {
-    this.investmentsData.deleteTrade(id);
-  }
-
   addCrowdlendingInvestment(investment: CrowdlendingInvestment): Observable<CrowdlendingInvestment> {
     return this.investmentsData.addCrowdlendingInvestment(investment);
   }
@@ -318,16 +308,13 @@ export class FinancialDataService {
     return this.investmentsData.deleteCrowdlendingInvestment(id);
   }
 
+  /** @deprecated El endpoint /crowdlending ya no se carga al iniciar la web. Solo se usa al entrar datos. */
   loadAllCrowdlending(): void {
     this.investmentsData.loadAllCrowdlending();
   }
 
   deleteSnapshot(id: string): void {
     this.snapshotsData.deleteSnapshot(id);
-  }
-
-  deleteHolding(id: string): void {
-    this.investmentsData.deleteHolding(id);
   }
 
   addMyInvestorFund(fund: MyInvestorFund): Observable<MyInvestorFund> {
@@ -342,6 +329,7 @@ export class FinancialDataService {
     return this.investmentsData.deleteMyInvestorFund(id);
   }
 
+  /** @deprecated El endpoint /myinvestor-funds ya no se carga al iniciar la web. Solo se usa al entrar datos. */
   loadAllMyInvestorFunds(): void {
     this.investmentsData.loadAllMyInvestorFunds();
   }
@@ -372,5 +360,13 @@ export class FinancialDataService {
 
   deleteFundBalance(id: string): Observable<void> {
     return this.investmentsData.deleteFundBalance(id);
+  }
+
+  getMintosAnnualInterest(year: number): Observable<MintosAnnualInterest | null> {
+    return this.mintosInterestData.getByYear(year);
+  }
+
+  saveMintosAnnualInterest(interest: MintosAnnualInterest): Observable<MintosAnnualInterest> {
+    return this.mintosInterestData.save(interest);
   }
 }

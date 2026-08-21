@@ -5,7 +5,6 @@ import { Platform } from '../../../../models/platform';
 import { Account } from '../../../../models/account';
 import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
 import { ChecklistItem } from '../../../../models/checklist-item';
-import { InvestmentHolding } from '../../../../models/investment-holding';
 import { Expense } from '../../../../models/expense';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 
@@ -78,19 +77,6 @@ import { FinancialDataService } from '../../../../core/services/financial-data.s
                   </button>
                   @if (expandedId() === account.id) {
                     <div class="ml-4 space-y-2 border-l-2 border-blue-100 pl-4 pb-2">
-                      @if (accountHoldings(account.id).length > 0) {
-                        <div>
-                          <p class="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Activos</p>
-                          @for (h of accountHoldings(account.id); track h.id) {
-                            <div class="flex items-center gap-3 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-gray-50">
-                              <span class="flex-1 font-medium text-gray-800">{{ h.assetName }}</span>
-                              <span class="w-16 text-right text-gray-500">{{ h.quantity }}</span>
-                              <span class="w-20 text-right text-gray-500">{{ h.valuePerUnit.toLocaleString('es-ES') }} €</span>
-                              <span class="w-20 text-right font-semibold text-gray-900">{{ h.totalValue.toLocaleString('es-ES') }} €</span>
-                            </div>
-                          }
-                        </div>
-                      }
                       @if (accountExpenses(account.id).length > 0) {
                         <div>
                           <p class="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">Gastos</p>
@@ -108,7 +94,7 @@ import { FinancialDataService } from '../../../../core/services/financial-data.s
                           }
                         </div>
                       }
-                      @if (accountHoldings(account.id).length === 0 && accountExpenses(account.id).length === 0) {
+                      @if (accountExpenses(account.id).length === 0) {
                         <p class="py-2 text-center text-xs text-gray-400">Sin detalles disponibles</p>
                       }
                     </div>
@@ -209,7 +195,6 @@ export class AccountBreakdownComponent {
   readonly platforms = input.required<Platform[]>();
   readonly accounts = input.required<Account[]>();
   readonly snapshots = input.required<MonthlySnapshot[]>();
-  readonly holdings = input.required<InvestmentHolding[]>();
   readonly expenses = input.required<Expense[]>();
 
   protected readonly expandedId = signal<string | null>(null);
@@ -294,12 +279,6 @@ export class AccountBreakdownComponent {
 
   protected accountExpensesTotal(accountId: string): number {
     return this.snapshotFor(accountId)?.expenses ?? 0;
-  }
-
-  protected accountHoldings(accountId: string): InvestmentHolding[] {
-    const snap = this.snapshotFor(accountId);
-    if (!snap) { return []; }
-    return this.holdings().filter(h => h.snapshotId === snap.id);
   }
 
   protected accountExpenses(accountId: string): Expense[] {

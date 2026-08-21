@@ -7,6 +7,7 @@ import { CrowdlendingInvestment } from '../../../../models/crowdlending-investme
 import { ProjectStatus } from '../../../../models/project-status';
 import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
 import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
+import { roundMoney } from '../../../../core/utils/money.util';
 
 @Component({
   selector: 'app-urbanitae-form',
@@ -26,7 +27,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             <input
               type="text" placeholder="ej: Vivienda Madrid"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [(ngModel)]="projectName"
+              [ngModel]="projectName()"
+              (ngModelChange)="projectName.set($event)"
             />
           </div>
           <div>
@@ -34,7 +36,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             <input
               type="number" step="any" placeholder="ej: 1000"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [(ngModel)]="investedAmount"
+              [ngModel]="investedAmount()"
+              (ngModelChange)="investedAmount.set($event)"
             />
           </div>
           <div>
@@ -42,7 +45,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             <input
               type="number" step="any" placeholder="ej: 8.5"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [(ngModel)]="interestRate"
+              [ngModel]="interestRate()"
+              (ngModelChange)="interestRate.set($event)"
             />
           </div>
           <div>
@@ -50,7 +54,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             <input
               type="number" step="1" placeholder="ej: 12"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [(ngModel)]="termMonths"
+              [ngModel]="termMonths()"
+              (ngModelChange)="termMonths.set($event)"
             />
           </div>
           <div>
@@ -58,7 +63,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             <input
               type="date"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [(ngModel)]="startDate"
+              [ngModel]="startDate()"
+              (ngModelChange)="startDate.set($event)"
             />
           </div>
           <div>
@@ -66,7 +72,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             <input
               type="date"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [(ngModel)]="endDate"
+              [ngModel]="endDate()"
+              (ngModelChange)="endDate.set($event)"
             />
           </div>
         </div>
@@ -128,19 +135,11 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
           <select
             aria-label="Mes"
             class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-            [(ngModel)]="localMonth"
+            [ngModel]="localMonth()"
+            (ngModelChange)="localMonth.set($event)"
           >
             @for (m of months; track m.value) {
               <option [value]="m.value">{{ m.label }}</option>
-            }
-          </select>
-          <select
-            aria-label="Año"
-            class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-            [(ngModel)]="localYear"
-          >
-            @for (y of years; track y) {
-              <option [value]="y">{{ y }}</option>
             }
           </select>
         </div>
@@ -159,7 +158,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               step="any"
               placeholder="ej: 3000"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [(ngModel)]="balance"
+              [ngModel]="balance()"
+              (ngModelChange)="balance.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Valor total en Urbanitae a 31 del mes</p>
           </div>
@@ -170,7 +170,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               step="any"
               placeholder="ej: 12"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [(ngModel)]="income"
+              [ngModel]="income()"
+              (ngModelChange)="income.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Intereses o rendimientos obtenidos</p>
           </div>
@@ -181,7 +182,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               step="any"
               placeholder="ej: 100"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [(ngModel)]="contribution"
+              [ngModel]="contribution()"
+              (ngModelChange)="contribution.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
           </div>
@@ -192,7 +194,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               step="any"
               placeholder="ej: 50"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
-              [(ngModel)]="withdrawal"
+              [ngModel]="withdrawal()"
+              (ngModelChange)="withdrawal.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
           </div>
@@ -263,7 +266,7 @@ export class UrbanitaeFormComponent {
 
   // --- Balance mensual ---
   protected readonly localMonth = signal(this.service.currentMonth());
-  protected readonly localYear = signal(this.service.currentYear());
+  protected readonly localYear = computed(() => this.service.currentYear());
   protected readonly balance = signal<number | null>(null);
   protected readonly income = signal<number | null>(null);
   protected readonly contribution = signal<number | null>(null);
@@ -286,7 +289,8 @@ export class UrbanitaeFormComponent {
 
   protected readonly balanceHistory = computed(() => {
     return this.service.getSnapshotsByAccount(this.ACCOUNT_ID)
-      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month));
+      .filter(s => s.year === this.localYear())
+      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + b.month));
   });
 
   constructor() {
@@ -341,7 +345,7 @@ export class UrbanitaeFormComponent {
   // --- Balance mensual ---
   protected onEdit(snap: MonthlySnapshot): void {
     this.editingSnapshot.set(snap);
-    this.localYear.set(snap.year);
+    this.service.currentYear.set(snap.year);
     this.localMonth.set(snap.month);
     this.balance.set(snap.balance);
     this.income.set(snap.income > 0 ? snap.income : null);
@@ -362,12 +366,12 @@ export class UrbanitaeFormComponent {
   }
 
   protected saveBalance(): void {
-    const bal = this.balance();
+    const bal = roundMoney(this.balance() ?? 0) ?? 0;
     if (bal === null) { return; }
 
-    const inc = this.income() ?? 0;
-    const contrib = this.contribution() ?? 0;
-    const withdrawal = this.withdrawal() ?? 0;
+    const inc = roundMoney(this.income() ?? 0) ?? 0;
+    const contrib = roundMoney(this.contribution() ?? 0) ?? 0;
+    const withdrawal = roundMoney(this.withdrawal() ?? 0) ?? 0;
 
     const existing = this.editingSnapshot();
     if (existing) {

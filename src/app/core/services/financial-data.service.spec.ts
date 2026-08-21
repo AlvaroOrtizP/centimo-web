@@ -2,10 +2,8 @@ import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { FinancialDataService } from './financial-data.service';
 import { MonthlySnapshot } from '../../models/monthly-snapshot';
-import { InvestmentHolding } from '../../models/investment-holding';
 import { Expense } from '../../models/expense';
 import { IncomeSource } from '../../models/income-source';
-import { InvestmentTransaction } from '../../models/investment-transaction';
 import { provideApiMocks } from '../testing/api-mocks';
 import { configureSeedSpies, applyFinancialSeed } from '../testing/test-seed';
 
@@ -120,21 +118,6 @@ describe('FinancialDataService', () => {
       expect(updated!.balance).toBe(9999);
     });
 
-    it('addHolding should add a holding', () => {
-      const holding: InvestmentHolding = {
-        id: 'hold-test',
-        snapshotId: 'bbva-checking-2026-01',
-        assetName: 'Test Asset',
-        assetType: 'stock' as never,
-        quantity: 10,
-        valuePerUnit: 100,
-        totalValue: 1000,
-      };
-      service.addHolding(holding);
-      const holdings = service.getHoldingsBySnapshot('bbva-checking-2026-01');
-      expect(holdings.some(h => h.id === 'hold-test')).toBeTrue();
-    });
-
     it('addExpense should add an expense', fakeAsync(() => {
       const expense: Expense = {
         id: 'exp-test',
@@ -164,23 +147,5 @@ describe('FinancialDataService', () => {
       expect(incomes.length).toBe(1);
       expect(incomes[0].amount).toBe(100);
     }));
-
-    it('addTrade should add a trade', () => {
-      const trade: InvestmentTransaction = {
-        id: 'trade-test',
-        accountId: 'bitvavo-main',
-        assetName: 'TestCoin',
-        assetType: 'crypto' as never,
-        type: 'buy' as never,
-        buyDate: '2026-07-01',
-        buyQuantity: 1,
-        buyPricePerUnit: 100,
-        buyTotalCost: 100,
-        status: 'open' as never,
-      };
-      service.addTrade(trade);
-      const trades = service.getTradesByAccount('bitvavo-main');
-      expect(trades.some(t => t.id === 'trade-test')).toBeTrue();
-    });
   });
 });

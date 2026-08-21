@@ -13,6 +13,9 @@ export class PlatformsDataService {
   private readonly accountsApi = inject(AccountsService);
   private readonly logger = inject(LoggerService);
 
+  private static readonly PLATFORMS_CACHE_KEY = 'centimo:platforms';
+  private static readonly ACCOUNTS_CACHE_KEY = 'centimo:accounts';
+
   readonly platforms = signal<Platform[]>([]);
   readonly accounts = signal<Account[]>([]);
 
@@ -32,7 +35,18 @@ export class PlatformsDataService {
     return this.accounts().find(a => a.id === accountId)?.platformId ?? '';
   }
 
-  loadAllPlatforms(): void {
+  loadAllPlatforms(force = false): void {
+    if (force) {
+      this.clearPlatformsCache();
+    } else if (this.platforms().length > 0) {
+      return;
+    } else {
+      const cached = this.loadPlatformsCache();
+      if (cached.length > 0) {
+        this.platforms.set(cached);
+        return;
+      }
+    }
     this.platformsApi.listPlatforms().pipe(
       map(list => list.map(p => ({
         id: p.id,
@@ -49,10 +63,50 @@ export class PlatformsDataService {
       }),
     ).subscribe(platforms => {
       this.platforms.set(platforms);
+      this.savePlatformsCache(platforms);
     });
   }
 
-  loadAllAccounts(): void {
+  private loadPlatformsCache(): Platform[] {
+    try {
+      if (typeof localStorage === 'undefined') { return []; }
+      const raw = localStorage.getItem(PlatformsDataService.PLATFORMS_CACHE_KEY);
+      return raw ? JSON.parse(raw) as Platform[] : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private savePlatformsCache(platforms: Platform[]): void {
+    try {
+      if (typeof localStorage === 'undefined') { return; }
+      localStorage.setItem(PlatformsDataService.PLATFORMS_CACHE_KEY, JSON.stringify(platforms));
+    } catch (err) {
+      this.logger.error('PlatformsData', 'savePlatformsCache error', err);
+    }
+  }
+
+  private clearPlatformsCache(): void {
+    try {
+      if (typeof localStorage === 'undefined') { return; }
+      localStorage.removeItem(PlatformsDataService.PLATFORMS_CACHE_KEY);
+    } catch (err) {
+      this.logger.error('PlatformsData', 'clearPlatformsCache error', err);
+    }
+  }
+
+  loadAllAccounts(force = false): void {
+    if (force) {
+      this.clearAccountsCache();
+    } else if (this.accounts().length > 0) {
+      return;
+    } else {
+      const cached = this.loadAccountsCache();
+      if (cached.length > 0) {
+        this.accounts.set(cached);
+        return;
+      }
+    }
     this.accountsApi.listAccounts().pipe(
       map(list => list.map(a => ({
         id: a.id,
@@ -68,6 +122,35 @@ export class PlatformsDataService {
       }),
     ).subscribe(accounts => {
       this.accounts.set(accounts);
+      this.saveAccountsCache(accounts);
     });
+  }
+
+  private loadAccountsCache(): Account[] {
+    try {
+      if (typeof localStorage === 'undefined') { return []; }
+      const raw = localStorage.getItem(PlatformsDataService.ACCOUNTS_CACHE_KEY);
+      return raw ? JSON.parse(raw) as Account[] : [];
+    } catch {
+      return [];
+    }
+  }
+
+  private saveAccountsCache(accounts: Account[]): void {
+    try {
+      if (typeof localStorage === 'undefined') { return; }
+      localStorage.setItem(PlatformsDataService.ACCOUNTS_CACHE_KEY, JSON.stringify(accounts));
+    } catch (err) {
+      this.logger.error('PlatformsData', 'saveAccountsCache error', err);
+    }
+  }
+
+  private clearAccountsCache(): void {
+    try {
+      if (typeof localStorage === 'undefined') { return; }
+      localStorage.removeItem(PlatformsDataService.ACCOUNTS_CACHE_KEY);
+    } catch (err) {
+      this.logger.error('PlatformsData', 'clearAccountsCache error', err);
+    }
   }
 }

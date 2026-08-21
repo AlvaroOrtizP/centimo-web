@@ -8,15 +8,12 @@ export const initDataResolver: ResolveFn<void> = () => {
   data.loadAllPlatforms();
   data.loadAllAccounts();
   data.loadAllSnapshots();
+  data.loadFundBalances(new Date().getFullYear(), new Date().getMonth() + 1);
   data.loadAllCrowdlending();
   data.loadAllMyInvestorFunds();
-  data.loadFundBalances(new Date().getFullYear(), new Date().getMonth() + 1);
 
   let y = new Date().getFullYear();
   let m = new Date().getMonth() + 1;
-  for (let i = 0; i < 6; i++) {
-    data.loadMonthlySummary(y, m);
-    m--;
-    if (m === 0) { m = 12; y--; }
-  }
+  data.loadMonthlySummariesRange(y, m, 6);
+  data.loadPlatformMonthlyBalances(y, m, 6);
 };

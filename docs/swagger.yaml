@@ -31,10 +31,8 @@ tags:
   - name: Incomes
     description: Ingresos detallados del mes
   # Inversiones
-  - name: Holdings
-    description: Posiciones abiertas en cuentas de inversión
   - name: Trades
-    description: Operaciones de compra/venta de activos
+    description: Operaciones de compra de activos
   # Otros
   - name: Crowdlending
     description: Inversiones en crowdlending
@@ -612,6 +610,19 @@ paths:
       tags: [Snapshots]
       operationId: listSnapshots
       summary: Listar todas las instantaneas
+      parameters:
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Filtrar las instantaneas por año
+        - name: accountId
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtrar las instantaneas por cuenta
       responses:
         '200':
           description: Lista de instantaneas
@@ -918,66 +929,6 @@ paths:
   #  INVERSIONES
   # ════════════════════════════════════════════
 
-  # ── Holdings ──
-  /holdings:
-    get:
-      tags: [Holdings]
-      operationId: listHoldings
-      summary: Listar holdings
-      parameters:
-        - name: snapshotId
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Lista de holdings
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/InvestmentHolding'
-        '400':
-          description: Error generico 400
-        '404':
-          description: Error generico 404
-    post:
-      tags: [Holdings]
-      operationId: createHolding
-      summary: Crear holding
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InvestmentHoldingCreate'
-      responses:
-        '201':
-          description: Creado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvestmentHolding'
-        '400':
-          description: Error generico 400
-        '404':
-          description: Error generico 404
-
-  /holdings/{id}:
-    parameters:
-      - $ref: '#/components/parameters/HoldingId'
-    delete:
-      tags: [Holdings]
-      operationId: deleteHolding
-      summary: Eliminar holding
-      responses:
-        '204':
-          description: Eliminado
-        '404':
-          $ref: '#/components/responses/NotFound'
-
   # ── Trades ──
   /trades:
     get:
@@ -1119,6 +1070,86 @@ paths:
       responses:
         '204':
           description: Eliminada
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Mintos intereses anuales ──
+  /mintos/intereses-anuales:
+    get:
+      tags: [MintosInteresesAnuales]
+      operationId: listMintosInteresesAnuales
+      summary: Listar intereses anuales de Mintos
+      parameters:
+        - name: anio
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de intereses anuales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MintosInterestAnnual'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [MintosInteresesAnuales]
+      operationId: createMintosInteresAnual
+      summary: Crear intereses anuales de Mintos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MintosInterestAnnualCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MintosInterestAnnual'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /mintos/intereses-anuales/{id}:
+    parameters:
+      - $ref: '#/components/parameters/MintosInterestAnnualId'
+    put:
+      tags: [MintosInteresesAnuales]
+      operationId: updateMintosInteresAnual
+      summary: Actualizar intereses anuales de Mintos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MintosInterestAnnualCreate'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MintosInterestAnnual'
+        '400':
+          description: Error generico 400
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [MintosInteresesAnuales]
+      operationId: deleteMintosInteresAnual
+      summary: Eliminar intereses anuales de Mintos
+      responses:
+        '204':
+          description: Eliminado
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -1298,6 +1329,48 @@ paths:
   #  RESÚMENES
   # ════════════════════════════════════════════
 
+  /summaries:
+    get:
+      tags: [Summaries]
+      operationId: getMonthlySummaries
+      summary: Resúmenes mensuales en rango
+      description: |
+        Devuelve los resúmenes de los últimos `months` meses, terminando en el mes
+        indicado por `year`/`month` (inclusive). Equivale a llamar getMonthlySummary
+        para cada mes del rango pero en una sola petición.
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+        - name: months
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Lista de resúmenes mensuales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MonthlySummary'
+        '400':
+          description: Parámetros de fecha inválidos
+        '404':
+          description: Error generico 404
+
   /summaries/{year}/{month}:
     parameters:
       - name: year
@@ -1348,6 +1421,49 @@ paths:
                   $ref: '#/components/schemas/YearMonth'
         '400':
           description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /summaries/platform-balances:
+    get:
+      tags: [Summaries]
+      operationId: getPlatformBalances
+      summary: Saldos mensuales por plataforma (sin gastos)
+      description: |
+        Devuelve, para cada plataforma (excepto la de gastos), la serie mensual de
+        saldos de sus cuentas en los últimos `months` meses terminando en `year`/`month`
+        (inclusive). Los meses van de más antiguo a más reciente. Útil para gráficos
+        de evolución en el dashboard.
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+        - name: months
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Saldos mensuales por plataforma
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PlatformMonthlyBalance'
+        '400':
+          description: Parámetros de fecha inválidos
         '404':
           description: Error generico 404
 
@@ -1404,12 +1520,6 @@ components:
       required: true
       schema:
         type: string
-    HoldingId:
-      name: id
-      in: path
-      required: true
-      schema:
-        type: string
     TradeId:
       name: id
       in: path
@@ -1429,6 +1539,12 @@ components:
       schema:
         type: string
     FundBalanceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    MintosInterestAnnualId:
       name: id
       in: path
       required: true
@@ -1835,6 +1951,11 @@ components:
           type: number
           format: decimal
           nullable: true
+        tax:
+          type: number
+          format: decimal
+          nullable: true
+          description: Retención de Hacienda (19%) aplicada a los intereses
         notes:
           type: string
           nullable: true
@@ -1867,6 +1988,11 @@ components:
           type: number
           format: float
           nullable: true
+        tax:
+          type: number
+          format: float
+          nullable: true
+          description: Retención de Hacienda (19%) aplicada a los intereses
         notes:
           type: string
           nullable: true
@@ -1892,6 +2018,11 @@ components:
           type: number
           format: float
           nullable: true
+        tax:
+          type: number
+          format: float
+          nullable: true
+          description: Retención de Hacienda (19%) aplicada a los intereses
         notes:
           type: string
           nullable: true
@@ -1926,6 +2057,11 @@ components:
           type: number
           format: float
           description: Aportación del mes (opcional)
+          nullable: true
+        tax:
+          type: number
+          format: float
+          description: Retención de Hacienda (19%) aplicada a los intereses (opcional)
           nullable: true
 
     ChecklistItem:
@@ -2024,49 +2160,6 @@ components:
         description:
           type: string
         amount:
-          type: number
-          format: float
-
-    # ═══════════ InvestmentHolding ═══════════
-    InvestmentHolding:
-      type: object
-      required: [id, snapshotId, assetName, assetType, quantity, valuePerUnit, totalValue]
-      properties:
-        id:
-          type: string
-        snapshotId:
-          type: string
-        assetName:
-          type: string
-        assetType:
-          $ref: '#/components/schemas/AssetType'
-        quantity:
-          type: number
-          format: float
-        valuePerUnit:
-          type: number
-          format: float
-        totalValue:
-          type: number
-          format: float
-
-    InvestmentHoldingCreate:
-      type: object
-      required: [snapshotId, assetName, assetType, quantity, valuePerUnit, totalValue]
-      properties:
-        snapshotId:
-          type: string
-        assetName:
-          type: string
-        assetType:
-          $ref: '#/components/schemas/AssetType'
-        quantity:
-          type: number
-          format: float
-        valuePerUnit:
-          type: number
-          format: float
-        totalValue:
           type: number
           format: float
 
@@ -2235,6 +2328,55 @@ components:
         status:
           $ref: '#/components/schemas/ProjectStatus'
 
+    # ═══════════ MintosInterestAnnual ═══════════
+    MintosInterestAnnual:
+      type: object
+      required: [id, year, amount, taxWithholding, taxRate, netAmount]
+      properties:
+        id:
+          type: string
+        year:
+          type: integer
+        amount:
+          type: number
+          format: float
+          description: Cantidad
+        taxWithholding:
+          type: number
+          format: float
+          description: Retencion de impuestos
+        taxRate:
+          type: number
+          format: float
+          description: Tipo impositivo
+        netAmount:
+          type: number
+          format: float
+          description: Importe despues de los impuestos
+
+    MintosInterestAnnualCreate:
+      type: object
+      required: [year, amount, taxWithholding, taxRate, netAmount]
+      properties:
+        year:
+          type: integer
+        amount:
+          type: number
+          format: float
+          description: Cantidad
+        taxWithholding:
+          type: number
+          format: float
+          description: Retencion de impuestos
+        taxRate:
+          type: number
+          format: float
+          description: Tipo impositivo
+        netAmount:
+          type: number
+          format: float
+          description: Importe despues de los impuestos
+
     # ═══════════ MyInvestorFund ═══════════
     MyInvestorFund:
       type: object
@@ -2359,6 +2501,39 @@ components:
           type: number
           format: float
         netSavings:
+          type: number
+          format: float
+
+    PlatformMonthlyBalance:
+      type: object
+      required: [platformId, platformName, type, color, icon, balances]
+      properties:
+        platformId:
+          type: string
+        platformName:
+          type: string
+        type:
+          $ref: '#/components/schemas/PlatformType'
+        color:
+          type: string
+        icon:
+          type: string
+        balances:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlatformMonthlyBalanceEntry'
+
+    PlatformMonthlyBalanceEntry:
+      type: object
+      required: [year, month, balance]
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        balance:
           type: number
           format: float
 

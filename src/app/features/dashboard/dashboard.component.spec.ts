@@ -1,5 +1,6 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 import { DashboardComponent } from './dashboard.component';
 import { FinancialDataService } from '../../core/services/financial-data.service';
@@ -12,7 +13,7 @@ describe('DashboardComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DashboardComponent],
+      imports: [DashboardComponent, HttpClientTestingModule],
       providers: [provideRouter([]), ...provideApiMocks()],
     }).compileComponents();
     configureSeedSpies();
@@ -53,6 +54,21 @@ describe('DashboardComponent', () => {
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
     expect(el.textContent).toContain('Gastos Acumulados');
+  });
+
+  it('resetView clears selected platform and restores total chart mode', () => {
+    const fixture = TestBed.createComponent(DashboardComponent);
+    const comp = fixture.componentInstance as any;
+    comp.selectedPlatformId.set('myinvestor');
+    comp.chartMode.set('per-platform');
+    fixture.detectChanges();
+    expect(comp.selectedPlatformId()).toBe('myinvestor');
+
+    comp.resetView();
+    fixture.detectChanges();
+
+    expect(comp.selectedPlatformId()).toBeNull();
+    expect(comp.chartMode()).toBe('total');
   });
 
   // ──────────────────────────────────────────────────────────
@@ -311,11 +327,9 @@ describe('DashboardComponent', () => {
 
 function setDashboardMonth(component: DashboardComponent, year: number, month: number): void {
   (component as unknown as {
-    viewYear: { set(value: number): void };
-    viewMonth: { set(value: number): void };
-  }).viewYear.set(year);
+    service: { currentYear: { set(value: number): void }; currentMonth: { set(value: number): void } };
+  }).service.currentYear.set(year);
   (component as unknown as {
-    viewYear: { set(value: number): void };
-    viewMonth: { set(value: number): void };
-  }).viewMonth.set(month);
+    service: { currentYear: { set(value: number): void }; currentMonth: { set(value: number): void } };
+  }).service.currentMonth.set(month);
 }

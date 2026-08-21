@@ -7,6 +7,7 @@ import { Account } from '../../../../models/account';
 import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
 import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.helper';
 import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
+import { roundMoney } from '../../../../core/utils/money.util';
 
 @Component({
   selector: 'app-banks-form',
@@ -19,19 +20,11 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
         <select
           aria-label="Mes"
           class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          [(ngModel)]="localMonth"
+          [ngModel]="localMonth()"
+          (ngModelChange)="localMonth.set($event)"
         >
           @for (m of months; track m.value) {
             <option [value]="m.value">{{ m.label }}</option>
-          }
-        </select>
-        <select
-          aria-label="Año"
-          class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          [(ngModel)]="localYear"
-        >
-          @for (y of years; track y) {
-            <option [value]="y">{{ y }}</option>
           }
         </select>
       </div>
@@ -161,7 +154,7 @@ export class BanksFormComponent {
   protected readonly getMonthLabel = getMonthLabel;
 
   protected readonly localMonth = signal(this.service.currentMonth());
-  protected readonly localYear = signal(this.service.currentYear());
+  protected readonly localYear = computed(() => this.service.currentYear());
 
   protected readonly editingBBVA = signal<MonthlySnapshot | null>(null);
   protected readonly editingCaixa = signal<MonthlySnapshot | null>(null);
@@ -202,12 +195,14 @@ export class BanksFormComponent {
 
   protected readonly historyBBVA = computed(() =>
     this.service.getSnapshotsByAccount(this.BBVA_ID)
-      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+      .filter(s => s.year === this.localYear())
+      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + b.month))
   );
 
   protected readonly historyCaixa = computed(() =>
     this.service.getSnapshotsByAccount(this.CAIXA_ID)
-      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+      .filter(s => s.year === this.localYear())
+      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + b.month))
   );
 
   constructor() {
@@ -222,7 +217,7 @@ export class BanksFormComponent {
 
   protected onEditBBVA(snap: MonthlySnapshot): void {
     this.editingBBVA.set(snap);
-    this.localYear.set(snap.year);
+    this.service.currentYear.set(snap.year);
     this.localMonth.set(snap.month);
     this.bbvaBalance.userValue.set(snap.balance);
     this.bbvaBalance.hasUserValue.set(true);
@@ -240,7 +235,7 @@ export class BanksFormComponent {
 
   protected onEditCaixa(snap: MonthlySnapshot): void {
     this.editingCaixa.set(snap);
-    this.localYear.set(snap.year);
+    this.service.currentYear.set(snap.year);
     this.localMonth.set(snap.month);
     this.caixaBalance.userValue.set(snap.balance);
     this.caixaBalance.hasUserValue.set(true);
@@ -257,7 +252,7 @@ export class BanksFormComponent {
   }
 
   protected saveBBVA(): void {
-    const bal = this.bbvaBalance.display();
+    const bal = roundMoney(this.bbvaBalance.display());
     if (bal === null) { return; }
 
     const existing = this.editingBBVA();
@@ -273,7 +268,7 @@ export class BanksFormComponent {
   }
 
   protected saveCaixa(): void {
-    const bal = this.caixaBalance.display();
+    const bal = roundMoney(this.caixaBalance.display());
     if (bal === null) { return; }
 
     const existing = this.editingCaixa();

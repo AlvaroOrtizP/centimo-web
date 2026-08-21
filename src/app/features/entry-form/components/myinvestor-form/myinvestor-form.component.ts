@@ -6,6 +6,7 @@ import { MONTH_OPTIONS, MONTHS, YEARS } from '../../../../core/constants/date.co
 import { Account } from '../../../../models/account';
 import { MyInvestorFund } from '../../../../models/myinvestor-fund';
 import { FundBalance } from '../../../../models/fund-balance';
+import { roundMoney } from '../../../../core/utils/money.util';
 
 @Component({
   selector: 'app-myinvestor-form',
@@ -21,19 +22,11 @@ import { FundBalance } from '../../../../models/fund-balance';
           <select
             aria-label="Mes fondos"
             class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-            [(ngModel)]="fundsLocalMonth"
+            [ngModel]="fundsLocalMonth()"
+            (ngModelChange)="fundsLocalMonth.set($event)"
           >
             @for (m of months; track m.value) {
               <option [value]="m.value">{{ m.label }}</option>
-            }
-          </select>
-          <select
-            aria-label="Año fondos"
-            class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-            [(ngModel)]="fundsLocalYear"
-          >
-            @for (y of years; track y) {
-              <option [value]="y">{{ y }}</option>
             }
           </select>
         </div>
@@ -46,7 +39,8 @@ import { FundBalance } from '../../../../models/fund-balance';
               <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Fondo</label>
               <select
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-                [(ngModel)]="selectedFundId"
+                [ngModel]="selectedFundId()"
+                (ngModelChange)="selectedFundId.set($event)"
               >
                 <option value="">Seleccionar fondo</option>
                 @for (fund of funds(); track fund.id) {
@@ -71,7 +65,8 @@ import { FundBalance } from '../../../../models/fund-balance';
                 step="any"
                 placeholder="ej: 4500"
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-                [(ngModel)]="fundBalanceValue"
+                [ngModel]="fundBalanceValue()"
+              (ngModelChange)="fundBalanceValue.set($event)"
               />
             </div>
             <div>
@@ -81,7 +76,8 @@ import { FundBalance } from '../../../../models/fund-balance';
                 step="any"
                 placeholder="ej: 63"
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-                [(ngModel)]="fundsIncomeValue"
+                [ngModel]="fundsIncomeValue()"
+              (ngModelChange)="fundsIncomeValue.set($event)"
               />
               <p class="mt-0.5 text-xs text-gray-400">Intereses obtenidos este mes</p>
             </div>
@@ -92,7 +88,8 @@ import { FundBalance } from '../../../../models/fund-balance';
                 step="any"
                 placeholder="ej: 100"
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-                [(ngModel)]="fundsContributionValue"
+                [ngModel]="fundsContributionValue()"
+              (ngModelChange)="fundsContributionValue.set($event)"
               />
               <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
             </div>
@@ -103,7 +100,8 @@ import { FundBalance } from '../../../../models/fund-balance';
                 step="any"
                 placeholder="ej: 50"
                 class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-                [(ngModel)]="fundsWithdrawalValue"
+                [ngModel]="fundsWithdrawalValue()"
+              (ngModelChange)="fundsWithdrawalValue.set($event)"
               />
               <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
             </div>
@@ -112,7 +110,7 @@ import { FundBalance } from '../../../../models/fund-balance';
           <div class="mt-4 flex items-center gap-3">
             <button
               class="rounded-lg bg-[#00A3E0] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0089C0] disabled:opacity-50"
-              [disabled]="!selectedFundId || !fundBalanceValue()"
+              [disabled]="!selectedFundId() || !fundBalanceValue()"
               (click)="saveFundBalance()"
             >{{ editingFundBalance() ? 'Actualizar balance' : 'Guardar balance' }}</button>
             @if (editingFundBalance()) {
@@ -206,7 +204,8 @@ import { FundBalance } from '../../../../models/fund-balance';
             <input
               type="text" placeholder="ej: ES0110237023"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-              [(ngModel)]="newCode"
+              [ngModel]="newCode()"
+              (ngModelChange)="newCode.set($event)"
             />
           </div>
           <div>
@@ -214,7 +213,8 @@ import { FundBalance } from '../../../../models/fund-balance';
             <input
               type="text" placeholder="ej: Indexa Capital Plan Mixto"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
-              [(ngModel)]="newName"
+              [ngModel]="newName()"
+              (ngModelChange)="newName.set($event)"
             />
           </div>
         </div>
@@ -222,7 +222,7 @@ import { FundBalance } from '../../../../models/fund-balance';
         <div class="mt-4 flex items-center gap-3">
           <button
             class="rounded-lg bg-[#00A3E0] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0089C0] disabled:opacity-50"
-            [disabled]="!newCode || !newName"
+            [disabled]="!newCode() || !newName()"
             (click)="addFund()"
           >Registrar fondo</button>
           @if (savedFund()) {
@@ -302,7 +302,7 @@ export class MyInvestorFormComponent {
 
   // --- Balance mensual por fondo ---
   protected readonly fundsLocalMonth = signal(this.service.currentMonth());
-  protected readonly fundsLocalYear = signal(this.service.currentYear());
+  protected readonly fundsLocalYear = computed(() => this.service.currentYear());
   protected readonly selectedFundId = signal('');
   protected readonly fundBalanceValue = signal<number | null>(null);
   protected readonly fundsIncomeValue = signal<number | null>(null);
@@ -316,11 +316,13 @@ export class MyInvestorFormComponent {
   );
 
   protected readonly totalFundBalanceForMonth = computed(() =>
-    this.currentMonthBalances().reduce((sum, b) => sum + b.balance, 0)
+    roundMoney(this.currentMonthBalances().reduce((sum, b) => sum + (b.balance ?? 0), 0)) ?? 0
   );
 
   protected readonly historyBalances = computed(() =>
-    [...this.service.fundBalances()].sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
+    [...this.service.fundBalances()]
+      .filter(b => b.year === this.fundsLocalYear())
+      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + b.month))
   );
 
   protected readonly previousFundBalance = computed(() => {
@@ -347,32 +349,24 @@ export class MyInvestorFormComponent {
     effect(() => {
       const snapshots = this.service.snapshots();
       const balances = this.currentMonthBalances();
-      const total = balances.reduce((sum, b) => sum + b.balance, 0);
-      const totalIncome = balances.reduce((sum, b) => sum + (b.income ?? 0), 0);
-      const totalContribution = balances.reduce((sum, b) => sum + (b.contribution ?? 0), 0);
-      const totalExpenses = balances.reduce((sum, b) => sum + (b.expenses ?? 0), 0);
+      const total = roundMoney(balances.reduce((sum, b) => sum + (b.balance ?? 0), 0)) ?? 0;
+      const totalIncome = roundMoney(balances.reduce((sum, b) => sum + (b.income ?? 0), 0)) ?? 0;
+      const totalContribution = roundMoney(balances.reduce((sum, b) => sum + (b.contribution ?? 0), 0)) ?? 0;
+      const totalExpenses = roundMoney(balances.reduce((sum, b) => sum + (b.expenses ?? 0), 0)) ?? 0;
       const y = this.fundsLocalYear();
       const m = this.fundsLocalMonth();
-      const snapId = `${this.INVESTMENT_ID}-${y}-${String(m).padStart(2, '0')}`;
       const existing = snapshots.find(s => s.accountId === this.INVESTMENT_ID && s.year === y && s.month === m);
 
-      const data = { balance: total, income: totalIncome, contribution: totalContribution, expenses: totalExpenses };
-      if (existing) {
-        const changed = existing.balance !== total
+      const hasData = total > 0 || totalIncome > 0 || totalContribution > 0 || totalExpenses > 0;
+      const changed = !existing
+        ? hasData
+        : existing.balance !== total
           || existing.income !== totalIncome
           || existing.contribution !== totalContribution
           || existing.expenses !== totalExpenses;
-        if (changed) {
-          this.service.updateSnapshot(existing.id, data);
-        }
-      } else if (total > 0) {
-        this.service.addSnapshot({
-          id: snapId,
-          accountId: this.INVESTMENT_ID,
-          year: y,
-          month: m,
-          ...data,
-        });
+
+      if (changed) {
+        this.service.upsertSnapshot(this.INVESTMENT_ID, y, m, total, totalIncome, totalExpenses, totalContribution).subscribe();
       }
     }, { allowSignalWrites: true });
   }

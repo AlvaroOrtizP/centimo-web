@@ -32,19 +32,22 @@ import { Expense } from '../../../../models/expense';
         <input
           type="date" aria-label="Fecha"
           class="w-56 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
-          [(ngModel)]="date"
+          [ngModel]="date()"
+          (ngModelChange)="date.set($event)"
         />
 
         <input
           type="number" placeholder="Cantidad (€)" aria-label="Cantidad"
           class="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
-          [(ngModel)]="amount"
+          [ngModel]="amount()"
+          (ngModelChange)="amount.set($event)"
         />
 
         <input
           type="text" placeholder="Descripción" aria-label="Descripción"
           class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
-          [(ngModel)]="description"
+          [ngModel]="description()"
+          (ngModelChange)="description.set($event)"
         />
 
         <button
@@ -61,11 +64,7 @@ import { Expense } from '../../../../models/expense';
         }
       </div>
 
-      @if (saved()) {
-        <p class="mt-2 text-sm text-green-600">Gasto guardado correctamente</p>
-      }
-
-      <div class="mt-4 border-t border-gray-100 pt-3">
+        <div class="mt-4 border-t border-gray-100 pt-3">
         <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
           <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Gastos registrados</p>
           <div class="flex items-center gap-2">
@@ -172,7 +171,7 @@ export class ExpenseFormComponent {
   }
 
   protected readonly expenses = computed<Expense[]>(() =>
-    this.service.getExpensesByPeriod(this.listYear(), this.listMonth())
+    this.service.getExpensesByPeriod(this.listYear(), this.listMonth()).slice().reverse()
   );
 
   protected readonly total = computed(() =>

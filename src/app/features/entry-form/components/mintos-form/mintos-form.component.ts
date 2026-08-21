@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
-import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
+import { MonthlySnapshot, MintosAnnualInterest } from '../../../../models';
 import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
+import { roundMoney } from '../../../../core/utils/money.util';
 
 @Component({
   selector: 'app-mintos-form',
@@ -19,19 +20,11 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
         <select
           aria-label="Mes"
           class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-          [(ngModel)]="localMonth"
+          [ngModel]="localMonth()"
+          (ngModelChange)="localMonth.set(+$event)"
         >
           @for (m of months; track m.value) {
             <option [value]="m.value">{{ m.label }}</option>
-          }
-        </select>
-        <select
-          aria-label="Año"
-          class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-          [(ngModel)]="localYear"
-        >
-          @for (y of years; track y) {
-            <option [value]="y">{{ y }}</option>
           }
         </select>
       </div>
@@ -50,20 +43,22 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             step="any"
             placeholder="ej: 1250"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            [(ngModel)]="balance"
+              [ngModel]="balance()"
+              (ngModelChange)="balance.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Valor total en Mintos a 31 del mes</p>
         </div>
         <div>
-          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses obtenidos este mes (€)</label>
+          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses menusales (€)</label>
           <input
             type="number"
             step="any"
-            placeholder="ej: 25"
+            placeholder="ej: 150"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            [(ngModel)]="income"
+              [ngModel]="income()"
+              (ngModelChange)="income.set($event)"
           />
-          <p class="mt-0.5 text-xs text-gray-400">Intereses o rendimientos obtenidos</p>
+          <p class="mt-0.5 text-xs text-gray-400">Total de intereses generados ese mes (Retorno aplicación)</p>
         </div>
         <div>
           <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
@@ -72,7 +67,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             step="any"
             placeholder="ej: 50"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            [(ngModel)]="contribution"
+              [ngModel]="contribution()"
+              (ngModelChange)="contribution.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
         </div>
@@ -83,7 +79,8 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             step="any"
             placeholder="ej: 100"
             class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            [(ngModel)]="withdrawal"
+              [ngModel]="withdrawal()"
+              (ngModelChange)="withdrawal.set($event)"
           />
           <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
         </div>
@@ -107,6 +104,74 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
       </div>
     </div>
 
+    @if (showAnnual()) {
+      <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+        <h3 class="mb-4 text-sm font-semibold text-amber-800">Mintos — Intereses anuales ({{ localYear() }})</h3>
+
+        @if (annualLoading()) {
+          <p class="text-sm text-gray-500">Cargando…</p>
+        } @else {
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Cantidad (€)</label>
+              <input
+                type="number"
+                step="any"
+                placeholder="ej: 1800"
+                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                 [ngModel]="annualAmount()"
+                 (ngModelChange)="annualAmount.set($event)"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Retención de impuestos (€)</label>
+              <input
+                type="number"
+                step="any"
+                placeholder="ej: 90"
+                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                 [ngModel]="annualTaxWithholding()"
+                 (ngModelChange)="annualTaxWithholding.set($event)"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Tipo impositivo (%)</label>
+              <input
+                type="number"
+                step="any"
+                placeholder="ej: 19"
+                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                 [ngModel]="annualTaxRate()"
+                 (ngModelChange)="annualTaxRate.set($event)"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Importe después de impuestos (€)</label>
+              <input
+                type="number"
+                step="any"
+                placeholder="ej: 1710"
+                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                 [ngModel]="annualNetAmount()"
+                 (ngModelChange)="annualNetAmount.set($event)"
+              />
+            </div>
+          </div>
+
+          <div class="mt-4 flex items-center gap-3">
+            <button
+              class="rounded-lg bg-amber-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-700 disabled:opacity-50"
+              [disabled]="!annualAmount()"
+              (click)="saveAnnual()"
+            >{{ annualId() ? 'Actualizar intereses anuales' : 'Guardar intereses anuales' }}</button>
+            @if (annualSaved()) {
+              <span class="text-sm text-emerald-600">✓ Guardado</span>
+            }
+          </div>
+        }
+      </div>
+    }
+
     <app-snapshot-history-table
       [snapshots]="history()"
       (edit)="onEdit($event)"
@@ -126,7 +191,7 @@ export class MintosFormComponent {
   protected readonly getMonthLabel = getMonthLabel;
 
   protected readonly localMonth = signal(this.service.currentMonth());
-  protected readonly localYear = signal(this.service.currentYear());
+  protected readonly localYear = computed(() => this.service.currentYear());
 
   protected readonly balance = signal<number | null>(null);
   protected readonly income = signal<number | null>(null);
@@ -134,6 +199,15 @@ export class MintosFormComponent {
   protected readonly withdrawal = signal<number | null>(null);
   protected readonly saved = signal(false);
   protected readonly editingSnapshot = signal<MonthlySnapshot | null>(null);
+
+  protected readonly showAnnual = computed(() => this.localMonth() === 12);
+  protected readonly annualLoading = signal(false);
+  protected readonly annualSaved = signal(false);
+  protected readonly annualId = signal<string | null>(null);
+  protected readonly annualAmount = signal<number | null>(null);
+  protected readonly annualTaxWithholding = signal<number | null>(null);
+  protected readonly annualTaxRate = signal<number | null>(null);
+  protected readonly annualNetAmount = signal<number | null>(null);
 
   protected readonly snapshotId = computed(() =>
     `${this.MINTOS_ACCOUNT_ID}-${this.localYear()}-${String(this.localMonth()).padStart(2, '0')}`
@@ -150,6 +224,7 @@ export class MintosFormComponent {
 
   protected readonly history = computed(() =>
     this.service.getSnapshotsByAccount(this.MINTOS_ACCOUNT_ID)
+      .filter(s => s.year === this.localYear())
       .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + a.month))
   );
 
@@ -165,11 +240,48 @@ export class MintosFormComponent {
       this.contribution.set(snap?.contribution ?? null);
       this.withdrawal.set(snap?.expenses && snap.expenses > 0 ? snap.expenses : null);
     }, { allowSignalWrites: true });
+
+    effect(() => {
+      this.localYear();
+      this.localMonth();
+      this.loadAnnualInterest();
+    }, { allowSignalWrites: true });
+  }
+
+  protected loadAnnualInterest(): void {
+    if (this.localMonth() !== 12) {
+      this.clearAnnual();
+      return;
+    }
+    this.annualLoading.set(true);
+    this.service.getMintosAnnualInterest(this.localYear()).subscribe({
+      next: interest => {
+        if (interest) {
+          this.annualId.set(interest.id);
+          this.annualAmount.set(interest.amount);
+          this.annualTaxWithholding.set(interest.taxWithholding);
+          this.annualTaxRate.set(interest.taxRate);
+          this.annualNetAmount.set(interest.netAmount);
+        } else {
+          this.clearAnnual();
+        }
+        this.annualLoading.set(false);
+      },
+      error: () => this.annualLoading.set(false),
+    });
+  }
+
+  private clearAnnual(): void {
+    this.annualId.set(null);
+    this.annualAmount.set(null);
+    this.annualTaxWithholding.set(null);
+    this.annualTaxRate.set(null);
+    this.annualNetAmount.set(null);
   }
 
   protected onEdit(snap: MonthlySnapshot): void {
     this.editingSnapshot.set(snap);
-    this.localYear.set(snap.year);
+    this.service.currentYear.set(snap.year);
     this.localMonth.set(snap.month);
     this.balance.set(snap.balance);
     this.income.set(snap.income > 0 ? snap.income : null);
@@ -190,12 +302,12 @@ export class MintosFormComponent {
   }
 
   protected save(): void {
-    const bal = this.balance();
+    const bal = roundMoney(this.balance() ?? 0) ?? 0;
     if (bal === null) { return; }
 
-    const inc = this.income() ?? 0;
-    const contrib = this.contribution() ?? 0;
-    const withdrawal = this.withdrawal() ?? 0;
+    const inc = roundMoney(this.income() ?? 0) ?? 0;
+    const contrib = roundMoney(this.contribution() ?? 0) ?? 0;
+    const withdrawal = roundMoney(this.withdrawal() ?? 0) ?? 0;
 
     const existing = this.editingSnapshot();
     if (existing) {
@@ -215,5 +327,21 @@ export class MintosFormComponent {
     this.withdrawal.set(null);
     this.saved.set(true);
     setTimeout(() => this.saved.set(false), 2000);
+  }
+
+  protected saveAnnual(): void {
+    const interest: MintosAnnualInterest = {
+      id: this.annualId() ?? '',
+      year: this.localYear(),
+      amount: roundMoney(this.annualAmount() ?? 0) ?? 0,
+      taxWithholding: roundMoney(this.annualTaxWithholding() ?? 0) ?? 0,
+      taxRate: roundMoney(this.annualTaxRate() ?? 0) ?? 0,
+      netAmount: roundMoney(this.annualNetAmount() ?? 0) ?? 0,
+    };
+    this.service.saveMintosAnnualInterest(interest).subscribe(saved => {
+      this.annualId.set(saved.id);
+      this.annualSaved.set(true);
+      setTimeout(() => this.annualSaved.set(false), 2000);
+    });
   }
 }

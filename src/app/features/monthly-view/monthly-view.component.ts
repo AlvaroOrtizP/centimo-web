@@ -48,7 +48,6 @@ import { CollapsibleDescriptionComponent } from '../../shared/components/collaps
             [platforms]="service.platforms()"
             [accounts]="service.accounts()"
             [snapshots]="snapshots()"
-            [holdings]="holdings()"
             [expenses]="expenses()"
           />
         </div>
@@ -66,15 +65,17 @@ export class MonthlyViewComponent {
 
   protected readonly service = inject(FinancialDataService);
 
-  private readonly parsedYear = computed(() => parseInt(this.year(), 10));
-  private readonly parsedMonth = computed(() => parseInt(this.month(), 10));
+  private readonly parsedYear = computed(() => this.service.currentYear());
+  private readonly parsedMonth = computed(() => this.service.currentMonth());
 
   constructor() {
     effect(() => {
-      this.service.currentYear.set(this.parsedYear());
-    }, { allowSignalWrites: true });
-    effect(() => {
-      this.service.currentMonth.set(this.parsedMonth());
+      const y = parseInt(this.year(), 10);
+      const m = parseInt(this.month(), 10);
+      if (!isNaN(y) && !isNaN(m)) {
+        this.service.currentYear.set(y);
+        this.service.currentMonth.set(m);
+      }
     }, { allowSignalWrites: true });
   }
 
@@ -89,11 +90,6 @@ export class MonthlyViewComponent {
   protected readonly currentSummary = computed(() =>
     this.service.getMonthlySummary(this.parsedYear(), this.parsedMonth())
   );
-
-  protected readonly holdings = computed(() => {
-    const snapshotIds = this.snapshots().map(s => s.id);
-    return this.service.holdings().filter(h => snapshotIds.includes(h.snapshotId));
-  });
 
   protected readonly expenses = computed(() => {
     const snapshotIds = this.snapshots().map(s => s.id);

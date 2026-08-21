@@ -1,8 +1,8 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
-import { MONTHS, PREVIOUS_MONTH } from '../../core/constants/date.constants';
+import { MONTHS } from '../../core/constants/date.constants';
 import { EXPENSES_PLATFORM_ID, PLATFORM_GROUPS } from '../../core/constants/platform.constants';
 import { MonthPickerComponent } from '../../shared/components/month-picker/month-picker.component';
 import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
@@ -22,7 +22,23 @@ type ExpensesMode = 'acumulado' | 'mensual';
   template: `
     <div class="space-y-4 lg:space-y-6">
       <app-collapsible-description description="Resumen general de tu patrimonio, distribución por plataformas y evolución en los últimos meses." storageKey="desc-dashboard" />
-      <div class="flex justify-end">
+      <div class="flex justify-end items-center gap-3">
+        <button
+          type="button"
+          title="resetear datos cache"
+          class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100"
+          (click)="service.refreshCachedData()"
+        >Resetear cache</button>
+        @if (selectedPlatformId()) {
+          <div class="flex items-center gap-1.5 rounded-lg border border-[#00A3E0] bg-[#00A3E0]/5 px-2.5 py-1 text-xs font-medium text-[#00A3E0]">
+            <span class="max-w-[140px] truncate">{{ selectedPlatformName() }}</span>
+            <button
+              type="button"
+              class="font-semibold underline-offset-2 hover:underline"
+              (click)="resetView()"
+            >Ver todo</button>
+          </div>
+        }
         <app-month-picker />
       </div>
       <app-summary-cards [summary]="currentSummary()" [previousSummary]="previousSummary()" />
@@ -31,6 +47,9 @@ type ExpensesMode = 'acumulado' | 'mensual';
           [platforms]="service.platforms()"
           [accounts]="service.accounts()"
           [snapshots]="currentSnapshots()"
+          [platformMonthlyBalances]="service.platformMonthlyBalances()"
+          [year]="viewYear()"
+          [month]="viewMonth()"
           [selectedPlatformId]="selectedPlatformId()"
           (platformClick)="onPlatformClick($event)"
         />
@@ -100,12 +119,26 @@ type ExpensesMode = 'acumulado' | 'mensual';
 })
 export class DashboardComponent {
   protected readonly service = inject(FinancialDataService);
-  protected readonly viewYear = signal(PREVIOUS_MONTH.year);
-  protected readonly viewMonth = signal(PREVIOUS_MONTH.month);
+  protected readonly viewYear = computed(() => this.service.currentYear());
+  protected readonly viewMonth = computed(() => this.service.currentMonth());
   protected readonly selectedPlatformId = signal<string | null>(null);
   protected readonly chartMode = signal<ChartMode>('total');
   protected readonly chartGroupFilter = signal<PlatformGroup>('all');
-  protected readonly expensesMode = signal<ExpensesMode>('acumulado');
+  protected readonly expensesMode = signal<ExpensesMode>('mensual');
+
+  constructor() {
+    effect(() => {
+      const year = this.service.currentYear();
+      const month = this.service.currentMonth();
+
+      // Recarga el resumen del mes visualizado y de la ventana de 6 meses de los gráficos.
+      for (const { year: y, month: m } of this.last6Months()) {
+        this.service.loadMonthlySummary(y, m);
+      }
+      this.service.loadPlatformMonthlyBalances(year, month, 6, true);
+      this.service.loadFundBalances(year, month);
+    }, { allowSignalWrites: true });
+  }
 
   protected readonly currentSnapshots = computed(() =>
     this.service.getSnapshotsByMonth(this.viewYear(), this.viewMonth())
@@ -201,6 +234,11 @@ export class DashboardComponent {
 
   onPlatformClick(platformId: string): void {
     this.selectedPlatformId.update(current => current === platformId ? null : platformId);
+  }
+
+  resetView(): void {
+    this.selectedPlatformId.set(null);
+    this.chartMode.set('total');
   }
 
   private getPlatformBalanceForMonth(platformId: string, year: number, month: number): number {

@@ -13,7 +13,7 @@ import { CollapsibleDescriptionComponent } from '../../shared/components/collaps
   template: `
     @if (platform(); as p) {
       <div class="space-y-6">
-        <app-collapsible-description description="Detalle de cuenta con historial de saldos, posiciones abiertas y operaciones recientes." storageKey="desc-platform" />
+        <app-collapsible-description description="Detalle de cuenta con historial de saldos y operaciones recientes." storageKey="desc-platform" />
 
         <div class="flex items-center gap-4 rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl" [style.background-color]="p.color + '15'">
@@ -36,98 +36,6 @@ import { CollapsibleDescriptionComponent } from '../../shared/components/collaps
           />
           <app-monthly-table [snapshots]="snapshots()" />
         </div>
-
-        @if (isInvestmentPlatform()) {
-          <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <div class="rounded-xl border border-gray-200/80 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
-              <div class="border-b border-gray-100 px-5 py-4">
-                <div class="flex items-center justify-between">
-                  <h2 class="text-base font-semibold text-gray-900">Holdings</h2>
-                  @if (holdings().length > 0) {
-                    <span class="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">{{ holdings().length }}</span>
-                  }
-                </div>
-              </div>
-              @if (holdings().length === 0) {
-                <div class="flex flex-col items-center gap-2 py-10 text-sm text-gray-400">
-                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                  </svg>
-                  Sin holdings registrados
-                </div>
-              } @else {
-                <div class="divide-y divide-gray-100">
-                  @for (h of holdings(); track h.id) {
-                    <div class="flex items-center gap-3 px-5 py-3.5 text-sm transition-colors hover:bg-gray-50/50">
-                      <span class="flex-1 font-medium text-gray-900">{{ h.assetName }}</span>
-                      <span class="w-20 text-right text-gray-500">{{ h.quantity }}</span>
-                      <span class="w-24 text-right text-gray-500">{{ h.valuePerUnit.toLocaleString('es-ES') }} €</span>
-                      <span class="w-24 text-right font-semibold text-gray-900">{{ h.totalValue.toLocaleString('es-ES') }} €</span>
-                    </div>
-                  }
-                </div>
-              }
-            </div>
-
-            <div class="rounded-xl border border-gray-200/80 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
-              <div class="border-b border-gray-100 px-5 py-4">
-                <div class="flex items-center justify-between">
-                  <h2 class="text-base font-semibold text-gray-900">Trades</h2>
-                  @if (trades().length > 0) {
-                    <span class="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700">{{ trades().length }}</span>
-                  }
-                </div>
-              </div>
-              @if (trades().length === 0) {
-                <div class="flex flex-col items-center gap-2 py-10 text-sm text-gray-400">
-                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300">
-                    <line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                  </svg>
-                  Sin operaciones registradas
-                </div>
-              } @else {
-                <div class="divide-y divide-gray-100">
-                  @for (t of trades(); track t.id) {
-                    <div class="px-5 py-3.5 text-sm transition-colors hover:bg-gray-50/50">
-                      <div class="flex items-center gap-2">
-                        <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
-                          [class.bg-emerald-100]="t.type === 'buy'"
-                          [class.text-emerald-800]="t.type === 'buy'"
-                          [class.bg-red-100]="t.type === 'sell'"
-                          [class.text-red-800]="t.type === 'sell'"
-                        >
-                          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline [attr.points]="t.type === 'buy' ? '18 15 12 9 6 15' : '6 9 12 15 18 9'"/>
-                          </svg>
-                          {{ t.type === 'buy' ? 'COMPRA' : 'VENTA' }}
-                        </span>
-                        <span class="font-semibold text-gray-900">{{ t.assetName }}</span>
-                        <span class="text-gray-500">{{ t.buyQuantity }} × {{ t.buyPricePerUnit.toLocaleString('es-ES') }} €</span>
-                        <span class="ml-auto rounded-full px-2 py-0.5 text-xs font-medium"
-                          [class.bg-yellow-100]="t.status === 'open'"
-                          [class.text-yellow-700]="t.status === 'open'"
-                          [class.bg-gray-100]="t.status === 'closed'"
-                          [class.text-gray-600]="t.status === 'closed'"
-                        >{{ t.status === 'open' ? 'Abierta' : 'Cerrada' }}</span>
-                      </div>
-                      <div class="mt-1 flex items-center gap-4 text-xs text-gray-500">
-                        <span>Compra: {{ t.buyDate }}</span>
-                        @if (t.sellDate) {
-                          <span>Venta: {{ t.sellDate }}</span>
-                        }
-                        @if (t.pnl != null) {
-                          <span [class.text-emerald-600]="t.pnl >= 0" [class.text-red-600]="t.pnl < 0" class="font-semibold">
-                            P&L: {{ t.pnl >= 0 ? '+' : '' }}{{ t.pnl.toLocaleString('es-ES') }} €
-                          </span>
-                        }
-                      </div>
-                    </div>
-                  }
-                </div>
-              }
-            </div>
-          </div>
-        }
       </div>
     } @else {
       <div class="flex h-64 items-center justify-center">
@@ -167,19 +75,5 @@ export class PlatformDetailComponent {
 
   protected readonly chartData = computed(() =>
     this.snapshots().map(s => s.balance)
-  );
-
-  protected readonly isInvestmentPlatform = computed(() =>
-    this.accounts().some(a => a.type === 'investment')
-  );
-
-  protected readonly holdings = computed(() => {
-    const latestSnapshot = this.snapshots()[this.snapshots().length - 1];
-    if (!latestSnapshot) { return []; }
-    return this.service.holdings().filter(h => h.snapshotId === latestSnapshot.id);
-  });
-
-  protected readonly trades = computed(() =>
-    this.accounts().flatMap(a => this.service.getTradesByAccount(a.id))
   );
 }

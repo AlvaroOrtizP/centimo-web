@@ -4,6 +4,7 @@ import { SwUpdate } from '@angular/service-worker';
 
 import { HeaderComponent } from './shared/components/header/header.component';
 import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
+import { AuthService } from './core/services/auth.service';
 
 @Component({
   selector: 'app-root',

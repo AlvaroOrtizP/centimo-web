@@ -1,13 +1,14 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { HttpErrorResponse } from '@angular/common/http';
 
 import { SnapshotsService } from '../../api/generated/api/snapshots.service';
 import { SnapshotResponse } from '../../api/generated/model/snapshotResponse';
 import { SnapshotUpsert } from '../../api/generated/model/snapshotUpsert';
 import { MonthlySnapshotCreate } from '../../api/generated/model/monthlySnapshotCreate';
+import { MonthlySnapshotUpdate } from '../../api/generated/model/monthlySnapshotUpdate';
 import { MonthlySnapshot } from '../../models';
+import { roundMoney } from '../utils/money.util';
 import { LoggerService } from './logger.service';
 
 @Injectable({ providedIn: 'root' })
@@ -33,26 +34,23 @@ export class SnapshotsDataService {
     return this.snapshots().find(s => s.accountId === accountId && s.year === y && s.month === m);
   }
 
-  fetchSnapshotFromBackend(accountId: string, year: number, month: number): Observable<SnapshotResponse | null> {
-    return this.snapshotsApi.getSnapshotByAccountAndDate(accountId, year, month).pipe(
-      map(response => response as SnapshotResponse),
-      catchError((error: HttpErrorResponse) => {
-        return error.status === 404 ? of(null) : of(null);
-      }),
-    );
-  }
-
-  loadAllSnapshots(): void {
+  loadAllSnapshots(force = false): void {
+    if (force) {
+      this.snapshots.set([]);
+    } else if (this.snapshots().length > 0) {
+      return;
+    }
     this.snapshotsApi.listSnapshots().pipe(
       map(list => list.map(s => ({
         id: s.id,
         accountId: s.accountId,
         year: s.year,
         month: s.month,
-        balance: s.balance,
-        income: s.income,
-        expenses: s.expenses,
-        contribution: s.contribution ?? undefined,
+        balance: roundMoney(s.balance ?? 0) ?? 0,
+        income: roundMoney(s.income ?? 0) ?? 0,
+        expenses: roundMoney(s.expenses ?? 0) ?? 0,
+        contribution: s.contribution != null ? roundMoney(s.contribution) ?? undefined : undefined,
+        tax: s.tax != null ? roundMoney(s.tax) ?? undefined : undefined,
         notes: s.notes ?? undefined,
         checklistItems: s.checklistItems ?? undefined,
       }))),
@@ -65,6 +63,37 @@ export class SnapshotsDataService {
     });
   }
 
+  /** Carga instantáneas desde el backend filtradas por año (y opcionalmente cuenta) y las fusiona. */
+  loadSnapshotsByYear(year: number, accountId?: string): void {
+    this.snapshotsApi.listSnapshots(year, accountId).pipe(
+      map(list => list.map(s => ({
+        id: s.id,
+        accountId: s.accountId,
+        year: s.year,
+        month: s.month,
+        balance: roundMoney(s.balance ?? 0) ?? 0,
+        income: roundMoney(s.income ?? 0) ?? 0,
+        expenses: roundMoney(s.expenses ?? 0) ?? 0,
+        contribution: s.contribution != null ? roundMoney(s.contribution) ?? undefined : undefined,
+        tax: s.tax != null ? roundMoney(s.tax) ?? undefined : undefined,
+        notes: s.notes ?? undefined,
+        checklistItems: s.checklistItems ?? undefined,
+      }))),
+      catchError((err) => {
+        this.logger.error('SnapshotsData', 'loadSnapshotsByYear error', err);
+        return of([]);
+      }),
+    ).subscribe(snapshots => {
+      this.snapshots.update(current => {
+        const others = accountId
+          ? current.filter(s => !(s.year === year && s.accountId === accountId))
+          : current.filter(s => s.year !== year);
+        return [...others, ...snapshots];
+      });
+    });
+  }
+
+
   addSnapshot(snapshot: MonthlySnapshot): void {
     const create: MonthlySnapshotCreate = {
       accountId: snapshot.accountId,
@@ -74,6 +103,7 @@ export class SnapshotsDataService {
       income: snapshot.income,
       expenses: snapshot.expenses,
       contribution: snapshot.contribution ?? null,
+      tax: snapshot.tax ?? null,
       notes: snapshot.notes ?? null,
     };
     this.snapshotsApi.createSnapshot(create).subscribe(created => {
@@ -82,10 +112,11 @@ export class SnapshotsDataService {
         accountId: created.accountId,
         year: created.year,
         month: created.month,
-        balance: created.balance,
-        income: created.income,
-        expenses: created.expenses,
-        contribution: created.contribution ?? undefined,
+        balance: roundMoney(created.balance ?? 0) ?? 0,
+        income: roundMoney(created.income ?? 0) ?? 0,
+        expenses: roundMoney(created.expenses ?? 0) ?? 0,
+        contribution: created.contribution != null ? roundMoney(created.contribution) ?? undefined : undefined,
+        tax: created.tax != null ? roundMoney(created.tax) ?? undefined : undefined,
         notes: created.notes ?? undefined,
         checklistItems: created.checklistItems ?? undefined,
       }]);
@@ -93,10 +124,33 @@ export class SnapshotsDataService {
   }
 
   updateSnapshot(id: string, data: Partial<MonthlySnapshot>): void {
-    this.snapshots.update(arr => arr.map(s => s.id === id ? { ...s, ...data } : s));
+    const update: MonthlySnapshotUpdate = {
+      balance: data.balance,
+      income: data.income,
+      expenses: data.expenses,
+      contribution: data.contribution ?? null,
+      tax: data.tax ?? null,
+      notes: data.notes ?? null,
+    };
+    this.snapshotsApi.updateSnapshot(id, update).subscribe(updated => {
+      const snapshot: MonthlySnapshot = {
+        id: updated.id,
+        accountId: updated.accountId,
+        year: updated.year,
+        month: updated.month,
+        balance: roundMoney(updated.balance ?? 0) ?? 0,
+        income: roundMoney(updated.income ?? 0) ?? 0,
+        expenses: roundMoney(updated.expenses ?? 0) ?? 0,
+        contribution: updated.contribution != null ? roundMoney(updated.contribution) ?? undefined : undefined,
+        tax: updated.tax != null ? roundMoney(updated.tax) ?? undefined : undefined,
+        notes: updated.notes ?? undefined,
+        checklistItems: updated.checklistItems ?? undefined,
+      };
+      this.snapshots.update(arr => arr.map(s => s.id === id ? snapshot : s));
+    });
   }
 
-  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number): Observable<SnapshotResponse> {
+  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number, tax?: number): Observable<SnapshotResponse> {
     const body: SnapshotUpsert = {
       accountId,
       year,
@@ -105,6 +159,7 @@ export class SnapshotsDataService {
       incomeDelta,
       expenses,
       contribution,
+      tax,
     };
     return this.snapshotsApi.upsertSnapshot(body).pipe(
       map(result => {
@@ -113,10 +168,11 @@ export class SnapshotsDataService {
           accountId: result.accountId,
           year: result.year,
           month: result.month,
-          balance: result.balance,
-          income: result.income,
-          expenses: result.expenses,
-          contribution: result.contribution ?? undefined,
+          balance: roundMoney(result.balance ?? 0) ?? 0,
+          income: roundMoney(result.income ?? 0) ?? 0,
+          expenses: roundMoney(result.expenses ?? 0) ?? 0,
+          contribution: result.contribution != null ? roundMoney(result.contribution) ?? undefined : undefined,
+          tax: result.tax != null ? roundMoney(result.tax) ?? undefined : undefined,
           notes: result.notes ?? undefined,
           checklistItems: result.checklistItems ?? undefined,
         };
