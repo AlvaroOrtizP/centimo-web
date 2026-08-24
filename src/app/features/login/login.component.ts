@@ -82,13 +82,18 @@ export class LoginComponent {
 
   readonly step = signal<'credentials' | 'totp'>('credentials');
   readonly error = signal<string | null>(null);
+  readonly loading = signal(false);
 
   username = '';
   password = '';
   code = '';
 
   async submitCredentials(): Promise<void> {
+    if (this.loading()) {
+      return;
+    }
     this.error.set(null);
+    this.loading.set(true);
     try {
       const result = await this.auth.login(this.username, this.password);
       if (result.requires2fa) {
@@ -98,16 +103,24 @@ export class LoginComponent {
       }
     } catch {
       this.error.set('Usuario o contraseña incorrectos');
+    } finally {
+      this.loading.set(false);
     }
   }
 
   async submitCode(): Promise<void> {
+    if (this.loading()) {
+      return;
+    }
     this.error.set(null);
+    this.loading.set(true);
     try {
       await this.auth.verify2fa(this.code);
       this.router.navigate(['/']);
     } catch {
       this.error.set('Código 2FA inválido');
+    } finally {
+      this.loading.set(false);
     }
   }
 }
