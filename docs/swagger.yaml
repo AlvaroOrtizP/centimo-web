@@ -43,8 +43,23 @@ tags:
   # Resúmenes
   - name: Summaries
     description: Resúmenes agregados y consultas calculadas
+  # Autenticación
+  - name: Auth
+    description: Login, 2FA (TOTP) y gestión de factor de doble autenticación
 
 paths:
+  /health:
+    get:
+      summary: Health check
+      description: Endpoint publico para verificar que el backend esta activo. No requiere autenticacion.
+      operationId: healthCheck
+      tags:
+        - Health
+      security: [ ]
+      responses:
+        '200':
+          description: El backend esta activo y responde correctamente
+
   # ════════════════════════════════════════════
   #  CONFIGURACIÓN
   # ════════════════════════════════════════════
@@ -1467,6 +1482,111 @@ paths:
         '404':
           description: Error generico 404
 
+  # ════════════════════════════════════════════
+  #  AUTENTICACIÓN (Auth)
+  # ════════════════════════════════════════════
+  /auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Iniciar sesión
+      description: |
+        Valida usuario + contraseña. Si el 2FA está activo devuelve un preAuthToken
+        y requires2fa=true; si no, devuelve el JWT de sesión directamente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login correcto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Credenciales inválidas
+
+  /auth/verify-2fa:
+    post:
+      tags: [Auth]
+      operationId: verify2fa
+      summary: Verificar código 2FA
+      description: Intercambia el preAuthToken por el JWT de sesión validando el código TOTP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Verify2faRequest'
+      responses:
+        '200':
+          description: Código válido, JWT de sesión
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Código inválido o token expirado
+
+  /auth/2fa/setup:
+    post:
+      tags: [Auth]
+      operationId: setup2fa
+      summary: Iniciar configuración de 2FA
+      description: |
+        Genera el secreto TOTP, la URL otpauth (para el QR) y los códigos de
+        recuperación. El 2FA queda activado tras confirmar con un código válido.
+      responses:
+        '200':
+          description: Datos de configuración 2FA
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TotpSetupResponse'
+        '401':
+          description: No autenticado
+
+  /auth/2fa/confirm:
+    post:
+      tags: [Auth]
+      operationId: confirm2fa
+      summary: Confirmar y activar 2FA
+      description: Activa el 2FA tras validar un código TOTP generado con el secreto de setup.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Confirm2faRequest'
+      responses:
+        '204':
+          description: 2FA activado correctamente
+        '401':
+          description: No autenticado
+        '400':
+          description: Código inválido o 2FA no iniciado
+
+  /auth/2fa/disable:
+    post:
+      tags: [Auth]
+      operationId: disable2fa
+      summary: Desactivar 2FA
+      description: Desactiva el 2FA tras validar la contraseña del usuario.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Disable2faRequest'
+      responses:
+        '204':
+          description: 2FA desactivado correctamente
+        '401':
+          description: Credenciales inválidas
+
 # ════════════════════════════════════════════
 #  COMPONENTES REUTILIZABLES
 # ════════════════════════════════════════════
@@ -1560,6 +1680,68 @@ components:
             $ref: '#/components/schemas/Error'
 
   schemas:
+    # ═══════════ Auth ═══════════
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT de sesión (cuando no hay 2FA)
+        preAuthToken:
+          type: string
+          description: Token temporal para validar el 2FA
+        requires2fa:
+          type: boolean
+
+    Verify2faRequest:
+      type: object
+      required: [preAuthToken, code]
+      properties:
+        preAuthToken:
+          type: string
+        code:
+          type: string
+          description: Código TOTP de 6 dígitos
+
+    TotpSetupResponse:
+      type: object
+      properties:
+        secret:
+          type: string
+          description: Secreto TOTP en base32 (para configuración manual)
+        otpauthUrl:
+          type: string
+          description: URL otpauth para generar el QR
+        backupCodes:
+          type: array
+          items:
+            type: string
+          description: Códigos de recuperación (mostrar una sola vez)
+
+    Confirm2faRequest:
+      type: object
+      required: [code]
+      properties:
+        code:
+          type: string
+          description: Código TOTP de 6 dígitos
+
+    Disable2faRequest:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+
     # ═══════════ Enums ═══════════
     PlatformType:
       type: string
