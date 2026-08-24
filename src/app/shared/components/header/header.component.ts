@@ -1,5 +1,7 @@
-import { Component, output } from '@angular/core';
+import { Component, inject, output } from '@angular/core';
+import { Router } from '@angular/router';
 
+import { AuthService } from '../../../core/services/auth.service';
 import { MonthPickerComponent } from '../month-picker/month-picker.component';
 
 @Component({
@@ -26,6 +28,17 @@ import { MonthPickerComponent } from '../month-picker/month-picker.component';
         </div>
       </div>
       <div class="flex items-center gap-3">
+        <button
+          aria-label="Cerrar sesión"
+          type="button"
+          class="flex h-9 items-center gap-2 rounded-xl px-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+          (click)="logout()"
+        >
+          <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H3m0 0l4-4m-4 4l4 4M9 4h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H9" />
+          </svg>
+          <span class="hidden lg:inline">Salir</span>
+        </button>
         <app-month-picker />
       </div>
     </header>
@@ -33,4 +46,12 @@ import { MonthPickerComponent } from '../month-picker/month-picker.component';
 })
 export class HeaderComponent {
   readonly menuClick = output<void>();
+
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
+
+  logout(): void {
+    this.auth.logout();
+    this.router.navigate(['/login']);
+  }
 }

@@ -2,17 +2,27 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 
+import { AuthService } from '../services/auth.service';
 import { NotificationService } from '../services/notification.service';
 import { LoggerService } from '../services/logger.service';
+import { Router } from '@angular/router';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const notification = inject(NotificationService);
   const logger = inject(LoggerService);
+  const auth = inject(AuthService);
+  const router = inject(Router);
 
   return next(req).pipe(
     catchError(error => {
       const message = getErrorMessage(error);
       logger.error('HTTP', `${req.method} ${req.url}`, error);
+
+      if (error && typeof error === 'object' && (error.status === 401 || error.status === 403)) {
+        auth.logout();
+        router.navigate(['/login']);
+      }
+
       notification.showError(message);
       return throwError(() => error);
     }),

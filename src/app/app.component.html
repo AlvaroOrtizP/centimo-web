@@ -1,29 +1,58 @@
-<div class="flex h-screen bg-gray-50">
-  @if (sidebarOpen()) {
-    <div
-      class="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
-      (click)="closeSidebar()"
-    ></div>
-  }
-
-  <aside
-    class="fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 lg:static lg:z-auto lg:w-auto lg:transform-none"
-    [class.-translate-x-full]="!sidebarOpen()"
-  >
-    <app-sidebar (navigate)="closeSidebar()" (close)="closeSidebar()" />
-  </aside>
-
-  <main class="flex min-w-0 flex-1 flex-col">
-    <app-header (menuClick)="toggleSidebar()" />
-    <div class="flex-1 overflow-y-auto">
-      <div class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
-        <router-outlet />
+@if (!backendHealthy()) {
+  <div class="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-center">
+    @if (!connectionFailed()) {
+      <div
+        class="mb-6 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-gray-900"
+        role="status"
+        aria-label="Cargando"
+      ></div>
+      <p class="text-sm text-gray-500">Conectando con el servidor…</p>
+    } @else {
+      <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-2xl text-red-600">
+        !
       </div>
-    </div>
-  </main>
-</div>
+      <p class="text-sm text-gray-500">No se pudo conectar con el servidor.</p>
+      <button
+        type="button"
+        (click)="retry()"
+        class="mt-6 rounded-xl bg-gray-900 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
+      >
+        Reintentar
+      </button>
+    }
+  </div>
+} @else {
+  @if (showShell()) {
+    <div class="flex h-screen bg-gray-50">
+      @if (sidebarOpen()) {
+        <div
+          class="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
+          (click)="closeSidebar()"
+        ></div>
+      }
 
-@if (updateAvailable()) {
+      <aside
+        class="fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 lg:static lg:z-auto lg:w-auto lg:transform-none"
+        [class.-translate-x-full]="!sidebarOpen()"
+      >
+        <app-sidebar (navigate)="closeSidebar()" (close)="closeSidebar()" />
+      </aside>
+
+      <main class="flex min-w-0 flex-1 flex-col">
+        <app-header (menuClick)="toggleSidebar()" />
+        <div class="flex-1 overflow-y-auto">
+          <div class="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
+            <router-outlet />
+          </div>
+        </div>
+      </main>
+    </div>
+  } @else {
+    <router-outlet />
+  }
+}
+
+@if (backendHealthy() && updateAvailable()) {
   <div class="fixed inset-x-0 bottom-4 z-[60] mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 shadow-lg">
     <p class="text-sm text-blue-800">Nueva versión disponible</p>
     <button
