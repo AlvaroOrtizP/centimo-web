@@ -10,7 +10,7 @@ const TOKEN_KEY = 'centimo_token';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
-  private readonly base = environment.apiUrl;
+  private readonly base = environment.apiUrl + '/api/v1';
 
   private readonly token = signal<string | null>(localStorage.getItem(TOKEN_KEY));
   private readonly pendingPreAuth = signal<string | null>(null);
