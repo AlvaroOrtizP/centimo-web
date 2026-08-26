@@ -14,7 +14,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes, withPreloading(PreloadAllModules)),
     provideHttpClient(withInterceptors([errorInterceptor, authInterceptor])),
-    provideApi(environment.apiUrl),
+    provideApi(environment.apiUrl + '/api/v1'),
     provideServiceWorker('ngsw-worker.js', {
         enabled: !isDevMode(),
         registrationStrategy: 'registerWhenStable:30000'
