@@ -161,10 +161,8 @@ export class FinancialDataService {
     this.expensesData.loadExpenses(snapshotId);
   }
 
-  loadExpensesByPeriod(year: number, month: number): void {
-    this.getSnapshotsByMonth(year, month).forEach(s => {
-      this.expensesData.loadExpenses(s.id);
-    });
+  loadExpensesByPeriod(year: number, month: number, force = false): void {
+    this.expensesData.loadExpensesByMonth(year, month, force);
   }
 
   getExpensesBySnapshot(snapshotId: string): Expense[] {

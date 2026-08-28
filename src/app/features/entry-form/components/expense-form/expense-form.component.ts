@@ -2,7 +2,6 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
-import { MONTHS, YEARS } from '../../../../core/constants/date.constants';
 import { ExpenseCategory } from '../../../../models/expense-category';
 import { Expense } from '../../../../models/expense';
 
@@ -67,27 +66,22 @@ import { Expense } from '../../../../models/expense';
         <div class="mt-4 border-t border-gray-100 pt-3">
         <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
           <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Gastos registrados</p>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <select
-              aria-label="Mes del historial de gastos"
+              aria-label="Ordenar por"
               class="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
-              [ngModel]="listMonth()"
-              (ngModelChange)="listMonth.set(+$event)"
+              [ngModel]="sortBy()"
+              (ngModelChange)="sortBy.set($event)"
             >
-              @for (m of months; track $index) {
-                <option [value]="$index + 1">{{ m }}</option>
-              }
+              <option value="date">Antigüedad</option>
+              <option value="amount">Valor</option>
             </select>
-            <select
-              aria-label="Año del historial de gastos"
-              class="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
-              [ngModel]="listYear()"
-              (ngModelChange)="listYear.set(+$event)"
-            >
-              @for (y of years; track y) {
-                <option [value]="y">{{ y }}</option>
-              }
-            </select>
+            <button
+              type="button"
+              aria-label="Dirección de ordenación"
+              class="rounded-lg border border-gray-300 px-2 py-1 text-sm text-gray-700 hover:bg-gray-50"
+              (click)="sortDir.set(sortDir() === 'asc' ? 'desc' : 'asc')"
+            >{{ sortDir() === 'asc' ? '↑' : '↓' }}</button>
             <p class="text-sm font-semibold text-red-600">{{ total().toLocaleString('es-ES') }} €</p>
           </div>
         </div>
@@ -139,9 +133,6 @@ export class ExpenseFormComponent {
 
   protected readonly snapshotId = signal('');
 
-  protected readonly months = MONTHS;
-  protected readonly years = YEARS;
-
   protected readonly listMonth = signal(this.service.currentMonth());
   protected readonly listYear = signal(this.service.currentYear());
 
@@ -170,9 +161,20 @@ export class ExpenseFormComponent {
     }, { allowSignalWrites: true });
   }
 
-  protected readonly expenses = computed<Expense[]>(() =>
-    this.service.getExpensesByPeriod(this.listYear(), this.listMonth()).slice().reverse()
-  );
+  protected readonly sortBy = signal<'date' | 'amount'>('date');
+  protected readonly sortDir = signal<'asc' | 'desc'>('desc');
+
+  protected readonly expenses = computed<Expense[]>(() => {
+    const list = this.service.getExpensesByPeriod(this.listYear(), this.listMonth());
+    const by = this.sortBy();
+    const dir = this.sortDir();
+    return list.slice().sort((a, b) => {
+      const cmp = by === 'amount'
+        ? a.amount - b.amount
+        : (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+      return dir === 'asc' ? cmp : -cmp;
+    });
+  });
 
   protected readonly total = computed(() =>
     this.expenses().reduce((sum, e) => sum + e.amount, 0)
