@@ -2,7 +2,6 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
-import { MONTHS, YEARS } from '../../../../core/constants/date.constants';
 import { ExpenseCategory } from '../../../../models/expense-category';
 import { Expense } from '../../../../models/expense';
 
@@ -69,39 +68,18 @@ import { Expense } from '../../../../models/expense';
           <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Gastos registrados</p>
           <div class="flex flex-wrap items-center gap-2">
             <select
-              aria-label="Mes del historial de gastos"
-              class="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
-              [ngModel]="listMonth()"
-              (ngModelChange)="listMonth.set(+$event)"
-            >
-              @for (m of months; track $index) {
-                <option [value]="$index + 1">{{ m }}</option>
-              }
-            </select>
-            <select
-              aria-label="Año del historial de gastos"
-              class="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
-              [ngModel]="listYear()"
-              (ngModelChange)="listYear.set(+$event)"
-            >
-              @for (y of years; track y) {
-                <option [value]="y">{{ y }}</option>
-              }
-            </select>
-            <select
               aria-label="Ordenar por"
               class="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
               [ngModel]="sortBy()"
               (ngModelChange)="sortBy.set($event)"
             >
-              <option value="date">Fecha</option>
-              <option value="amount">Importe</option>
+              <option value="date">Antigüedad</option>
+              <option value="amount">Valor</option>
             </select>
             <button
               type="button"
               aria-label="Dirección de ordenación"
               class="rounded-lg border border-gray-300 px-2 py-1 text-sm text-gray-700 hover:bg-gray-50"
-              [ngModel]="sortDir()"
               (click)="sortDir.set(sortDir() === 'asc' ? 'desc' : 'asc')"
             >{{ sortDir() === 'asc' ? '↑' : '↓' }}</button>
             <p class="text-sm font-semibold text-red-600">{{ total().toLocaleString('es-ES') }} €</p>
@@ -154,9 +132,6 @@ export class ExpenseFormComponent {
   private readonly ACCOUNT_ID = 'bbva-gasto';
 
   protected readonly snapshotId = signal('');
-
-  protected readonly months = MONTHS;
-  protected readonly years = YEARS;
 
   protected readonly listMonth = signal(this.service.currentMonth());
   protected readonly listYear = signal(this.service.currentYear());
