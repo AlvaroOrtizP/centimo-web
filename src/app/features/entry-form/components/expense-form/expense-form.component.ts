@@ -67,7 +67,7 @@ import { Expense } from '../../../../models/expense';
         <div class="mt-4 border-t border-gray-100 pt-3">
         <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
           <p class="text-xs font-medium uppercase tracking-wider text-gray-500">Gastos registrados</p>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <select
               aria-label="Mes del historial de gastos"
               class="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
@@ -88,6 +88,22 @@ import { Expense } from '../../../../models/expense';
                 <option [value]="y">{{ y }}</option>
               }
             </select>
+            <select
+              aria-label="Ordenar por"
+              class="rounded-lg border border-gray-300 px-2 py-1 text-sm focus:border-blue-500 focus:outline-none"
+              [ngModel]="sortBy()"
+              (ngModelChange)="sortBy.set($event)"
+            >
+              <option value="date">Fecha</option>
+              <option value="amount">Importe</option>
+            </select>
+            <button
+              type="button"
+              aria-label="Dirección de ordenación"
+              class="rounded-lg border border-gray-300 px-2 py-1 text-sm text-gray-700 hover:bg-gray-50"
+              [ngModel]="sortDir()"
+              (click)="sortDir.set(sortDir() === 'asc' ? 'desc' : 'asc')"
+            >{{ sortDir() === 'asc' ? '↑' : '↓' }}</button>
             <p class="text-sm font-semibold text-red-600">{{ total().toLocaleString('es-ES') }} €</p>
           </div>
         </div>
@@ -170,9 +186,20 @@ export class ExpenseFormComponent {
     }, { allowSignalWrites: true });
   }
 
-  protected readonly expenses = computed<Expense[]>(() =>
-    this.service.getExpensesByPeriod(this.listYear(), this.listMonth()).slice().reverse()
-  );
+  protected readonly sortBy = signal<'date' | 'amount'>('date');
+  protected readonly sortDir = signal<'asc' | 'desc'>('desc');
+
+  protected readonly expenses = computed<Expense[]>(() => {
+    const list = this.service.getExpensesByPeriod(this.listYear(), this.listMonth());
+    const by = this.sortBy();
+    const dir = this.sortDir();
+    return list.slice().sort((a, b) => {
+      const cmp = by === 'amount'
+        ? a.amount - b.amount
+        : (a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+      return dir === 'asc' ? cmp : -cmp;
+    });
+  });
 
   protected readonly total = computed(() =>
     this.expenses().reduce((sum, e) => sum + e.amount, 0)
