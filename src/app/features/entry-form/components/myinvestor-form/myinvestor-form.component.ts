@@ -335,6 +335,8 @@ export class MyInvestorFormComponent {
   });
 
   constructor() {
+    this.service.loadFundBalances(this.fundsLocalYear(), this.fundsLocalMonth());
+
     effect(() => {
       const fundId = this.selectedFundId();
       const y = this.fundsLocalYear();

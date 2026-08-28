@@ -23,27 +23,6 @@ interface TabConfig {
   done: boolean;
 }
 
-const TAB_ACCOUNT_IDS: Partial<Record<Tab, string[]>> = {
-  banks: ['bbva-checking', 'caixa-main'],
-  revolut: ['revolut-main'],
-  b100: ['b100-save', 'b100-heal'],
-  myinvestor: ['myinvestor-fondo'],
-  mintos: ['mintos-main'],
-  urbanitae: ['urbanitae'],
-  bitvavo: ['bitvavo-main'],
-};
-
-const TAB_PLATFORMS: Record<Tab, string[]> = {
-  banks: ['bbva', 'caixabank'],
-  revolut: ['revolut'],
-  b100: ['b100'],
-  myinvestor: ['myinvestor'],
-  mintos: ['mintos'],
-  equito: ['equito'],
-  urbanitae: ['urbanitae'],
-  bitvavo: ['bitvavo'],
-};
-
 @Component({
   selector: 'app-entry-form',
   standalone: true,
@@ -185,22 +164,10 @@ export class EntryFormComponent {
     // El usuario puede cambiarlo luego con el selector.
     this.service.currentYear.set(new Date().getFullYear());
 
-    // Al entrar en cada pestaña (o cambiar el año) se recargan desde el backend
-    // solo las instantáneas de las cuentas de esa pestaña para el año indicado,
-    // alimentando así el historial con los resultados deseados.
-    effect(() => {
-      const tab = this.activeTab();
-      const year = this.service.currentYear();
-      const accountIds = TAB_ACCOUNT_IDS[tab]
-        ?? this.allAccounts()
-          .filter(a => TAB_PLATFORMS[tab].includes(a.platformId))
-          .map(a => a.id);
-      if (accountIds.length === 0) {
-        this.service.loadSnapshotsByYear(year);
-      } else {
-        accountIds.forEach(id => this.service.loadSnapshotsByYear(year, id));
-      }
-    });
+    // Crowdlending y fondos MyInvestor solo se usan en esta pantalla de entrada
+    // de datos, así que se cargan aquí en lugar de en el resolver global.
+    this.service.loadAllCrowdlending();
+    this.service.loadAllMyInvestorFunds();
   }
 
   protected readonly tabs: TabConfig[] = [
