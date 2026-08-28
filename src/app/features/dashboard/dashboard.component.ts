@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
@@ -131,12 +131,16 @@ export class DashboardComponent {
       const year = this.service.currentYear();
       const month = this.service.currentMonth();
 
-      // Recarga el resumen del mes visualizado y de la ventana de 6 meses de los gráficos.
-      for (const { year: y, month: m } of this.last6Months()) {
-        this.service.loadMonthlySummary(y, m);
-      }
-      this.service.loadPlatformMonthlyBalances(year, month, 6, true);
-      this.service.loadFundBalances(year, month);
+      // Las cargas se ejecutan fuera del tracking del effect: sus métodos internos
+      // leen señales (p.ej. platformBalancesLoaded) que actualizan al completar,
+      // lo que de otro modo provocaría un bucle infinito de peticiones.
+      untracked(() => {
+        for (const { year: y, month: m } of this.last6Months()) {
+          this.service.loadMonthlySummary(y, m);
+        }
+        this.service.loadPlatformMonthlyBalances(year, month, 6, true);
+        this.service.loadFundBalances(year, month);
+      });
     }, { allowSignalWrites: true });
   }
 

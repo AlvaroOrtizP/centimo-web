@@ -55,6 +55,14 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private startHealthCheck(): void {
+    // Si el backend ya respondió sano hace menos de 30 min, no malgastamos
+    // una llamada /health: asumimos que sigue disponible.
+    if (this.health.isRecentlyHealthy()) {
+      this.backendHealthy.set(true);
+      this.connectionFailed.set(false);
+      return;
+    }
+
     this.backendHealthy.set(false);
     this.connectionFailed.set(false);
     this.healthSub?.unsubscribe();
@@ -67,6 +75,7 @@ export class AppComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.backendHealthy.set(true);
+          this.health.markHealthy();
           this.healthSub?.unsubscribe();
         },
         complete: () => {
