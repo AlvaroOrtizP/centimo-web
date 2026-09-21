@@ -2,15 +2,16 @@ import { Injectable, inject, signal } from '@angular/core';
 import { of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 
-import { PlatformsService } from '../../api/generated/api/platforms.service';
-import { AccountsService } from '../../api/generated/api/accounts.service';
+// TODO(BACKEND): servicios eliminados del swagger (solo queda B100). Se reactivarán al ampliar la nueva API.
+// import { PlatformsService } from '../../api/generated/api/platforms.service';
+// import { AccountsService } from '../../api/generated/api/accounts.service';
 import { Platform, PlatformType, Account } from '../../models';
 import { LoggerService } from './logger.service';
 
 @Injectable({ providedIn: 'root' })
 export class PlatformsDataService {
-  private readonly platformsApi = inject(PlatformsService);
-  private readonly accountsApi = inject(AccountsService);
+  // private readonly platformsApi = inject(PlatformsService);
+  // private readonly accountsApi = inject(AccountsService);
   private readonly logger = inject(LoggerService);
 
   private static readonly PLATFORMS_CACHE_KEY = 'centimo:platforms';
@@ -47,24 +48,25 @@ export class PlatformsDataService {
         return;
       }
     }
-    this.platformsApi.listPlatforms().pipe(
-      map(list => list.map(p => ({
-        id: p.id,
-        name: p.name,
-        type: p.type as unknown as PlatformType,
-        color: p.color,
-        icon: p.icon,
-        order: p.order,
-        fixedNotes: p.fixedNotes ?? undefined,
-      }))),
-      catchError((err) => {
-        this.logger.error('PlatformsData', 'loadAllPlatforms error', err);
-        return of([]);
-      }),
-    ).subscribe(platforms => {
-      this.platforms.set(platforms);
-      this.savePlatformsCache(platforms);
-    });
+    // TODO(BACKEND): llamada a GET /platforms comentada.
+    // this.platformsApi.listPlatforms().pipe(
+    //   map(list => list.map(p => ({
+    //     id: p.id,
+    //     name: p.name,
+    //     type: p.type as unknown as PlatformType,
+    //     color: p.color,
+    //     icon: p.icon,
+    //     order: p.order,
+    //     fixedNotes: p.fixedNotes ?? undefined,
+    //   }))),
+    //   catchError((err) => {
+    //     this.logger.error('PlatformsData', 'loadAllPlatforms error', err);
+    //     return of([]);
+    //   }),
+    // ).subscribe(platforms => {
+    //   this.platforms.set(platforms);
+    //   this.savePlatformsCache(platforms);
+    // });
   }
 
   private loadPlatformsCache(): Platform[] {
@@ -107,23 +109,24 @@ export class PlatformsDataService {
         return;
       }
     }
-    this.accountsApi.listAccounts().pipe(
-      map(list => list.map(a => ({
-        id: a.id,
-        platformId: a.platformId,
-        name: a.name,
-        type: a.type,
-        currency: a.currency,
-        order: a.order,
-      }))),
-      catchError((err) => {
-        this.logger.error('PlatformsData', 'loadAllAccounts error', err);
-        return of([]);
-      }),
-    ).subscribe(accounts => {
-      this.accounts.set(accounts);
-      this.saveAccountsCache(accounts);
-    });
+    // TODO(BACKEND): llamada a GET /accounts comentada.
+    // this.accountsApi.listAccounts().pipe(
+    //   map(list => list.map(a => ({
+    //     id: a.id,
+    //     platformId: a.platformId,
+    //     name: a.name,
+    //     type: a.type,
+    //     currency: a.currency,
+    //     order: a.order,
+    //   }))),
+    //   catchError((err) => {
+    //     this.logger.error('PlatformsData', 'loadAllAccounts error', err);
+    //     return of([]);
+    //   }),
+    // ).subscribe(accounts => {
+    //   this.accounts.set(accounts);
+    //   this.saveAccountsCache(accounts);
+    // });
   }
 
   private loadAccountsCache(): Account[] {

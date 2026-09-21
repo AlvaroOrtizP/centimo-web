@@ -28,10 +28,11 @@ import {
 } from '../../models';
 import { EXPENSES_PLATFORM_ID } from '../constants/platform.constants';
 
-import { SnapshotResponse } from '../../api/generated/model/snapshotResponse';
-import { NominaCreate } from '../../api/generated/model/nominaCreate';
-import { NominaResponse } from '../../api/generated/model/nominaResponse';
-import { ExpenseUpdate } from '../../api/generated/model/expenseUpdate';
+// TODO(BACKEND): modelos eliminados del swagger (solo queda B100). Se reactivarán al ampliar la nueva API.
+// import { SnapshotResponse } from '../../api/generated/model/snapshotResponse';
+// import { NominaCreate } from '../../api/generated/model/nominaCreate';
+// import { NominaResponse } from '../../api/generated/model/nominaResponse';
+// import { ExpenseUpdate } from '../../api/generated/model/expenseUpdate';
 
 @Injectable({ providedIn: 'root' })
 export class FinancialDataService {
@@ -145,11 +146,11 @@ export class FinancialDataService {
     this.summaryData.loadPlatformMonthlyBalances(year, month, months, force);
   }
 
-  fetchNominaFromBackend(year: number, month: number): Observable<NominaResponse | null> {
+  fetchNominaFromBackend(year: number, month: number): Observable<any | null> {
     return this.incomesData.fetchNominaFromBackend(year, month);
   }
 
-  createNomina(nomina: NominaCreate): Observable<NominaResponse | null> {
+  createNomina(nomina: any): Observable<any | null> {
     return this.incomesData.createNomina(nomina);
   }
 
@@ -226,7 +227,7 @@ export class FinancialDataService {
     this.snapshotsData.updateSnapshot(id, data);
   }
 
-  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number, tax?: number): Observable<SnapshotResponse> {
+  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number, tax?: number): Observable<MonthlySnapshot> {
     return this.snapshotsData.upsertSnapshot(accountId, year, month, balance, incomeDelta, expenses, contribution, tax);
   }
 
@@ -238,7 +239,7 @@ export class FinancialDataService {
     return this.expensesData.addExpense(expense);
   }
 
-  updateExpense(id: string, data: ExpenseUpdate): Observable<Expense> {
+  updateExpense(id: string, data: any): Observable<Expense> {
     return this.expensesData.updateExpense(id, data);
   }
 

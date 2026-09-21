@@ -3,17 +3,18 @@ import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { IncomesService } from '../../api/generated/api/incomes.service';
-import { NominaService } from '../../api/generated/api/nomina.service';
-import { IncomeSourceCreate } from '../../api/generated/model/incomeSourceCreate';
-import { NominaCreate } from '../../api/generated/model/nominaCreate';
-import { NominaResponse } from '../../api/generated/model/nominaResponse';
+// TODO(BACKEND): servicios y modelos eliminados del swagger (solo queda B100). Se reactivarán al ampliar la nueva API.
+// import { IncomesService } from '../../api/generated/api/incomes.service';
+// import { NominaService } from '../../api/generated/api/nomina.service';
+// import { IncomeSourceCreate } from '../../api/generated/model/incomeSourceCreate';
+// import { NominaCreate } from '../../api/generated/model/nominaCreate';
+// import { NominaResponse } from '../../api/generated/model/nominaResponse';
 import { IncomeSource } from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class IncomesDataService {
-  private readonly incomesApi = inject(IncomesService);
-  private readonly nominaApi = inject(NominaService);
+  // private readonly incomesApi = inject(IncomesService);
+  // private readonly nominaApi = inject(NominaService);
 
   readonly incomes = signal<IncomeSource[]>([]);
 
@@ -21,40 +22,21 @@ export class IncomesDataService {
     return this.incomes().filter(i => i.snapshotId === snapshotId);
   }
 
-  fetchNominaFromBackend(year: number, month: number): Observable<NominaResponse | null> {
-    return this.nominaApi.getNominaAndDate(year, month).pipe(
-      map(response => response as NominaResponse),
-      catchError((error: HttpErrorResponse) => {
-        return error.status === 404 ? of(null) : of(null);
-      }),
-    );
+  fetchNominaFromBackend(year: number, month: number): Observable<any | null> {
+    // TODO(BACKEND): llamada a GET /nomina comentada.
+    void year; void month;
+    return of(null);
   }
 
-  createNomina(nomina: NominaCreate): Observable<NominaResponse | null> {
-    return this.nominaApi.createNomina(nomina).pipe(
-      map(response => response as NominaResponse),
-      catchError((error: HttpErrorResponse) => {
-        return of(null);
-      }),
-    );
+  createNomina(nomina: any): Observable<any | null> {
+    // TODO(BACKEND): llamada a POST /nomina comentada.
+    void nomina;
+    return of(null);
   }
 
   addIncome(income: IncomeSource): void {
-    const create: IncomeSourceCreate = {
-      snapshotId: income.snapshotId,
-      source: income.source,
-      description: income.description,
-      amount: income.amount,
-    };
-    this.incomesApi.createIncome(create).subscribe(created => {
-      this.incomes.update(arr => [...arr, {
-        id: created.id,
-        snapshotId: created.snapshotId,
-        source: created.source,
-        description: created.description,
-        amount: created.amount,
-      }]);
-    });
+    // TODO(BACKEND): llamada a POST /incomes comentada.
+    this.incomes.update(arr => [...arr, income]);
   }
 
   deleteIncome(id: string): void {

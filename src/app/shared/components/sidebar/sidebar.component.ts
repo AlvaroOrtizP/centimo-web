@@ -34,11 +34,12 @@ interface NavItem {
         @for (item of navItems; track item.path) {
           <a
             [routerLink]="item.path"
-            routerLinkActive="bg-blue-50 text-blue-700 before:bg-blue-600"
+            routerLinkActive="before:bg-orange-600"
             #rla="routerLinkActive"
-            class="relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-all duration-150 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-r before:transition-all hover:bg-gray-100 hover:text-gray-900"
+            class="relative flex items-center gap-3 rounded-lg bg-orange-50 px-3 py-2.5 text-sm font-medium text-orange-700 transition-all duration-150 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-r before:transition-all hover:bg-orange-100"
             [class.pl-10]="compact()"
-            [class.text-blue-700]="rla.isActive"
+            [class.bg-orange-100]="rla.isActive"
+            [class.text-orange-800]="rla.isActive"
             (click)="navigate.emit()"
           >
             <span class="flex-shrink-0" [innerHTML]="item.icon"></span>

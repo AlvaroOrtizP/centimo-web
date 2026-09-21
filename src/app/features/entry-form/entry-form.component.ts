@@ -60,21 +60,17 @@ interface TabConfig {
           <div class="flex gap-1 overflow-x-auto">
             @for (tab of tabs; track tab.key) {
               <button
-                class="relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all duration-200"
-                [style.background-color]="activeTab() === tab.key ? tab.color : 'transparent'"
-                [class.text-white]="activeTab() === tab.key"
-                [class.text-gray-500]="activeTab() !== tab.key"
-                [class.hover:text-gray-700]="activeTab() !== tab.key"
-                [class.hover:bg-gray-100]="activeTab() !== tab.key"
+                class="relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-t-lg px-4 py-2.5 text-sm font-medium text-orange-700 transition-all duration-200 hover:text-orange-800"
+                [style.background-color]="activeTab() === tab.key ? ORANGE_BG_ACTIVE : ORANGE_BG"
                 [class.shadow-sm]="activeTab() === tab.key"
                 (click)="activeTab.set(tab.key)"
               >
                 <span
                   class="flex h-5 w-5 items-center justify-center rounded-full"
-                  [style.background-color]="activeTab() === tab.key ? 'rgba(255,255,255,0.25)' : tab.color + '20'"
+                  [style.background-color]="'rgba(249,115,22,0.15)'"
                 >
                   <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                    [style.color]="activeTab() === tab.key ? '#fff' : tab.color"
+                    [style.color]="'#c2410c'"
                   >
                     @if (tab.key === 'banks') {
                       <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
@@ -158,6 +154,8 @@ interface TabConfig {
 export class EntryFormComponent {
   protected readonly service = inject(FinancialDataService);
   protected readonly activeTab = signal<Tab>('banks');
+  protected readonly ORANGE_BG = 'rgb(255 237 213)';
+  protected readonly ORANGE_BG_ACTIVE = 'rgb(254 215 170)';
 
   constructor() {
     // Por defecto el periodo es el año actual al abrir "Entrada de datos".
@@ -180,10 +178,7 @@ export class EntryFormComponent {
     { key: 'urbanitae', label: 'Urbanitae', color: '#E63946', done: true },
   ];
 
-  protected readonly activeTabColor = computed(() => {
-    const tab = this.tabs.find(t => t.key === this.activeTab());
-    return tab?.color ?? '#6b7280';
-  });
+  protected readonly activeTabColor = computed(() => '#f97316');
 
   protected readonly allAccounts = computed(() => this.service.accounts());
 

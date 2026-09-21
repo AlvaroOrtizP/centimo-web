@@ -21,33 +21,24 @@ import { CollapsibleDescriptionComponent } from '../../shared/components/collaps
       <div class="border-b border-gray-200">
         <nav aria-label="Navegación de ingresos" class="-mb-px flex gap-4 overflow-x-auto sm:gap-6">
           <button
-            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium transition-colors"
-            [class.border-green-600]="activeTab() === 'income'"
-            [class.text-green-600]="activeTab() === 'income'"
+            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium text-orange-600 transition-colors"
+            [class.border-orange-500]="activeTab() === 'income'"
+            [class.text-orange-700]="activeTab() === 'income'"
             [class.border-transparent]="activeTab() !== 'income'"
-            [class.text-gray-500]="activeTab() !== 'income'"
-            [class.hover:border-gray-300]="activeTab() !== 'income'"
-            [class.hover:text-gray-700]="activeTab() !== 'income'"
             (click)="activeTab.set('income')"
           >Distribución Mensual</button>
           <button
-            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium transition-colors"
-            [class.border-green-600]="activeTab() === 'config'"
-            [class.text-green-600]="activeTab() === 'config'"
+            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium text-orange-600 transition-colors"
+            [class.border-orange-500]="activeTab() === 'config'"
+            [class.text-orange-700]="activeTab() === 'config'"
             [class.border-transparent]="activeTab() !== 'config'"
-            [class.text-gray-500]="activeTab() !== 'config'"
-            [class.hover:border-gray-300]="activeTab() !== 'config'"
-            [class.hover:text-gray-700]="activeTab() !== 'config'"
             (click)="activeTab.set('config')"
           >Planificación</button>
           <button
-            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium transition-colors"
-            [class.border-green-600]="activeTab() === 'commitments'"
-            [class.text-green-600]="activeTab() === 'commitments'"
+            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium text-orange-600 transition-colors"
+            [class.border-orange-500]="activeTab() === 'commitments'"
+            [class.text-orange-700]="activeTab() === 'commitments'"
             [class.border-transparent]="activeTab() !== 'commitments'"
-            [class.text-gray-500]="activeTab() !== 'commitments'"
-            [class.hover:border-gray-300]="activeTab() !== 'commitments'"
-            [class.hover:text-gray-700]="activeTab() !== 'commitments'"
             (click)="activeTab.set('commitments')"
           >Compromisos</button>
         </nav>
