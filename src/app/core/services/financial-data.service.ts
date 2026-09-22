@@ -9,6 +9,7 @@ import { SalaryDataService } from './salary.service';
 import { InvestmentsDataService } from './investments.service';
 import { SummaryDataService } from './summary.service';
 import { MintosInterestDataService } from './mintos-interest.service';
+import { B100BalanceDataService } from './b100-balance.service';
 import { roundMoney } from '../utils/money.util';
 
 import {
@@ -25,6 +26,9 @@ import {
   SalaryAllocation,
   Commitment,
   PlatformMonthlyBalance,
+  B100Balance,
+  B100BalanceSave,
+  B100Subcuenta,
 } from '../../models';
 import { EXPENSES_PLATFORM_ID } from '../constants/platform.constants';
 
@@ -44,6 +48,7 @@ export class FinancialDataService {
   private readonly investmentsData = inject(InvestmentsDataService);
   private readonly summaryData = inject(SummaryDataService);
   private readonly mintosInterestData = inject(MintosInterestDataService);
+  private readonly b100Data = inject(B100BalanceDataService);
 
   readonly platforms = computed(() => this.platformsData.platforms());
   readonly accounts = computed(() => this.platformsData.accounts());
@@ -60,6 +65,7 @@ export class FinancialDataService {
   readonly currentMonth = signal(new Date().getMonth() + 1);
 
   readonly platformMonthlyBalances = this.summaryData.platformMonthlyBalances;
+  readonly b100Balances = computed(() => this.b100Data.balances());
 
   private autoAdjustedToData = false;
 
@@ -367,5 +373,25 @@ export class FinancialDataService {
 
   saveMintosAnnualInterest(interest: MintosAnnualInterest): Observable<MintosAnnualInterest> {
     return this.mintosInterestData.save(interest);
+  }
+
+  loadB100History(tipo: B100Subcuenta, year: number, month: number, limit = 12, order = 'desc', force = false): void {
+    this.b100Data.loadHistory(tipo, year, month, limit, order, force);
+  }
+
+  getB100BalancesByTipo(tipo: B100Subcuenta): B100Balance[] {
+    return this.b100Data.getBalancesByTipo(tipo);
+  }
+
+  getB100Balance(tipo: B100Subcuenta, year: number, month: number): B100Balance | undefined {
+    return this.b100Data.getBalance(tipo, year, month);
+  }
+
+  saveB100Balance(tipo: B100Subcuenta, year: number, month: number, data: B100BalanceSave): Observable<B100Balance> {
+    return this.b100Data.save(tipo, year, month, data);
+  }
+
+  deleteB100Balance(id: string): Observable<any> {
+    return this.b100Data.delete(id);
   }
 }

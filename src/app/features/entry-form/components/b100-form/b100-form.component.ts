@@ -2,20 +2,19 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
-import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
+import { MONTH_OPTIONS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
-import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
-import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.helper';
-import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
+import { B100Balance, B100BalanceSave, B100Subcuenta } from '../../../../models';
+import { B100HistoryTableComponent } from '../b100-history-table/b100-history-table.component';
 import { roundMoney } from '../../../../core/utils/money.util';
 
 @Component({
   selector: 'app-b100-form',
   standalone: true,
-  imports: [FormsModule, SnapshotHistoryTableComponent],
+  imports: [FormsModule, B100HistoryTableComponent],
   template: `
     <div class="space-y-4">
-      <!-- Selector mes/año -->
+      <!-- Selector mes -->
       <div class="flex gap-2">
         <select
           aria-label="Mes"
@@ -23,12 +22,12 @@ import { roundMoney } from '../../../../core/utils/money.util';
           [ngModel]="localMonth()" (ngModelChange)="localMonth.set($event)"
         >
           @for (m of months; track m.value) {
-              <option [ngValue]="m.value">{{ m.label }}</option>
-            }
-          </select>
-        </div>
+            <option [ngValue]="m.value">{{ m.label }}</option>
+          }
+        </select>
+      </div>
 
-      <!-- Cuenta Ahorro -->
+      <!-- Cuenta Save -->
       <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <h3 class="mb-4 text-sm font-semibold text-gray-900">B100 — Cuenta Save</h3>
 
@@ -38,7 +37,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
           </div>
         }
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
             <input
@@ -46,34 +45,34 @@ import { roundMoney } from '../../../../core/utils/money.util';
               step="any"
               placeholder="ej: 3000"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [ngModel]="savingsBalance.display()"
-              (ngModelChange)="savingsBalance.userValue.set($event)"
+              [ngModel]="savingsBalance()"
+              (ngModelChange)="savingsBalance.set($event)"
             />
-            <p class="mt-0.5 text-xs text-gray-400">Valor total en Cuenta Ahorro</p>
+            <p class="mt-0.5 text-xs text-gray-400">Valor total en Cuenta Save</p>
           </div>
           <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses este mes (€) <span class="text-amber-600">· neto 19% Hacienda</span></label>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Dinero total a repartir (€)</label>
             <input
               type="number"
               step="any"
               placeholder="ej: 12"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [ngModel]="savingsInterest.display()"
-              (ngModelChange)="onSavingsInterest($event)"
+              [ngModel]="savingsTotalRepartir()"
+              (ngModelChange)="onTotalRepartirSavings($event)"
             />
-            <p class="mt-0.5 text-xs text-gray-400">Intereses tras retener el 19% de Hacienda</p>
+            <p class="mt-0.5 text-xs text-gray-400">Total que reparte B100 al 100%</p>
           </div>
           <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-amber-600">Hacienda retenida (€)</label>
+            <label class="block text-xs font-medium uppercase tracking-wider text-amber-600">Hacienda (€)</label>
             <input
               type="number"
               step="any"
-              placeholder="ej: 3"
+              placeholder="ej: 2.28"
               class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              [ngModel]="savingsTax()"
-              (ngModelChange)="savingsTax.set($event)"
+              [ngModel]="savingsHacienda()"
+              (ngModelChange)="savingsHacienda.set($event)"
             />
-            <p class="mt-0.5 text-xs text-gray-400">19% retenido (auto, editable)</p>
+            <p class="mt-0.5 text-xs text-gray-400">19% de lo repartido (auto, editable)</p>
           </div>
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
@@ -82,29 +81,17 @@ import { roundMoney } from '../../../../core/utils/money.util';
               step="any"
               placeholder="ej: 100"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [ngModel]="savingsContribution()"
-              (ngModelChange)="savingsContribution.set($event)"
+              [ngModel]="savingsAporte()"
+              (ngModelChange)="savingsAporte.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
-          </div>
-          <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Retirada este mes (€)</label>
-            <input
-              type="number"
-              step="any"
-              placeholder="ej: 50"
-              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [ngModel]="savingsWithdrawal()"
-              (ngModelChange)="savingsWithdrawal.set($event)"
-            />
-            <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
           </div>
         </div>
 
         <div class="mt-4 flex items-center gap-3">
           <button
             class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
-            [disabled]="!savingsBalance.display()"
+            [disabled]="savingsBalance() == null"
             (click)="saveSavings()"
           >{{ editingSavings() ? 'Actualizar balance' : 'Guardar' }}</button>
           @if (editingSavings()) {
@@ -119,7 +106,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
         </div>
       </div>
 
-      <!-- Bolsillo Inversión -->
+      <!-- Cuenta Health -->
       <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <h3 class="mb-4 text-sm font-semibold text-gray-900">B100 — Cuenta Health</h3>
 
@@ -129,7 +116,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
           </div>
         }
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
             <input
@@ -137,34 +124,34 @@ import { roundMoney } from '../../../../core/utils/money.util';
               step="any"
               placeholder="ej: 5000"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [ngModel]="investmentBalance.display()"
-              (ngModelChange)="investmentBalance.userValue.set($event)"
+              [ngModel]="investmentBalance()"
+              (ngModelChange)="investmentBalance.set($event)"
             />
-            <p class="mt-0.5 text-xs text-gray-400">Valor total en Bolsillo Inversión</p>
+            <p class="mt-0.5 text-xs text-gray-400">Valor total en Cuenta Health</p>
           </div>
           <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses este mes (€) <span class="text-amber-600">· neto 19% Hacienda</span></label>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Dinero total a repartir (€)</label>
             <input
               type="number"
               step="any"
               placeholder="ej: 20"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [ngModel]="investmentInterest.display()"
-              (ngModelChange)="onInvestmentInterest($event)"
+              [ngModel]="investmentTotalRepartir()"
+              (ngModelChange)="onTotalRepartirInvestment($event)"
             />
-            <p class="mt-0.5 text-xs text-gray-400">Intereses tras retener el 19% de Hacienda</p>
+            <p class="mt-0.5 text-xs text-gray-400">Total que reparte B100 al 100%</p>
           </div>
           <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-amber-600">Hacienda retenida (€)</label>
+            <label class="block text-xs font-medium uppercase tracking-wider text-amber-600">Hacienda (€)</label>
             <input
               type="number"
               step="any"
-              placeholder="ej: 5"
+              placeholder="ej: 3.80"
               class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              [ngModel]="investmentTax()"
-              (ngModelChange)="investmentTax.set($event)"
+              [ngModel]="investmentHacienda()"
+              (ngModelChange)="investmentHacienda.set($event)"
             />
-            <p class="mt-0.5 text-xs text-gray-400">19% retenido (auto, editable)</p>
+            <p class="mt-0.5 text-xs text-gray-400">19% de lo repartido (auto, editable)</p>
           </div>
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
@@ -173,29 +160,17 @@ import { roundMoney } from '../../../../core/utils/money.util';
               step="any"
               placeholder="ej: 200"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [ngModel]="investmentContribution()"
-              (ngModelChange)="investmentContribution.set($event)"
+              [ngModel]="investmentAporte()"
+              (ngModelChange)="investmentAporte.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
-          </div>
-          <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Retirada este mes (€)</label>
-            <input
-              type="number"
-              step="any"
-              placeholder="ej: 100"
-              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-              [ngModel]="investmentWithdrawal()"
-              (ngModelChange)="investmentWithdrawal.set($event)"
-            />
-            <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
           </div>
         </div>
 
         <div class="mt-4 flex items-center gap-3">
           <button
             class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
-            [disabled]="!investmentBalance.display()"
+            [disabled]="investmentBalance() == null"
             (click)="saveInvestment()"
           >{{ editingInvestment() ? 'Actualizar balance' : 'Guardar' }}</button>
           @if (editingInvestment()) {
@@ -211,30 +186,24 @@ import { roundMoney } from '../../../../core/utils/money.util';
       </div>
 
       <!-- Historial Save -->
-      @if (historySavings().length > 0) {
-        <div>
-          <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Historial Save</p>
-          <app-snapshot-history-table
-            [snapshots]="historySavings()"
-            headingTooltip="Solo se muestran los dos últimos registros"
-            (edit)="onEditSavings($event)"
-            (delete)="onDeleteSavings($event)"
-          />
-        </div>
-      }
+      <div>
+        <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Historial Save</p>
+        <app-b100-history-table
+          [balances]="historySavings()"
+          (edit)="onEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      </div>
 
       <!-- Historial Health -->
-      @if (historyInvestment().length > 0) {
-        <div>
-          <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Historial Health</p>
-          <app-snapshot-history-table
-            [snapshots]="historyInvestment()"
-            headingTooltip="Solo se muestran los dos últimos registros"
-            (edit)="onEditInvestment($event)"
-            (delete)="onDeleteInvestment($event)"
-          />
-        </div>
-      }
+      <div>
+        <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Historial Health</p>
+        <app-b100-history-table
+          [balances]="historyInvestment()"
+          (edit)="onEditInvestment($event)"
+          (delete)="onDeleteInvestment($event)"
+        />
+      </div>
     </div>
   `,
 })
@@ -243,239 +212,201 @@ export class B100FormComponent {
 
   readonly accounts = input.required<Account[]>();
 
-  private readonly SAVINGS_ID = 'b100-save';
-  private readonly INVESTMENT_ID = 'b100-heal';
+  protected readonly SAVINGS_TIPO: B100Subcuenta = 'save';
+  protected readonly INVESTMENT_TIPO: B100Subcuenta = 'health';
 
   protected readonly months = MONTH_OPTIONS;
-  protected readonly years = YEARS;
   protected readonly getMonthLabel = getMonthLabel;
 
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = computed(() => this.service.currentYear());
 
-  protected readonly editingSavings = signal<MonthlySnapshot | null>(null);
-  protected readonly editingInvestment = signal<MonthlySnapshot | null>(null);
+  protected readonly editingSavings = signal<B100Balance | null>(null);
+  protected readonly editingInvestment = signal<B100Balance | null>(null);
 
-  protected readonly savingsBalance = createSnapshotField(this.service, this.SAVINGS_ID, () => this.localYear(), () => this.localMonth());
-  protected readonly savingsInterest = createSnapshotField(this.service, this.SAVINGS_ID, () => this.localYear(), () => this.localMonth(), 'income');
-  protected readonly savingsContribution = signal<number | null>(null);
-  protected readonly savingsWithdrawal = signal<number | null>(null);
-  protected readonly savingsTax = signal<number | null>(null);
-  protected readonly savingsTae = signal<number | null>(null);
+  protected readonly savingsBalance = signal<number | null>(null);
+  protected readonly savingsTotalRepartir = signal<number | null>(null);
+  protected readonly savingsHacienda = signal<number | null>(null);
+  protected readonly savingsAporte = signal<number | null>(null);
   protected readonly savedSavings = signal(false);
 
-  protected readonly investmentBalance = createSnapshotField(this.service, this.INVESTMENT_ID, () => this.localYear(), () => this.localMonth());
-  protected readonly investmentInterest = createSnapshotField(this.service, this.INVESTMENT_ID, () => this.localYear(), () => this.localMonth(), 'income');
-  protected readonly investmentContribution = signal<number | null>(null);
-  protected readonly investmentWithdrawal = signal<number | null>(null);
-  protected readonly investmentTax = signal<number | null>(null);
-  protected readonly investmentTae = signal<number | null>(null);
+  protected readonly investmentBalance = signal<number | null>(null);
+  protected readonly investmentTotalRepartir = signal<number | null>(null);
+  protected readonly investmentHacienda = signal<number | null>(null);
+  protected readonly investmentAporte = signal<number | null>(null);
   protected readonly savedInvestment = signal(false);
 
-  protected readonly previousSavingsBalance = computed(() => {
-    const snapshots = this.service.getSnapshotsByAccount(this.SAVINGS_ID);
-    let prevMonth = this.localMonth() - 1;
-    let prevYear = this.localYear();
-    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
-    const prev = snapshots.find(s => s.year === prevYear && s.month === prevMonth);
-    return prev?.balance ?? null;
-  });
+  protected readonly previousSavingsBalance = computed(() => this.getPreviousBalance(this.SAVINGS_TIPO));
+  protected readonly previousInvestmentBalance = computed(() => this.getPreviousBalance(this.INVESTMENT_TIPO));
 
-  protected readonly previousInvestmentBalance = computed(() => {
-    const snapshots = this.service.getSnapshotsByAccount(this.INVESTMENT_ID);
-    let prevMonth = this.localMonth() - 1;
-    let prevYear = this.localYear();
-    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
-    const prev = snapshots.find(s => s.year === prevYear && s.month === prevMonth);
-    return prev?.balance ?? null;
-  });
+  protected readonly historySavings = computed(() => this.getHistory(this.SAVINGS_TIPO));
+  protected readonly historyInvestment = computed(() => this.getHistory(this.INVESTMENT_TIPO));
 
-  protected readonly hasExistingSavingsSnapshot = computed(() =>
-    this.service.getSnapshotsByAccount(this.SAVINGS_ID)
-      .some(s => s.year === this.localYear() && s.month === this.localMonth())
-  );
-
-  protected readonly hasExistingInvestmentSnapshot = computed(() =>
-    this.service.getSnapshotsByAccount(this.INVESTMENT_ID)
-      .some(s => s.year === this.localYear() && s.month === this.localMonth())
-  );
-
-  protected readonly historySavings = computed(() =>
-    this.service.getSnapshotsByAccount(this.SAVINGS_ID)
-      .filter(s => s.year === this.localYear())
-      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + b.month))
-      .slice(0, 2)
-  );
-
-  protected readonly historyInvestment = computed(() =>
-    this.service.getSnapshotsByAccount(this.INVESTMENT_ID)
-      .filter(s => s.year === this.localYear())
-      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + b.month))
-      .slice(0, 2)
-  );
-
+  private static readonly HACIENDA_PERCENT = 19;
   private static readonly HACIENDA_RATE = 0.19;
 
-  private static computeHacienda(netInterest: number): number {
-    if (!netInterest) { return 0; }
-    const gross = netInterest / (1 - B100FormComponent.HACIENDA_RATE);
-    const tax = gross * B100FormComponent.HACIENDA_RATE;
-    return Math.round(tax * 100) / 100;
+  private getPreviousBalance(tipo: B100Subcuenta): number | null {
+    let prevMonth = this.localMonth() - 1;
+    let prevYear = this.localYear();
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+    return this.service.getB100Balance(tipo, prevYear, prevMonth)?.balanceMensual ?? null;
   }
 
-  protected onSavingsInterest(value: number | null): void {
-    this.savingsInterest.userValue.set(value);
-    this.savingsTax.set(value != null ? B100FormComponent.computeHacienda(value) : null);
+  private getHistory(tipo: B100Subcuenta): B100Balance[] {
+    const since = B100FormComponent.toMes(this.localYear(), this.localMonth());
+    return this.service.getB100BalancesByTipo(tipo)
+      .filter(b => b.mes <= since)
+      .sort((a, b) => (a.mes < b.mes ? 1 : -1));
   }
 
-  protected onInvestmentInterest(value: number | null): void {
-    this.investmentInterest.userValue.set(value);
-    this.investmentTax.set(value != null ? B100FormComponent.computeHacienda(value) : null);
+  private static toMes(year: number, month: number): string {
+    return `${year}-${String(month).padStart(2, '0')}`;
+  }
+
+  private static parseMes(mes: string): { year: number; month: number } {
+    const [year, month] = mes.split('-').map(Number);
+    return { year, month };
+  }
+
+  protected onTotalRepartirSavings(value: number | null): void {
+    this.savingsTotalRepartir.set(value);
+    this.savingsHacienda.set(B100FormComponent.computeHacienda(value));
+  }
+
+  protected onTotalRepartirInvestment(value: number | null): void {
+    this.investmentTotalRepartir.set(value);
+    this.investmentHacienda.set(B100FormComponent.computeHacienda(value));
+  }
+
+  private static computeHacienda(totalRepartir: number | null): number | null {
+    if (totalRepartir == null) { return null; }
+    return roundMoney(totalRepartir * B100FormComponent.HACIENDA_RATE) ?? null;
   }
 
   constructor() {
     effect(() => {
       const year = this.localYear();
       const month = this.localMonth();
+      this.service.loadB100History(this.SAVINGS_TIPO, year, month);
+      this.service.loadB100History(this.INVESTMENT_TIPO, year, month);
       this.editingSavings.set(null);
       this.editingInvestment.set(null);
-      resetSnapshotFields(this.savingsBalance, this.savingsInterest, this.investmentBalance, this.investmentInterest);
-      this.savingsContribution.set(null);
-      this.savingsWithdrawal.set(null);
-      this.investmentContribution.set(null);
-      this.investmentWithdrawal.set(null);
+      this.resetSavingsFields();
+      this.resetInvestmentFields();
 
-      const savingsSnap = this.service.getSnapshotsByAccount(this.SAVINGS_ID)
-        .find(s => s.year === year && s.month === month);
-      if (savingsSnap) {
-        this.editingSavings.set(savingsSnap);
-        this.savingsContribution.set(savingsSnap.contribution ?? null);
-        this.savingsWithdrawal.set(savingsSnap.expenses > 0 ? savingsSnap.expenses : null);
+      const savingsBalance = this.service.getB100Balance(this.SAVINGS_TIPO, year, month);
+      if (savingsBalance) {
+        this.editingSavings.set(savingsBalance);
+        this.savingsBalance.set(savingsBalance.balanceMensual);
+        this.savingsTotalRepartir.set(savingsBalance.dineroTotalRepartir);
+        this.savingsHacienda.set(savingsBalance.dineroHacienda ?? null);
+        this.savingsAporte.set(savingsBalance.aporteMensual ?? null);
       }
-      this.savingsTax.set(
-        savingsSnap ? (savingsSnap.tax != null ? savingsSnap.tax : B100FormComponent.computeHacienda(savingsSnap.income ?? 0)) : null
-      );
 
-      const investmentSnap = this.service.getSnapshotsByAccount(this.INVESTMENT_ID)
-        .find(s => s.year === year && s.month === month);
-      if (investmentSnap) {
-        this.editingInvestment.set(investmentSnap);
-        this.investmentContribution.set(investmentSnap.contribution ?? null);
-        this.investmentWithdrawal.set(investmentSnap.expenses > 0 ? investmentSnap.expenses : null);
+      const investmentBalance = this.service.getB100Balance(this.INVESTMENT_TIPO, year, month);
+      if (investmentBalance) {
+        this.editingInvestment.set(investmentBalance);
+        this.investmentBalance.set(investmentBalance.balanceMensual);
+        this.investmentTotalRepartir.set(investmentBalance.dineroTotalRepartir);
+        this.investmentHacienda.set(investmentBalance.dineroHacienda ?? null);
+        this.investmentAporte.set(investmentBalance.aporteMensual ?? null);
       }
-      this.investmentTax.set(
-        investmentSnap ? (investmentSnap.tax != null ? investmentSnap.tax : B100FormComponent.computeHacienda(investmentSnap.income ?? 0)) : null
-      );
     }, { allowSignalWrites: true });
   }
 
-  protected onEditSavings(snap: MonthlySnapshot): void {
-    this.editingSavings.set(snap);
-    this.service.currentYear.set(snap.year);
-    this.localMonth.set(snap.month);
-    this.savingsBalance.userValue.set(snap.balance);
-    this.savingsBalance.hasUserValue.set(true);
-    this.savingsInterest.userValue.set(snap.income);
-    this.savingsInterest.hasUserValue.set(true);
-    this.savingsContribution.set(snap.contribution ?? null);
-    this.savingsWithdrawal.set(snap.expenses > 0 ? snap.expenses : null);
-    this.savingsTax.set(snap.tax ?? null);
+  private resetSavingsFields(): void {
+    this.savingsBalance.set(null);
+    this.savingsTotalRepartir.set(null);
+    this.savingsHacienda.set(null);
+    this.savingsAporte.set(null);
+  }
+
+  private resetInvestmentFields(): void {
+    this.investmentBalance.set(null);
+    this.investmentTotalRepartir.set(null);
+    this.investmentHacienda.set(null);
+    this.investmentAporte.set(null);
+  }
+
+  private fillFromBalance(balance: B100Balance, tipo: B100Subcuenta): void {
+    const { year, month } = B100FormComponent.parseMes(balance.mes);
+    this.service.currentYear.set(year);
+    this.localMonth.set(month);
+    if (tipo === this.SAVINGS_TIPO) {
+      this.savingsBalance.set(balance.balanceMensual);
+      this.savingsTotalRepartir.set(balance.dineroTotalRepartir);
+      this.savingsHacienda.set(balance.dineroHacienda ?? null);
+      this.savingsAporte.set(balance.aporteMensual ?? null);
+    } else {
+      this.investmentBalance.set(balance.balanceMensual);
+      this.investmentTotalRepartir.set(balance.dineroTotalRepartir);
+      this.investmentHacienda.set(balance.dineroHacienda ?? null);
+      this.investmentAporte.set(balance.aporteMensual ?? null);
+    }
+  }
+
+  protected onEdit(balance: B100Balance): void {
+    this.editingSavings.set(balance);
+    this.fillFromBalance(balance, this.SAVINGS_TIPO);
+  }
+
+  protected onEditInvestment(balance: B100Balance): void {
+    this.editingInvestment.set(balance);
+    this.fillFromBalance(balance, this.INVESTMENT_TIPO);
   }
 
   protected cancelEditSavings(): void {
     this.editingSavings.set(null);
-    this.savingsBalance.userValue.set(null);
-    this.savingsBalance.hasUserValue.set(false);
-    this.savingsInterest.userValue.set(null);
-    this.savingsInterest.hasUserValue.set(false);
-    this.savingsContribution.set(null);
-    this.savingsWithdrawal.set(null);
-    this.savingsTax.set(null);
-  }
-
-  protected onDeleteSavings(id: string): void {
-    this.service.deleteSnapshot(id);
-  }
-
-  protected onEditInvestment(snap: MonthlySnapshot): void {
-    this.editingInvestment.set(snap);
-    this.service.currentYear.set(snap.year);
-    this.localMonth.set(snap.month);
-    this.investmentBalance.userValue.set(snap.balance);
-    this.investmentBalance.hasUserValue.set(true);
-    this.investmentInterest.userValue.set(snap.income);
-    this.investmentInterest.hasUserValue.set(true);
-    this.investmentContribution.set(snap.contribution ?? null);
-    this.investmentWithdrawal.set(snap.expenses > 0 ? snap.expenses : null);
-    this.investmentTax.set(snap.tax ?? null);
+    this.resetSavingsFields();
   }
 
   protected cancelEditInvestment(): void {
     this.editingInvestment.set(null);
-    this.investmentBalance.userValue.set(null);
-    this.investmentBalance.hasUserValue.set(false);
-    this.investmentInterest.userValue.set(null);
-    this.investmentInterest.hasUserValue.set(false);
-    this.investmentContribution.set(null);
-    this.investmentWithdrawal.set(null);
-    this.investmentTax.set(null);
+    this.resetInvestmentFields();
+  }
+
+  protected onDelete(id: string): void {
+    this.service.deleteB100Balance(id).subscribe();
   }
 
   protected onDeleteInvestment(id: string): void {
-    this.service.deleteSnapshot(id);
+    this.service.deleteB100Balance(id).subscribe();
   }
 
   protected saveSavings(): void {
-    const bal = roundMoney(this.savingsBalance.display() ?? 0) ?? 0;
-    if (bal === null) { return; }
-
-    const inter = roundMoney(this.savingsInterest.display() ?? 0) ?? 0;
-    const contrib = roundMoney(this.savingsContribution() ?? 0) ?? 0;
-    const withdrawal = roundMoney(this.savingsWithdrawal() ?? 0) ?? 0;
-    const tax = roundMoney(this.savingsTax() ?? 0) ?? 0;
-
-    const existing = this.editingSavings();
-    if (existing) {
-      this.service.updateSnapshot(existing.id, {
-        balance: bal,
-        income: inter,
-        contribution: contrib,
-        expenses: withdrawal,
-        tax,
-      });
-      this.cancelEditSavings();
-    } else {
-      this.service.upsertSnapshot(this.SAVINGS_ID, this.localYear(), this.localMonth(), bal, inter, withdrawal, contrib, tax).subscribe();
-    }
-
-    this.savedSavings.set(true);
-    setTimeout(() => this.savedSavings.set(false), 2000);
+    this.save(this.SAVINGS_TIPO, this.savingsBalance(), this.savingsTotalRepartir(), this.savingsHacienda(), this.savingsAporte(), this.savedSavings, () => this.cancelEditSavings());
   }
 
   protected saveInvestment(): void {
-    const bal = roundMoney(this.investmentBalance.display() ?? 0) ?? 0;
+    this.save(this.INVESTMENT_TIPO, this.investmentBalance(), this.investmentTotalRepartir(), this.investmentHacienda(), this.investmentAporte(), this.savedInvestment, () => this.cancelEditInvestment());
+  }
+
+  private save(
+    tipo: B100Subcuenta,
+    balance: number | null,
+    totalRepartir: number | null,
+    hacienda: number | null,
+    aporte: number | null,
+    savedSignal: ReturnType<typeof signal<boolean>>,
+    doCancel: () => void,
+  ): void {
+    const bal = roundMoney(balance ?? 0) ?? 0;
     if (bal === null) { return; }
 
-    const inter = roundMoney(this.investmentInterest.display() ?? 0) ?? 0;
-    const contrib = roundMoney(this.investmentContribution() ?? 0) ?? 0;
-    const withdrawal = roundMoney(this.investmentWithdrawal() ?? 0) ?? 0;
-    const tax = roundMoney(this.investmentTax() ?? 0) ?? 0;
+    const data: B100BalanceSave = {
+      balanceMensual: bal,
+      dineroTotalRepartir: roundMoney(totalRepartir ?? 0) ?? 0,
+      dineroHacienda: roundMoney(hacienda ?? 0) ?? 0,
+      aporteMensual: roundMoney(aporte ?? 0) ?? 0,
+      porcentajeHacienda: B100FormComponent.HACIENDA_PERCENT,
+    };
 
-    const existing = this.editingInvestment();
-    if (existing) {
-      this.service.updateSnapshot(existing.id, {
-        balance: bal,
-        income: inter,
-        contribution: contrib,
-        expenses: withdrawal,
-        tax,
-      });
-      this.cancelEditInvestment();
-    } else {
-      this.service.upsertSnapshot(this.INVESTMENT_ID, this.localYear(), this.localMonth(), bal, inter, withdrawal, contrib, tax).subscribe();
-    }
-
-    this.savedInvestment.set(true);
-    setTimeout(() => this.savedInvestment.set(false), 2000);
+    this.service.saveB100Balance(tipo, this.localYear(), this.localMonth(), data).subscribe({
+      next: () => {
+        doCancel();
+        savedSignal.set(true);
+        setTimeout(() => savedSignal.set(false), 2000);
+      },
+    });
   }
 }

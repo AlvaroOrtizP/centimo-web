@@ -26,6 +26,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: mes
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Fecha mes-año (YYYY-MM) desde la que partir (inclusive)
         - name: limit
           in: query
           schema:
