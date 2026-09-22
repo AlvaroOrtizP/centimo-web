@@ -2,126 +2,132 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
-import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
+import { MONTH_OPTIONS, getMonthLabel } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
-import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
-import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.helper';
-import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
+import { RevolutBalance, RevolutBalanceSave } from '../../../../models';
+import { RevolutHistoryTableComponent } from '../revolut-history-table/revolut-history-table.component';
 import { roundMoney } from '../../../../core/utils/money.util';
 
 @Component({
   selector: 'app-revolut-form',
   standalone: true,
-  imports: [FormsModule, SnapshotHistoryTableComponent],
+  imports: [FormsModule, RevolutHistoryTableComponent],
   template: `
-    <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <h3 class="mb-4 text-sm font-semibold text-gray-900">Revolut — Balance mensual</h3>
-
-      <div class="mb-4 flex gap-2">
+    <div class="space-y-4">
+      <!-- Selector mes -->
+      <div class="flex gap-2">
         <select
           aria-label="Mes"
           class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-          [ngModel]="localMonth()"
-          (ngModelChange)="localMonth.set($event)"
+          [ngModel]="localMonth()" (ngModelChange)="localMonth.set($event)"
         >
           @for (m of months; track m.value) {
-            <option [value]="m.value">{{ m.label }}</option>
+            <option [ngValue]="m.value">{{ m.label }}</option>
           }
         </select>
       </div>
 
-      @if (previousBalance() !== null) {
-        <div class="mb-4 rounded-lg bg-gray-50 px-4 py-2 text-sm text-gray-600">
-          Balance mes anterior: <strong>{{ previousBalance()!.toLocaleString('es-ES') }} €</strong>
-        </div>
-      }
+      <!-- Balance Revolut -->
+      <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <h3 class="mb-4 text-sm font-semibold text-gray-900">Revolut — Balance mensual</h3>
 
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <div>
-          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
-          <input
-            type="number"
-            step="any"
-            placeholder="ej: 5000"
-            class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-            [ngModel]="balance.display()"
-            (ngModelChange)="onBalanceChange($event)"
-          />
-          <p class="mt-0.5 text-xs text-gray-400">Valor total en Revolut a 31 del mes</p>
+        @if (previousBalance() !== null) {
+          <div class="mb-4 rounded-lg bg-gray-50 px-4 py-2 text-sm text-gray-600">
+            Balance mes anterior: <strong>{{ previousBalance()!.toLocaleString('es-ES') }} €</strong>
+          </div>
+        }
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 5000"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
+              [ngModel]="balance()"
+              (ngModelChange)="balance.set($event)"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Valor total en Revolut a 31 del mes</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 100"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
+              [ngModel]="aporte()"
+              (ngModelChange)="aporte.set($event)"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Dinero total (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 15"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
+              [ngModel]="dineroTotal()"
+              (ngModelChange)="onDineroTotalChange($event)"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Intereses generados por Revolut</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-amber-600">Hacienda (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 2.85"
+              class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              [ngModel]="hacienda()"
+              (ngModelChange)="onHaciendaChange($event)"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">19% del total (auto, editable)</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Dinero final (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 12.15"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
+              [ngModel]="dineroFinal()"
+              (ngModelChange)="dineroFinal.set($event)"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Total menos Hacienda (auto, editable)</p>
+          </div>
         </div>
-        <div>
-          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses este mes (€) <span class="text-amber-600">· neto 19% Hacienda</span></label>
-          <input
-            type="number"
-            step="any"
-            placeholder="ej: 15"
-            class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-            [ngModel]="interest.display()"
-            (ngModelChange)="onInterest($event)"
-          />
-          <p class="mt-0.5 text-xs text-gray-400">Intereses tras retener el 19% de Hacienda</p>
-        </div>
-        <div>
-          <label class="block text-xs font-medium uppercase tracking-wider text-amber-600">Hacienda retenida (€)</label>
-          <input
-            type="number"
-            step="any"
-            placeholder="ej: 3"
-            class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-              [ngModel]="tax()"
-              (ngModelChange)="tax.set($event)"
-          />
-          <p class="mt-0.5 text-xs text-gray-400">19% retenido (auto, editable)</p>
-        </div>
-        <div>
-          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
-          <input
-            type="number"
-            step="any"
-            placeholder="ej: 100"
-            class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-              [ngModel]="contribution()"
-              (ngModelChange)="contribution.set($event)"
-          />
-          <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
-        </div>
-        <div>
-          <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Retirada este mes (€)</label>
-          <input
-            type="number"
-            step="any"
-            placeholder="ej: 50"
-            class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-500"
-              [ngModel]="withdrawal()"
-              (ngModelChange)="withdrawal.set($event)"
-          />
-          <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
+
+        <div class="mt-4 flex items-center gap-3">
+          <button
+            class="rounded-lg bg-pink-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-pink-700 disabled:opacity-50"
+            [disabled]="balance() == null"
+            (click)="save()"
+          >{{ editing() ? 'Actualizar balance' : 'Guardar' }}</button>
+          @if (editing()) {
+            <button
+              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              (click)="cancelEdit()"
+            >Cancelar</button>
+          }
+          @if (saved()) {
+            <span class="text-sm text-emerald-600">✓ Guardado</span>
+          }
         </div>
       </div>
 
-      <div class="mt-4 flex items-center gap-3">
-        <button
-          class="rounded-lg bg-pink-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-pink-700 disabled:opacity-50"
-          [disabled]="!balance.display()"
-          (click)="save()"
-        >{{ editingSnapshot() ? 'Actualizar balance' : 'Guardar balance' }}</button>
-        @if (editingSnapshot()) {
-          <button
-            class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            (click)="cancelEdit()"
-          >Cancelar</button>
-        }
-        @if (saved()) {
-          <span class="text-sm text-emerald-600">✓ Guardado</span>
-        }
+      <!-- Historial -->
+      <div>
+        <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Historial</p>
+        <app-revolut-history-table
+          [balances]="history()"
+          (edit)="onEdit($event)"
+          (delete)="onDelete($event)"
+        />
       </div>
     </div>
-
-    <app-snapshot-history-table
-      [snapshots]="history()"
-      (edit)="onEdit($event)"
-      (delete)="onDelete($event)"
-    />
   `,
 })
 export class RevolutFormComponent {
@@ -129,132 +135,141 @@ export class RevolutFormComponent {
 
   readonly accounts = input.required<Account[]>();
 
-  private readonly ACCOUNT_ID = 'revolut-main';
-
   protected readonly months = MONTH_OPTIONS;
-  protected readonly years = YEARS;
   protected readonly getMonthLabel = getMonthLabel;
 
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = computed(() => this.service.currentYear());
-  protected readonly tae = signal<number | null>(null);
-  protected readonly contribution = signal<number | null>(null);
-  protected readonly withdrawal = signal<number | null>(null);
-  protected readonly tax = signal<number | null>(null);
+
+  protected readonly editing = signal<RevolutBalance | null>(null);
+
+  protected readonly balance = signal<number | null>(null);
+  protected readonly aporte = signal<number | null>(null);
+  protected readonly dineroTotal = signal<number | null>(null);
+  protected readonly hacienda = signal<number | null>(null);
+  protected readonly dineroFinal = signal<number | null>(null);
   protected readonly saved = signal(false);
-  protected readonly editingSnapshot = signal<MonthlySnapshot | null>(null);
 
-  private static readonly HACIENDA_RATE = 0.19;
+  protected readonly previousBalance = computed(() => this.getPreviousBalance());
 
-  private static computeHacienda(netInterest: number): number {
-    if (!netInterest) { return 0; }
-    const gross = netInterest / (1 - RevolutFormComponent.HACIENDA_RATE);
-    const tax = gross * RevolutFormComponent.HACIENDA_RATE;
-    return Math.round(tax * 100) / 100;
-  }
-
-  protected readonly balance = createSnapshotField(this.service, this.ACCOUNT_ID, () => this.localYear(), () => this.localMonth());
-  protected readonly interest = createSnapshotField(this.service, this.ACCOUNT_ID, () => this.localYear(), () => this.localMonth(), 'income');
-
-  protected readonly previousBalance = computed(() => {
-    const snapshots = this.service.getSnapshotsByAccount(this.ACCOUNT_ID);
-    let prevMonth = this.localMonth() - 1;
-    let prevYear = this.localYear();
-    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
-    const prev = snapshots.find(s => s.year === prevYear && s.month === prevMonth);
-    return prev?.balance ?? null;
+  protected readonly history = computed(() => {
+    const since = RevolutFormComponent.toMes(this.localYear(), this.localMonth());
+    return this.service.getRevolutBalances()
+      .filter(b => b.mes <= since)
+      .sort((a, b) => (a.mes < b.mes ? 1 : -1));
   });
 
-  protected readonly hasExistingSnapshot = computed(() =>
-    this.service.getSnapshotsByAccount(this.ACCOUNT_ID)
-      .some(s => s.year === this.localYear() && s.month === this.localMonth())
-  );
-
-  protected readonly history = computed(() =>
-    this.service.getSnapshotsByAccount(this.ACCOUNT_ID)
-      .filter(s => s.year === this.localYear())
-      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + b.month))
-  );
+  private static readonly HACIENDA_PERCENT = 19;
+  private static readonly HACIENDA_RATE = 0.19;
 
   constructor() {
     effect(() => {
-      this.localYear();
-      this.localMonth();
-      this.editingSnapshot.set(null);
-      resetSnapshotFields(this.balance, this.interest);
-      this.contribution.set(null);
-      this.withdrawal.set(null);
+      const year = this.localYear();
+      const month = this.localMonth();
+      this.service.loadRevolutHistory(year, month);
+      this.editing.set(null);
+      this.resetFields();
 
-      const snap = this.service.getSnapshotsByAccount(this.ACCOUNT_ID)
-        .find(s => s.year === this.localYear() && s.month === this.localMonth());
-      this.tax.set(
-        snap ? (snap.tax != null ? snap.tax : RevolutFormComponent.computeHacienda(snap.income ?? 0)) : null
-      );
+      const balance = this.service.getRevolutBalance(year, month);
+      if (balance) {
+        this.editing.set(balance);
+        this.balance.set(balance.balanceMensual);
+        this.aporte.set(balance.aporteMensual ?? null);
+        this.dineroTotal.set(balance.dineroTotal ?? null);
+        this.hacienda.set(balance.dineroHacienda ?? null);
+        this.dineroFinal.set(balance.dineroFinal ?? null);
+      }
     }, { allowSignalWrites: true });
   }
 
-  protected onBalanceChange(value: number | null): void {
-    this.balance.userValue.set(value);
-    this.balance.hasUserValue.set(true);
+  private getPreviousBalance(): number | null {
+    let prevMonth = this.localMonth() - 1;
+    let prevYear = this.localYear();
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+    return this.service.getRevolutBalance(prevYear, prevMonth)?.balanceMensual ?? null;
   }
 
-  protected onInterest(value: number | null): void {
-    this.interest.userValue.set(value);
-    this.interest.hasUserValue.set(true);
-    this.tax.set(value != null ? RevolutFormComponent.computeHacienda(value) : null);
+  private static toMes(year: number, month: number): string {
+    return `${year}-${String(month).padStart(2, '0')}`;
   }
 
-  protected onEdit(snap: MonthlySnapshot): void {
-    this.editingSnapshot.set(snap);
-    this.service.currentYear.set(snap.year);
-    this.localMonth.set(snap.month);
-    this.balance.userValue.set(snap.balance);
-    this.balance.hasUserValue.set(true);
-    this.interest.userValue.set(snap.income);
-    this.interest.hasUserValue.set(true);
-    this.contribution.set(snap.contribution ?? null);
-    this.withdrawal.set(snap.expenses > 0 ? snap.expenses : null);
-    this.tax.set(snap.tax ?? null);
+  private static parseMes(mes: string): { year: number; month: number } {
+    const [year, month] = mes.split('-').map(Number);
+    return { year, month };
+  }
+
+  protected onDineroTotalChange(value: number | null): void {
+    this.dineroTotal.set(value);
+    this.hacienda.set(RevolutFormComponent.computeHacienda(value));
+    this.dineroFinal.set(RevolutFormComponent.computeFinal(value, this.hacienda()));
+  }
+
+  protected onHaciendaChange(value: number | null): void {
+    this.hacienda.set(value);
+    this.dineroFinal.set(RevolutFormComponent.computeFinal(this.dineroTotal(), value));
+  }
+
+  private static computeHacienda(dineroTotal: number | null): number | null {
+    if (dineroTotal == null) { return null; }
+    return roundMoney(dineroTotal * RevolutFormComponent.HACIENDA_RATE) ?? null;
+  }
+
+  private static computeFinal(dineroTotal: number | null, hacienda: number | null): number | null {
+    if (dineroTotal == null || hacienda == null) { return null; }
+    return roundMoney(dineroTotal - hacienda) ?? null;
+  }
+
+  private resetFields(): void {
+    this.balance.set(null);
+    this.aporte.set(null);
+    this.dineroTotal.set(null);
+    this.hacienda.set(null);
+    this.dineroFinal.set(null);
+  }
+
+  private fillFromBalance(balance: RevolutBalance): void {
+    const { year, month } = RevolutFormComponent.parseMes(balance.mes);
+    this.service.currentYear.set(year);
+    this.localMonth.set(month);
+    this.balance.set(balance.balanceMensual);
+    this.aporte.set(balance.aporteMensual ?? null);
+    this.dineroTotal.set(balance.dineroTotal ?? null);
+    this.hacienda.set(balance.dineroHacienda ?? null);
+    this.dineroFinal.set(balance.dineroFinal ?? null);
+  }
+
+  protected onEdit(balance: RevolutBalance): void {
+    this.editing.set(balance);
+    this.fillFromBalance(balance);
   }
 
   protected cancelEdit(): void {
-    this.editingSnapshot.set(null);
-    resetSnapshotFields(this.balance, this.interest);
-    this.contribution.set(null);
-    this.withdrawal.set(null);
-    this.tax.set(null);
+    this.editing.set(null);
+    this.resetFields();
   }
 
   protected onDelete(id: string): void {
-    this.service.deleteSnapshot(id);
+    this.service.deleteRevolutBalance(id).subscribe();
   }
 
   protected save(): void {
-    const bal = roundMoney(this.balance.display() ?? 0) ?? 0;
+    const bal = roundMoney(this.balance() ?? 0) ?? 0;
     if (bal === null) { return; }
 
-    const inter = roundMoney(this.interest.display() ?? 0) ?? 0;
-    const contrib = roundMoney(this.contribution() ?? 0) ?? 0;
-    const withdrawal = roundMoney(this.withdrawal() ?? 0) ?? 0;
-    const tax = roundMoney(this.tax() ?? 0) ?? 0;
+    const data: RevolutBalanceSave = {
+      balanceMensual: bal,
+      aporteMensual: roundMoney(this.aporte() ?? 0) ?? 0,
+      dineroTotal: roundMoney(this.dineroTotal() ?? 0) ?? 0,
+      dineroHacienda: roundMoney(this.hacienda() ?? 0) ?? 0,
+      dineroFinal: roundMoney(this.dineroFinal() ?? 0) ?? 0,
+    };
 
-    const existing = this.editingSnapshot();
-    if (existing) {
-      this.service.updateSnapshot(existing.id, {
-        balance: bal,
-        income: inter,
-        contribution: contrib,
-        expenses: withdrawal,
-        tax,
-      });
-      this.cancelEdit();
-    } else {
-      this.service.upsertSnapshot(this.ACCOUNT_ID, this.localYear(), this.localMonth(), bal, inter, withdrawal, contrib, tax).subscribe();
-    }
-
-    this.contribution.set(null);
-    this.withdrawal.set(null);
-    this.saved.set(true);
-    setTimeout(() => this.saved.set(false), 2000);
+    this.service.saveRevolutBalance(this.localYear(), this.localMonth(), data).subscribe({
+      next: () => {
+        this.cancelEdit();
+        this.saved.set(true);
+        setTimeout(() => this.saved.set(false), 2000);
+      },
+    });
   }
 }

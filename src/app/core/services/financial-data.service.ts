@@ -10,6 +10,7 @@ import { InvestmentsDataService } from './investments.service';
 import { SummaryDataService } from './summary.service';
 import { MintosInterestDataService } from './mintos-interest.service';
 import { B100BalanceDataService } from './b100-balance.service';
+import { RevolutBalanceDataService } from './revolut-balance.service';
 import { roundMoney } from '../utils/money.util';
 
 import {
@@ -29,6 +30,8 @@ import {
   B100Balance,
   B100BalanceSave,
   B100Subcuenta,
+  RevolutBalance,
+  RevolutBalanceSave,
 } from '../../models';
 import { EXPENSES_PLATFORM_ID } from '../constants/platform.constants';
 
@@ -49,6 +52,7 @@ export class FinancialDataService {
   private readonly summaryData = inject(SummaryDataService);
   private readonly mintosInterestData = inject(MintosInterestDataService);
   private readonly b100Data = inject(B100BalanceDataService);
+  private readonly revolutData = inject(RevolutBalanceDataService);
 
   readonly platforms = computed(() => this.platformsData.platforms());
   readonly accounts = computed(() => this.platformsData.accounts());
@@ -66,6 +70,7 @@ export class FinancialDataService {
 
   readonly platformMonthlyBalances = this.summaryData.platformMonthlyBalances;
   readonly b100Balances = computed(() => this.b100Data.balances());
+  readonly revolutBalances = computed(() => this.revolutData.balances());
 
   private autoAdjustedToData = false;
 
@@ -393,5 +398,25 @@ export class FinancialDataService {
 
   deleteB100Balance(id: string): Observable<any> {
     return this.b100Data.delete(id);
+  }
+
+  loadRevolutHistory(year: number, month: number, limit = 12, order = 'desc', force = false): void {
+    this.revolutData.loadHistory(year, month, limit, order, force);
+  }
+
+  getRevolutBalances(): RevolutBalance[] {
+    return this.revolutData.getBalances();
+  }
+
+  getRevolutBalance(year: number, month: number): RevolutBalance | undefined {
+    return this.revolutData.getBalance(year, month);
+  }
+
+  saveRevolutBalance(year: number, month: number, data: RevolutBalanceSave): Observable<RevolutBalance> {
+    return this.revolutData.save(year, month, data);
+  }
+
+  deleteRevolutBalance(id: string): Observable<any> {
+    return this.revolutData.delete(id);
   }
 }

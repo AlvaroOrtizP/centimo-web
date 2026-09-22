@@ -17,4 +17,5 @@ export * from './platform-type';
 export * from './platform-monthly-balance';
 export * from './platform-monthly-balance-entry';
 export * from './project-status';
+export * from './revolut-balance';
 export * from './salary-allocation';

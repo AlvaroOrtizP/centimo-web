@@ -1,6 +1,6 @@
 # Entidad: RevolutBalance — Balance mensual de Revolut
 
-> **Implementado:** `false`
+> **Implementado:** `true`
 
 Entidad dedicada a Revolut. Una fila por mes: el dinero que hay en Revolut en cada mes, junto con el aporte que se hace ese mes.
 
@@ -103,5 +103,5 @@ Eliminar un balance existente, localizado por su id (`{AAAA-MM}`).
 - **Capa driven**: `RevolutBalanceMO`, `RevolutBalanceRepository`, `RevolutBalanceDatasourceAdapter`, `RevolutBalanceDatasourceMapper`.
 - **Capa driving**: controlador implementando `RevolutBalanceApi` (swagger), `RevolutBalanceApiMapper`.
 - **Swagger**: nuevos schemas y paths para la entidad (CRUD de `RevolutBalance`).
-- **Flyway**: nueva migración `V18__create_revolut_balances.sql`.
-- **Tests**: no hay IT específico del CRUD de esta entidad. `RevolutIT` cubre la pantalla de la plataforma Revolut (plataforma + cuenta + instantáneas mensuales), no el CRUD mensual de balances.
+- **Flyway**: migración `V18__create_revolut_balances.sql`.
+- **Tests**: `RevolutIT` para el CRUD de la entidad (crear con defaults, upsert por mes, listar con límite/orden, actualizar y eliminar).

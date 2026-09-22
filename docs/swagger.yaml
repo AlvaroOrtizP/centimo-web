@@ -2,8 +2,8 @@ openapi: 3.0.3
 info:
   title: Centimo API
   description: |
-    API REST de Centimo — B100.
-    Gestiona el balance mensual por subcuenta de B100.
+    API REST de Centimo.
+    Gestiona el balance mensual de las entidades financieras (B100, Revolut).
   version: 1.0.0
 
 servers:
@@ -13,6 +13,8 @@ servers:
 tags:
   - name: B100Balance
     description: Balance mensual por subcuenta de B100
+  - name: RevolutBalance
+    description: Balance mensual de Revolut
 
 paths:
   /b100-balances:
@@ -109,9 +111,98 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /revolut-balances:
+    get:
+      tags: [RevolutBalance]
+      operationId: listRevolutBalances
+      summary: Listar balances de Revolut por mes
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: order
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de balances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RevolutBalanceResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [RevolutBalance]
+      operationId: createRevolutBalance
+      summary: Crear o actualizar un balance de Revolut (upsert por mes)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevolutBalanceRequest'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevolutBalanceResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /revolut-balances/{id}:
+    parameters:
+      - $ref: '#/components/parameters/RevolutBalanceId'
+    put:
+      tags: [RevolutBalance]
+      operationId: updateRevolutBalance
+      summary: Actualizar un balance de Revolut
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevolutBalanceRequest'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevolutBalanceResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [RevolutBalance]
+      operationId: deleteRevolutBalance
+      summary: Eliminar un balance de Revolut
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 components:
   parameters:
     B100BalanceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    RevolutBalanceId:
       name: id
       in: path
       required: true
@@ -182,6 +273,59 @@ components:
           type: number
           format: float
         porcentajeHacienda:
+          type: number
+          format: float
+
+    # ═══════════ RevolutBalance ═══════════
+    RevolutBalanceRequest:
+      type: object
+      required: [mes, balanceMensual]
+      properties:
+        mes:
+          type: string
+          description: Fecha mes-año (YYYY-MM)
+        balanceMensual:
+          type: number
+          format: float
+          description: Dinero en Revolut en el mes
+        aporteMensual:
+          type: number
+          format: float
+          description: Aporte que se hace ese mes (puede ser 0)
+        dineroTotal:
+          type: number
+          format: float
+          description: Dinero total que da Revolut en el mes (intereses generados)
+        dineroHacienda:
+          type: number
+          format: float
+          description: Dinero que se queda Hacienda
+        dineroFinal:
+          type: number
+          format: float
+          description: Dinero que finalmente te llega (después de Hacienda)
+
+    RevolutBalanceResponse:
+      type: object
+      required: [id, mes, balanceMensual]
+      properties:
+        id:
+          type: string
+        mes:
+          type: string
+        balanceMensual:
+          type: number
+          format: float
+        aporteMensual:
+          type: number
+          format: float
+        dineroTotal:
+          type: number
+          format: float
+        dineroHacienda:
+          type: number
+          format: float
+        dineroFinal:
           type: number
           format: float
 
