@@ -194,7 +194,7 @@ export class EntryFormComponent {
     { key: 'myinvestor', label: 'MyInvestor', color: '#00A3E0', done: true, pending: true },
     { key: 'mintos', label: 'Mintos', color: '#00BFA5', done: true, pending: false },
     { key: 'equito', label: 'Equito', color: '#FF6B35', done: true, pending: true },
-    { key: 'urbanitae', label: 'Urbanitae', color: '#E63946', done: true, pending: true },
+    { key: 'urbanitae', label: 'Urbanitae', color: '#E63946', done: true, pending: false },
   ];
 
   protected readonly activeTabColor = computed(() => {

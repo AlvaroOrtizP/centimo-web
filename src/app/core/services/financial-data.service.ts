@@ -13,6 +13,8 @@ import { B100BalanceDataService } from './b100-balance.service';
 import { RevolutBalanceDataService } from './revolut-balance.service';
 import { MintosBalanceDataService } from './mintos-balance.service';
 import { BancoBalanceDataService } from './banco-balance.service';
+import { UrbanitaeBalanceDataService } from './urbanitae-balance.service';
+import { UrbanitaeCompraDataService } from './urbanitae-compra.service';
 import { roundMoney } from '../utils/money.util';
 
 import {
@@ -38,6 +40,11 @@ import {
   MintosBalanceSave,
   BancoBalance,
   BancoBalanceSave,
+  UrbanitaeBalance,
+  UrbanitaeBalanceSave,
+  UrbanitaeCompra,
+  UrbanitaeCompraEstado,
+  UrbanitaeCompraSave,
 } from '../../models';
 import { EXPENSES_PLATFORM_ID } from '../constants/platform.constants';
 
@@ -61,6 +68,8 @@ export class FinancialDataService {
   private readonly revolutData = inject(RevolutBalanceDataService);
   private readonly mintosData = inject(MintosBalanceDataService);
   private readonly bancoData = inject(BancoBalanceDataService);
+  private readonly urbanitaeBalanceData = inject(UrbanitaeBalanceDataService);
+  private readonly urbanitaeCompraData = inject(UrbanitaeCompraDataService);
 
   readonly platforms = computed(() => this.platformsData.platforms());
   readonly accounts = computed(() => this.platformsData.accounts());
@@ -81,6 +90,8 @@ export class FinancialDataService {
   readonly revolutBalances = computed(() => this.revolutData.balances());
   readonly mintosBalances = computed(() => this.mintosData.balances());
   readonly bancoBalances = computed(() => this.bancoData.balances());
+  readonly urbanitaeBalances = computed(() => this.urbanitaeBalanceData.balances());
+  readonly urbanitaeCompras = computed(() => this.urbanitaeCompraData.compras());
 
   private autoAdjustedToData = false;
 
@@ -468,5 +479,49 @@ export class FinancialDataService {
 
   deleteBancoBalance(id: string): Observable<any> {
     return this.bancoData.delete(id);
+  }
+
+  loadUrbanitaeHistory(year: number, month: number, force = false): void {
+    this.urbanitaeBalanceData.loadHistory(year, month, force);
+  }
+
+  getUrbanitaeBalances(): UrbanitaeBalance[] {
+    return this.urbanitaeBalanceData.getBalances();
+  }
+
+  getUrbanitaeBalance(year: number, month: number): UrbanitaeBalance | undefined {
+    return this.urbanitaeBalanceData.getBalance(year, month);
+  }
+
+  saveUrbanitaeBalance(year: number, month: number, data: UrbanitaeBalanceSave): Observable<UrbanitaeBalance> {
+    return this.urbanitaeBalanceData.save(year, month, data);
+  }
+
+  deleteUrbanitaeBalance(id: string): Observable<any> {
+    return this.urbanitaeBalanceData.delete(id);
+  }
+
+  loadUrbanitaeCompras(force = false): void {
+    this.urbanitaeCompraData.loadCompras(force);
+  }
+
+  getUrbanitaeCompras(): UrbanitaeCompra[] {
+    return this.urbanitaeCompraData.getCompras();
+  }
+
+  saveUrbanitaeCompra(data: UrbanitaeCompraSave): Observable<UrbanitaeCompra> {
+    return this.urbanitaeCompraData.save(data);
+  }
+
+  updateUrbanitaeCompra(id: string, data: UrbanitaeCompraSave): Observable<UrbanitaeCompra> {
+    return this.urbanitaeCompraData.update(id, data);
+  }
+
+  setUrbanitaeCompraEstado(id: string, estado: UrbanitaeCompraEstado): Observable<UrbanitaeCompra> {
+    return this.urbanitaeCompraData.setEstado(id, estado);
+  }
+
+  deleteUrbanitaeCompra(id: string): Observable<any> {
+    return this.urbanitaeCompraData.delete(id);
   }
 }

@@ -3,7 +3,7 @@ info:
   title: Centimo API
   description: |
     API REST de Centimo.
-    Gestiona el balance mensual de las entidades financieras (B100, Revolut, Mintos, Banco).
+    Gestiona el balance mensual de las entidades financieras (B100, Revolut, Mintos, Banco, Urbanitae).
   version: 1.0.0
 
 servers:
@@ -19,6 +19,10 @@ tags:
     description: Intereses de Mintos por mes
   - name: BancoBalance
     description: Balance mensual por banco
+  - name: UrbanitaeBalance
+    description: Balance mensual de Urbanitae
+  - name: UrbanitaeCompra
+    description: Registro de compras de Urbanitae
 
 paths:
   /b100-balances:
@@ -368,6 +372,173 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /urbanitae/balances:
+    get:
+      tags: [UrbanitaeBalance]
+      operationId: listUrbanitaeBalances
+      summary: Listar balances de Urbanitae por mes
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: order
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de balances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UrbanitaeBalanceResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [UrbanitaeBalance]
+      operationId: createUrbanitaeBalance
+      summary: Crear o actualizar el balance de Urbanitae de un mes (upsert por mes)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UrbanitaeBalanceRequest'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrbanitaeBalanceResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /urbanitae/balances/{id}:
+    parameters:
+      - $ref: '#/components/parameters/UrbanitaeBalanceId'
+    put:
+      tags: [UrbanitaeBalance]
+      operationId: updateUrbanitaeBalance
+      summary: Actualizar un balance de Urbanitae
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UrbanitaeBalanceRequest'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrbanitaeBalanceResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [UrbanitaeBalance]
+      operationId: deleteUrbanitaeBalance
+      summary: Eliminar un balance de Urbanitae
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /urbanitae/compras:
+    get:
+      tags: [UrbanitaeCompra]
+      operationId: listUrbanitaeCompras
+      summary: Listar compras de Urbanitae
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            type: string
+          description: Estado de la compra (activa o vendida); opcional
+        - name: order
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de compras
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UrbanitaeCompraResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [UrbanitaeCompra]
+      operationId: createUrbanitaeCompra
+      summary: Registrar una compra de un préstamo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UrbanitaeCompraCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrbanitaeCompraResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /urbanitae/compras/{id}:
+    parameters:
+      - $ref: '#/components/parameters/UrbanitaeCompraId'
+    put:
+      tags: [UrbanitaeCompra]
+      operationId: updateUrbanitaeCompra
+      summary: Actualizar una compra (p. ej. marcarla como vendida)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UrbanitaeCompraUpdate'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrbanitaeCompraResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [UrbanitaeCompra]
+      operationId: deleteUrbanitaeCompra
+      summary: Eliminar una compra
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 components:
   parameters:
     B100BalanceId:
@@ -389,6 +560,18 @@ components:
       schema:
         type: string
     BancoBalanceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    UrbanitaeBalanceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    UrbanitaeCompraId:
       name: id
       in: path
       required: true
@@ -583,6 +766,125 @@ components:
         aporteMensual:
           type: number
           format: float
+
+    # ═══════════ UrbanitaeBalance ═══════════
+    UrbanitaeBalanceRequest:
+      type: object
+      required: [mes, balanceMensual]
+      properties:
+        mes:
+          type: string
+          description: Fecha mes-año (YYYY-MM)
+        balanceMensual:
+          type: number
+          format: float
+          description: Dinero en Urbanitae en el mes
+        aporteMensual:
+          type: number
+          format: float
+          description: Aporte que se hace ese mes (puede ser 0)
+        dineroTotal:
+          type: number
+          format: float
+          description: Dinero total que da Urbanitae en el mes (rendimiento generado)
+        dineroHacienda:
+          type: number
+          format: float
+          description: Dinero que se queda Hacienda
+        dineroFinal:
+          type: number
+          format: float
+          description: Dinero que finalmente te llega (después de Hacienda)
+
+    UrbanitaeBalanceResponse:
+      type: object
+      required: [id, mes, balanceMensual]
+      properties:
+        id:
+          type: string
+        mes:
+          type: string
+        balanceMensual:
+          type: number
+          format: float
+        aporteMensual:
+          type: number
+          format: float
+        dineroTotal:
+          type: number
+          format: float
+        dineroHacienda:
+          type: number
+          format: float
+        dineroFinal:
+          type: number
+          format: float
+
+    # ═══════════ UrbanitaeCompra ═══════════
+    UrbanitaeCompraCreate:
+      type: object
+      required: [fecha, entidad, monto, estado]
+      properties:
+        fecha:
+          type: string
+          format: date
+          description: Fecha de la compra
+        entidad:
+          type: string
+          description: Entidad/promotor al que se presta el dinero
+        monto:
+          type: number
+          format: float
+          description: Importe de la compra
+        rendimiento:
+          type: number
+          format: float
+          description: Rendimiento/interés de la compra (p. ej. 8.50)
+        estado:
+          type: string
+          description: Estado de la compra (activa o vendida)
+
+    UrbanitaeCompraUpdate:
+      type: object
+      properties:
+        fecha:
+          type: string
+          format: date
+          description: Fecha de la compra
+        entidad:
+          type: string
+          description: Entidad/promotor al que se presta el dinero
+        monto:
+          type: number
+          format: float
+          description: Importe de la compra
+        rendimiento:
+          type: number
+          format: float
+          description: Rendimiento/interés de la compra (p. ej. 8.50)
+        estado:
+          type: string
+          description: Estado de la compra (activa o vendida)
+
+    UrbanitaeCompraResponse:
+      type: object
+      required: [id, fecha, entidad, monto, estado]
+      properties:
+        id:
+          type: string
+        fecha:
+          type: string
+          format: date
+        entidad:
+          type: string
+        monto:
+          type: number
+          format: float
+        rendimiento:
+          type: number
+          format: float
+        estado:
+          type: string
 
     # ═══════════ Error ═══════════
     Error:

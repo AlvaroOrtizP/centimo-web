@@ -21,3 +21,5 @@ export * from './platform-monthly-balance-entry';
 export * from './project-status';
 export * from './revolut-balance';
 export * from './salary-allocation';
+export * from './urbanitae-balance';
+export * from './urbanitae-compra';

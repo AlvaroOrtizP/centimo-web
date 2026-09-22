@@ -1,6 +1,6 @@
 # Entidades: Urbanitae — Balance mensual y registro de compras
 
-> **Implementado:** `false`
+> **Implementado:** `true`
 
 Entidad dedicada a Urbanitae (crowdlending inmobiliario). Dividida en dos partes, igual que Equito:
 
