@@ -12,6 +12,7 @@ import { MintosInterestDataService } from './mintos-interest.service';
 import { B100BalanceDataService } from './b100-balance.service';
 import { RevolutBalanceDataService } from './revolut-balance.service';
 import { MintosBalanceDataService } from './mintos-balance.service';
+import { BancoBalanceDataService } from './banco-balance.service';
 import { roundMoney } from '../utils/money.util';
 
 import {
@@ -35,6 +36,8 @@ import {
   RevolutBalanceSave,
   MintosBalance,
   MintosBalanceSave,
+  BancoBalance,
+  BancoBalanceSave,
 } from '../../models';
 import { EXPENSES_PLATFORM_ID } from '../constants/platform.constants';
 
@@ -57,6 +60,7 @@ export class FinancialDataService {
   private readonly b100Data = inject(B100BalanceDataService);
   private readonly revolutData = inject(RevolutBalanceDataService);
   private readonly mintosData = inject(MintosBalanceDataService);
+  private readonly bancoData = inject(BancoBalanceDataService);
 
   readonly platforms = computed(() => this.platformsData.platforms());
   readonly accounts = computed(() => this.platformsData.accounts());
@@ -76,6 +80,7 @@ export class FinancialDataService {
   readonly b100Balances = computed(() => this.b100Data.balances());
   readonly revolutBalances = computed(() => this.revolutData.balances());
   readonly mintosBalances = computed(() => this.mintosData.balances());
+  readonly bancoBalances = computed(() => this.bancoData.balances());
 
   private autoAdjustedToData = false;
 
@@ -443,5 +448,25 @@ export class FinancialDataService {
 
   deleteMintosBalance(id: string): Observable<any> {
     return this.mintosData.delete(id);
+  }
+
+  loadBancoHistory(entidad: string, year: number, month: number, force = false): void {
+    this.bancoData.loadHistory(entidad, year, month, force);
+  }
+
+  getBancoBalances(entidad: string): BancoBalance[] {
+    return this.bancoData.getBalances(entidad);
+  }
+
+  getBancoBalance(entidad: string, year: number, month: number): BancoBalance | undefined {
+    return this.bancoData.getBalance(entidad, year, month);
+  }
+
+  saveBancoBalance(entidad: string, year: number, month: number, data: BancoBalanceSave): Observable<BancoBalance> {
+    return this.bancoData.save(entidad, year, month, data);
+  }
+
+  deleteBancoBalance(id: string): Observable<any> {
+    return this.bancoData.delete(id);
   }
 }

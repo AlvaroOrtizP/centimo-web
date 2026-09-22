@@ -3,7 +3,7 @@ info:
   title: Centimo API
   description: |
     API REST de Centimo.
-    Gestiona el balance mensual de las entidades financieras (B100, Revolut).
+    Gestiona el balance mensual de las entidades financieras (B100, Revolut, Mintos, Banco).
   version: 1.0.0
 
 servers:
@@ -17,6 +17,8 @@ tags:
     description: Balance mensual de Revolut
   - name: MintosInteresesAnuales
     description: Intereses de Mintos por mes
+  - name: BancoBalance
+    description: Balance mensual por banco
 
 paths:
   /b100-balances:
@@ -277,6 +279,95 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /banco/balances:
+    get:
+      tags: [BancoBalance]
+      operationId: listBancoBalances
+      summary: Listar balances de un banco
+      parameters:
+        - name: entidad
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Banco al que pertenecen los balances (p. ej. bbva, caixabank)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: order
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de balances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BancoBalanceResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [BancoBalance]
+      operationId: createBancoBalance
+      summary: Crear o actualizar el balance de un banco en un mes (upsert por entidad y mes)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BancoBalanceRequest'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BancoBalanceResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /banco/balances/{id}:
+    parameters:
+      - $ref: '#/components/parameters/BancoBalanceId'
+    put:
+      tags: [BancoBalance]
+      operationId: updateBancoBalance
+      summary: Actualizar un balance de un banco
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BancoBalanceRequest'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BancoBalanceResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [BancoBalance]
+      operationId: deleteBancoBalance
+      summary: Eliminar un balance de un banco
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 components:
   parameters:
     B100BalanceId:
@@ -292,6 +383,12 @@ components:
       schema:
         type: string
     MintosInteresAnualId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    BancoBalanceId:
       name: id
       in: path
       required: true
@@ -447,6 +544,43 @@ components:
           type: number
           format: float
         valorFinal:
+          type: number
+          format: float
+
+    # ═══════════ BancoBalance ═══════════
+    BancoBalanceRequest:
+      type: object
+      required: [entidad, mes, balanceMensual]
+      properties:
+        entidad:
+          type: string
+          description: Banco al que pertenece el balance (p. ej. bbva, caixabank)
+        mes:
+          type: string
+          description: Fecha mes-año (YYYY-MM)
+        balanceMensual:
+          type: number
+          format: float
+          description: Balance del banco a final de mes (el valor final)
+        aporteMensual:
+          type: number
+          format: float
+          description: Importe añadido ese mes (el aporte extra; puede ser 0)
+
+    BancoBalanceResponse:
+      type: object
+      required: [id, entidad, mes, balanceMensual]
+      properties:
+        id:
+          type: string
+        entidad:
+          type: string
+        mes:
+          type: string
+        balanceMensual:
+          type: number
+          format: float
+        aporteMensual:
           type: number
           format: float
 

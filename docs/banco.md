@@ -1,6 +1,6 @@
 # Entidad: BancoBalance — Balance mensual por banco
 
-> **Implementado:** `false`
+> **Implementado:** `true`
 
 Entidad dedicada a los bancos (BBVA, CaixaBank...). Una fila por banco y mes: el balance a final de mes y el aporte hecho ese mes. No hay bloque de Hacienda (se mantiene simple, estilo `mintos` pero sin retenciones).
 

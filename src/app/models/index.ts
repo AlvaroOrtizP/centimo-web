@@ -1,5 +1,6 @@
 export * from './account';
 export * from './b100-balance';
+export * from './banco-balance';
 export * from './account-type';
 export * from './checklist-item';
 export * from './commitment';
