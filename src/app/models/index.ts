@@ -10,6 +10,7 @@ export * from './fund-balance';
 export * from './income-source';
 export * from './monthly-snapshot';
 export * from './mintos-annual-interest';
+export * from './mintos-balance';
 export * from './monthly-summary';
 export * from './myinvestor-fund';
 export * from './platform';

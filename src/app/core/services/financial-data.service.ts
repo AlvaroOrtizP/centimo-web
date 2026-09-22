@@ -11,6 +11,7 @@ import { SummaryDataService } from './summary.service';
 import { MintosInterestDataService } from './mintos-interest.service';
 import { B100BalanceDataService } from './b100-balance.service';
 import { RevolutBalanceDataService } from './revolut-balance.service';
+import { MintosBalanceDataService } from './mintos-balance.service';
 import { roundMoney } from '../utils/money.util';
 
 import {
@@ -32,6 +33,8 @@ import {
   B100Subcuenta,
   RevolutBalance,
   RevolutBalanceSave,
+  MintosBalance,
+  MintosBalanceSave,
 } from '../../models';
 import { EXPENSES_PLATFORM_ID } from '../constants/platform.constants';
 
@@ -53,6 +56,7 @@ export class FinancialDataService {
   private readonly mintosInterestData = inject(MintosInterestDataService);
   private readonly b100Data = inject(B100BalanceDataService);
   private readonly revolutData = inject(RevolutBalanceDataService);
+  private readonly mintosData = inject(MintosBalanceDataService);
 
   readonly platforms = computed(() => this.platformsData.platforms());
   readonly accounts = computed(() => this.platformsData.accounts());
@@ -71,6 +75,7 @@ export class FinancialDataService {
   readonly platformMonthlyBalances = this.summaryData.platformMonthlyBalances;
   readonly b100Balances = computed(() => this.b100Data.balances());
   readonly revolutBalances = computed(() => this.revolutData.balances());
+  readonly mintosBalances = computed(() => this.mintosData.balances());
 
   private autoAdjustedToData = false;
 
@@ -418,5 +423,25 @@ export class FinancialDataService {
 
   deleteRevolutBalance(id: string): Observable<any> {
     return this.revolutData.delete(id);
+  }
+
+  loadMintosHistory(year: number, month: number, force = false): void {
+    this.mintosData.loadHistory(year, month, force);
+  }
+
+  getMintosBalances(): MintosBalance[] {
+    return this.mintosData.getBalances();
+  }
+
+  getMintosBalance(year: number, month: number): MintosBalance | undefined {
+    return this.mintosData.getBalance(year, month);
+  }
+
+  saveMintosBalance(year: number, month: number, data: MintosBalanceSave): Observable<MintosBalance> {
+    return this.mintosData.save(year, month, data);
+  }
+
+  deleteMintosBalance(id: string): Observable<any> {
+    return this.mintosData.delete(id);
   }
 }

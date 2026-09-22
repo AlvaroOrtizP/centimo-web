@@ -15,6 +15,8 @@ tags:
     description: Balance mensual por subcuenta de B100
   - name: RevolutBalance
     description: Balance mensual de Revolut
+  - name: MintosInteresesAnuales
+    description: Intereses de Mintos por mes
 
 paths:
   /b100-balances:
@@ -194,6 +196,87 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /mintos/intereses-anuales:
+    get:
+      tags: [MintosInteresesAnuales]
+      operationId: listInteresesAnuales
+      summary: Listar intereses de Mintos por mes
+      parameters:
+        - name: mes
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Fecha mes-año (YYYY-MM); si se indica devuelve solo ese mes
+      responses:
+        '200':
+          description: Lista de intereses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MintosInterestAnnual'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    post:
+      tags: [MintosInteresesAnuales]
+      operationId: createInteresAnual
+      summary: Crear o actualizar los intereses de Mintos de un mes (upsert por mes)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MintosInterestAnnualCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MintosInterestAnnual'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+
+  /mintos/intereses-anuales/{id}:
+    parameters:
+      - $ref: '#/components/parameters/MintosInteresAnualId'
+    put:
+      tags: [MintosInteresesAnuales]
+      operationId: updateInteresAnual
+      summary: Actualizar los intereses de Mintos de un mes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MintosInterestAnnualCreate'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MintosInterestAnnual'
+        '400':
+          description: Error generico 400
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [MintosInteresesAnuales]
+      operationId: deleteInteresAnual
+      summary: Eliminar los intereses de Mintos de un mes
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 components:
   parameters:
     B100BalanceId:
@@ -203,6 +286,12 @@ components:
       schema:
         type: string
     RevolutBalanceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    MintosInteresAnualId:
       name: id
       in: path
       required: true
@@ -326,6 +415,38 @@ components:
           type: number
           format: float
         dineroFinal:
+          type: number
+          format: float
+
+    # ═══════════ MintosInteresesAnuales ═══════════
+    MintosInterestAnnualCreate:
+      type: object
+      required: [mes, valorFinal]
+      properties:
+        mes:
+          type: string
+          description: Fecha mes-año (YYYY-MM)
+        importeAñadido:
+          type: number
+          format: float
+          description: Importe añadido ese mes (el aporte extra; puede ser 0)
+        valorFinal:
+          type: number
+          format: float
+          description: Valor final de la cartera al cerrar el mes
+
+    MintosInterestAnnual:
+      type: object
+      required: [id, mes, importeAñadido, valorFinal]
+      properties:
+        id:
+          type: string
+        mes:
+          type: string
+        importeAñadido:
+          type: number
+          format: float
+        valorFinal:
           type: number
           format: float
 

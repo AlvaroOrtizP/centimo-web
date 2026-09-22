@@ -189,10 +189,10 @@ export class EntryFormComponent {
 
   protected readonly tabs: TabConfig[] = [
     { key: 'banks', label: 'Bancos', color: '#004481', done: true, pending: true },
-    { key: 'revolut', label: 'Revolut', color: '#EB008B', done: true, pending: true },
+    { key: 'revolut', label: 'Revolut', color: '#EB008B', done: true, pending: false },
     { key: 'b100', label: 'B100', color: '#6C3FD1', done: true, pending: false },
     { key: 'myinvestor', label: 'MyInvestor', color: '#00A3E0', done: true, pending: true },
-    { key: 'mintos', label: 'Mintos', color: '#00BFA5', done: true, pending: true },
+    { key: 'mintos', label: 'Mintos', color: '#00BFA5', done: true, pending: false },
     { key: 'equito', label: 'Equito', color: '#FF6B35', done: true, pending: true },
     { key: 'urbanitae', label: 'Urbanitae', color: '#E63946', done: true, pending: true },
   ];

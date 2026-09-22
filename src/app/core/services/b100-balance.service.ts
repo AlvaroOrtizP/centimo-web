@@ -27,7 +27,7 @@ export class B100BalanceDataService {
 
   loadHistory(tipo: B100Subcuenta, year: number, month: number, limit = 12, order = 'desc', force = false): void {
     const since = B100BalanceDataService.toMes(year, month);
-    if (!force && this.loadedMes.get(tipo) === since && this.getBalancesByTipo(tipo).length > 0) { return; }
+    if (!force && this.loadedMes.get(tipo) === since) { return; }
 
     this.b100Api.listB100Balances(tipo, since, limit, order).pipe(
       map(list => list.map(r => this.mapFromApi(r))),

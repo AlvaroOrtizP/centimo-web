@@ -27,7 +27,7 @@ export class RevolutBalanceDataService {
 
   loadHistory(year: number, month: number, limit = 12, order = 'desc', force = false): void {
     const since = RevolutBalanceDataService.toMes(year, month);
-    if (!force && this.loadedMes === since && this.balances().length > 0) { return; }
+    if (!force && this.loadedMes === since) { return; }
 
     this.revolutApi.listRevolutBalances(limit, order).pipe(
       map(list => list.map(r => this.mapFromApi(r))),
