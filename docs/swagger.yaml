@@ -3,7 +3,7 @@ info:
   title: Centimo API
   description: |
     API REST de Centimo.
-    Gestiona el balance mensual de las entidades financieras (B100, Revolut, Mintos, Banco, Urbanitae).
+    Gestiona el balance mensual de las entidades financieras (B100, Revolut, Mintos, Banco, Urbanitae, Equito).
   version: 1.0.0
 
 servers:
@@ -23,6 +23,10 @@ tags:
     description: Balance mensual de Urbanitae
   - name: UrbanitaeCompra
     description: Registro de compras de Urbanitae
+  - name: EquitoBalance
+    description: Balance mensual de Equito
+  - name: EquitoCompra
+    description: Registro de compras de Equito
 
 paths:
   /b100-balances:
@@ -539,6 +543,174 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /equito/balances:
+    get:
+      tags: [EquitoBalance]
+      operationId: listEquitoBalances
+      summary: Listar balances de Equito por mes
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 24
+        - name: order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Lista de balances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EquitoBalanceResponse'
+        '400':
+          description: Error generico 400
+    post:
+      tags: [EquitoBalance]
+      operationId: createEquitoBalance
+      summary: Crear o actualizar el balance de Equito de un mes (upsert por mes)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EquitoBalanceRequest'
+      responses:
+        '200':
+          description: Creado o actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquitoBalanceResponse'
+        '400':
+          description: Error generico 400
+
+  /equito/balances/{id}:
+    parameters:
+      - $ref: '#/components/parameters/EquitoBalanceId'
+    put:
+      tags: [EquitoBalance]
+      operationId: updateEquitoBalance
+      summary: Actualizar un balance de Equito
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EquitoBalanceRequest'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquitoBalanceResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    delete:
+      tags: [EquitoBalance]
+      operationId: deleteEquitoBalance
+      summary: Eliminar un balance de Equito
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          description: Error generico 404
+
+  /equito/compras:
+    get:
+      tags: [EquitoCompra]
+      operationId: listEquitoCompras
+      summary: Listar compras de Equito
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [activa, vendida]
+        - name: order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: Lista de compras
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EquitoCompraResponse'
+        '400':
+          description: Error generico 400
+    post:
+      tags: [EquitoCompra]
+      operationId: createEquitoCompra
+      summary: Registrar una compra de un préstamo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EquitoCompraCreate'
+      responses:
+        '200':
+          description: Creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquitoCompraResponse'
+        '400':
+          description: Error generico 400
+
+  /equito/compras/{id}:
+    parameters:
+      - $ref: '#/components/parameters/EquitoCompraId'
+    put:
+      tags: [EquitoCompra]
+      operationId: updateEquitoCompra
+      summary: Actualizar una compra (p. ej. marcarla como vendida)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EquitoCompraUpdate'
+      responses:
+        '200':
+          description: Actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EquitoCompraResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [EquitoCompra]
+      operationId: deleteEquitoCompra
+      summary: Eliminar una compra
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 components:
   parameters:
     B100BalanceId:
@@ -572,6 +744,18 @@ components:
       schema:
         type: string
     UrbanitaeCompraId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    EquitoBalanceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    EquitoCompraId:
       name: id
       in: path
       required: true
@@ -867,6 +1051,125 @@ components:
           description: Estado de la compra (activa o vendida)
 
     UrbanitaeCompraResponse:
+      type: object
+      required: [id, fecha, entidad, monto, estado]
+      properties:
+        id:
+          type: string
+        fecha:
+          type: string
+          format: date
+        entidad:
+          type: string
+        monto:
+          type: number
+          format: float
+        rendimiento:
+          type: number
+          format: float
+        estado:
+          type: string
+
+    # ═══════════ EquitoBalance ═══════════
+    EquitoBalanceRequest:
+      type: object
+      required: [mes, balanceMensual]
+      properties:
+        mes:
+          type: string
+          description: Fecha mes-año (YYYY-MM)
+        balanceMensual:
+          type: number
+          format: float
+          description: Dinero en Equito en el mes
+        aporteMensual:
+          type: number
+          format: float
+          description: Aporte que se hace ese mes (puede ser 0)
+        dineroTotal:
+          type: number
+          format: float
+          description: Dinero total que da Equito en el mes (rendimiento generado)
+        dineroHacienda:
+          type: number
+          format: float
+          description: Dinero que se queda Hacienda
+        dineroFinal:
+          type: number
+          format: float
+          description: Dinero que finalmente te llega (después de Hacienda)
+
+    EquitoBalanceResponse:
+      type: object
+      required: [id, mes, balanceMensual]
+      properties:
+        id:
+          type: string
+        mes:
+          type: string
+        balanceMensual:
+          type: number
+          format: float
+        aporteMensual:
+          type: number
+          format: float
+        dineroTotal:
+          type: number
+          format: float
+        dineroHacienda:
+          type: number
+          format: float
+        dineroFinal:
+          type: number
+          format: float
+
+    # ═══════════ EquitoCompra ═══════════
+    EquitoCompraCreate:
+      type: object
+      required: [fecha, entidad, monto, estado]
+      properties:
+        fecha:
+          type: string
+          format: date
+          description: Fecha de la compra
+        entidad:
+          type: string
+          description: Entidad/deudor al que se presta el dinero
+        monto:
+          type: number
+          format: float
+          description: Importe de la compra
+        rendimiento:
+          type: number
+          format: float
+          description: Rendimiento/interés de la compra (p. ej. 8.50)
+        estado:
+          type: string
+          description: Estado de la compra (activa o vendida)
+
+    EquitoCompraUpdate:
+      type: object
+      properties:
+        fecha:
+          type: string
+          format: date
+          description: Fecha de la compra
+        entidad:
+          type: string
+          description: Entidad/deudor al que se presta el dinero
+        monto:
+          type: number
+          format: float
+          description: Importe de la compra
+        rendimiento:
+          type: number
+          format: float
+          description: Rendimiento/interés de la compra (p. ej. 8.50)
+        estado:
+          type: string
+          description: Estado de la compra (activa o vendida)
+
+    EquitoCompraResponse:
       type: object
       required: [id, fecha, entidad, monto, estado]
       properties:

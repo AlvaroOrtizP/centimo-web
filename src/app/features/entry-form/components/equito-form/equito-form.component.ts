@@ -1,146 +1,18 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
-import { MONTH_OPTIONS, YEARS } from '../../../../core/constants/date.constants';
-import { CrowdlendingInvestment } from '../../../../models/crowdlending-investment';
-import { ProjectStatus } from '../../../../models/project-status';
-import { Account } from '../../../../models/account';
-import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
+import { MONTH_OPTIONS } from '../../../../core/constants/date.constants';
+import { EquitoBalance, EquitoBalanceSave, EquitoCompra, EquitoCompraEstado, EquitoCompraSave } from '../../../../models';
+import { EquitoHistoryTableComponent } from '../equito-history-table/equito-history-table.component';
 import { roundMoney } from '../../../../core/utils/money.util';
-import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
 
 @Component({
   selector: 'app-equito-form',
   standalone: true,
-  imports: [FormsModule, SnapshotHistoryTableComponent],
+  imports: [FormsModule, EquitoHistoryTableComponent],
   template: `
     <div class="space-y-4">
-      <!-- Registrar inversión -->
-      <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <div class="flex items-center justify-between">
-          <h3 class="text-sm font-semibold text-gray-900">{{ editingInvestment() ? 'Editar inversión' : 'Registrar inversión' }}</h3>
-          @if (editingInvestment()) {
-            <button
-              class="rounded-lg border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
-              (click)="cancelEditInvestment()"
-            >Cancelar edición</button>
-          }
-        </div>
-
-        <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div class="sm:col-span-2 lg:col-span-1">
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Nombre del proyecto</label>
-            <input
-              type="text" placeholder="ej: Préstamo personal Letonia"
-              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              [ngModel]="projectName()"
-              (ngModelChange)="projectName.set($event)"
-            />
-          </div>
-          <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Cantidad invertida (€)</label>
-            <input
-              type="number" step="any" placeholder="ej: 1000"
-              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              [ngModel]="investedAmount()"
-              (ngModelChange)="investedAmount.set($event)"
-            />
-          </div>
-          <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Tasa de interés (%)</label>
-            <input
-              type="number" step="any" placeholder="ej: 8.5"
-              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              [ngModel]="interestRate()"
-              (ngModelChange)="interestRate.set($event)"
-            />
-          </div>
-          <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Fecha de inicio</label>
-            <input
-              type="date"
-              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              [ngModel]="startDate()"
-              (ngModelChange)="startDate.set($event)"
-            />
-          </div>
-          <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Fecha de fin <span class="normal-case text-gray-400">(opcional)</span></label>
-            <input
-              type="date"
-              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              [ngModel]="endDate()"
-              (ngModelChange)="endDate.set($event)"
-            />
-          </div>
-        </div>
-
-        @if (investedAmount() > 0 && interestRate() > 0) {
-          <div class="mt-3 rounded-lg bg-orange-50 px-4 py-2 text-sm text-orange-800">
-            Retorno mensual estimado: <strong>{{ monthlyReturnEstimate().toLocaleString('es-ES') }} €</strong>
-            <span class="text-orange-500"> ({{ investedAmount() }} × {{ interestRate() }}% / 12)</span>
-          </div>
-        }
-
-        <div class="mt-4 flex items-center gap-3">
-          <button
-            class="rounded-lg bg-orange-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-700 disabled:opacity-50"
-            [disabled]="!canSave()"
-            (click)="saveInvestment()"
-          >{{ editingInvestment() ? 'Actualizar inversión' : 'Registrar inversión' }}</button>
-          @if (editingInvestment()) {
-            <button
-              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              (click)="cancelEditInvestment()"
-            >Cancelar</button>
-          }
-          @if (savedInvestment()) {
-            <span class="text-sm text-emerald-600">✓ Inversión registrada</span>
-          }
-        </div>
-      </div>
-
-      <!-- Inversiones registradas -->
-      @if (investments().length > 0) {
-        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-          <p class="mb-3 text-xs font-medium uppercase tracking-wider text-gray-500">Inversiones registradas</p>
-          <div class="space-y-1">
-            @for (inv of investments(); track inv.id) {
-              <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
-                <div class="h-2 w-2 rounded-full" [class.bg-emerald-500]="inv.status === 'active'" [class.bg-blue-500]="inv.status === 'completed'" [class.bg-red-500]="inv.status === 'defaulted'"></div>
-                <span class="w-40 font-semibold text-gray-900 truncate">{{ inv.projectName }}</span>
-                <span class="text-gray-500">{{ inv.investedAmount.toLocaleString('es-ES') }} €</span>
-                <span class="text-gray-400">{{ inv.interestRate }}%</span>
-                <span class="text-gray-400">{{ inv.termMonths }}m</span>
-                <span class="text-gray-400">{{ inv.startDate }}</span>
-                <span class="ml-auto text-emerald-600 font-medium">+{{ inv.totalReturned.toLocaleString('es-ES') }} €</span>
-                <button
-                  class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-orange-50 hover:text-orange-500"
-                  (click)="onEditInvestment(inv)"
-                  title="Editar inversión"
-                  aria-label="Editar inversión"
-                >
-                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
-                  </svg>
-                </button>
-                <button
-                  class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                  (click)="deleteInvestment(inv)"
-                  title="Eliminar inversión"
-                  aria-label="Eliminar inversión"
-                >
-                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                  </svg>
-                </button>
-              </div>
-            }
-          </div>
-        </div>
-      }
-
       <!-- Balance mensual -->
       <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <h3 class="mb-4 text-sm font-semibold text-gray-900">Equito — Balance mensual</h3>
@@ -153,7 +25,7 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
             (ngModelChange)="localMonth.set($event)"
           >
             @for (m of months; track m.value) {
-              <option [value]="m.value">{{ m.label }}</option>
+              <option [ngValue]="m.value">{{ m.label }}</option>
             }
           </select>
         </div>
@@ -164,30 +36,18 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
           </div>
         }
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
             <input
               type="number"
               step="any"
-              placeholder="ej: 2500"
+              placeholder="ej: 3000"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               [ngModel]="balance()"
               (ngModelChange)="balance.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Valor total en Equito a 31 del mes</p>
-          </div>
-          <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses obtenidos este mes (€)</label>
-            <input
-              type="number"
-              step="any"
-              placeholder="ej: 15"
-              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              [ngModel]="income()"
-              (ngModelChange)="income.set($event)"
-            />
-            <p class="mt-0.5 text-xs text-gray-400">Intereses o rendimientos obtenidos</p>
           </div>
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
@@ -196,35 +56,59 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
               step="any"
               placeholder="ej: 100"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              [ngModel]="contribution()"
-              (ngModelChange)="contribution.set($event)"
+              [ngModel]="aporte()"
+              (ngModelChange)="aporte.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Cantidad ingresada este mes</p>
           </div>
           <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Retirada este mes (€)</label>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Dinero total (€)</label>
             <input
               type="number"
               step="any"
-              placeholder="ej: 50"
+              placeholder="ej: 15"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
-              [ngModel]="withdrawal()"
-              (ngModelChange)="withdrawal.set($event)"
+              [ngModel]="dineroTotal()"
+              (ngModelChange)="onDineroTotalChange($event)"
             />
-            <p class="mt-0.5 text-xs text-gray-400">Cantidad retirada este mes</p>
+            <p class="mt-0.5 text-xs text-gray-400">Rendimiento generado por Equito</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-amber-600">Hacienda (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 2.85"
+              class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              [ngModel]="hacienda()"
+              (ngModelChange)="onHaciendaChange($event)"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">19% del total (auto, editable)</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Dinero final (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 12.15"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              [ngModel]="dineroFinal()"
+              (ngModelChange)="dineroFinal.set($event)"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Total menos Hacienda (auto, editable)</p>
           </div>
         </div>
 
         <div class="mt-4 flex items-center gap-3">
           <button
             class="rounded-lg bg-orange-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-700 disabled:opacity-50"
-            [disabled]="!balance()"
+            [disabled]="balance() == null"
             (click)="saveBalance()"
-          >{{ editingSnapshot() ? 'Actualizar balance' : 'Guardar balance' }}</button>
-          @if (editingSnapshot()) {
+          >{{ editingBalance() ? 'Actualizar balance' : 'Guardar' }}</button>
+          @if (editingBalance()) {
             <button
               class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              (click)="cancelEdit()"
+              (click)="cancelEditBalance()"
             >Cancelar</button>
           }
           @if (savedBalance()) {
@@ -233,210 +117,364 @@ import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapsho
         </div>
       </div>
 
-      <app-snapshot-history-table
-        [snapshots]="balanceHistory()"
-        (edit)="onEdit($event)"
-        (delete)="onDelete($event)"
+      <!-- Historial de balances -->
+      <app-equito-history-table
+        [balances]="history()"
+        (edit)="onEditBalance($event)"
+        (delete)="onDeleteBalance($event)"
       />
+
+      <!-- Compras -->
+      <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+        <h3 class="mb-4 text-sm font-semibold text-gray-900">Registrar compra</h3>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Fecha</label>
+            <input
+              type="date"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              [ngModel]="compraFecha()"
+              (ngModelChange)="compraFecha.set($event)"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Entidad / deudor</label>
+            <input
+              type="text"
+              placeholder="ej: Préstamo personal"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              [ngModel]="compraEntidad()"
+              (ngModelChange)="compraEntidad.set($event)"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Monto (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 1000"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              [ngModel]="compraMonto()"
+              (ngModelChange)="compraMonto.set($event)"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Rendimiento (%)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 8.5"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              [ngModel]="compraRendimiento()"
+              (ngModelChange)="compraRendimiento.set($event)"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Estado</label>
+            <select
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              [ngModel]="compraEstado()"
+              (ngModelChange)="compraEstado.set($event)"
+            >
+              <option [ngValue]="'activa'">Activa</option>
+              <option [ngValue]="'vendida'">Vendida</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center gap-3">
+          <button
+            class="rounded-lg bg-orange-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-700 disabled:opacity-50"
+            [disabled]="!canSaveCompra()"
+            (click)="saveCompra()"
+          >{{ editingCompra() ? 'Actualizar compra' : 'Registrar compra' }}</button>
+          @if (editingCompra()) {
+            <button
+              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              (click)="cancelEditCompra()"
+            >Cancelar</button>
+          }
+          @if (savedCompra()) {
+            <span class="text-sm text-emerald-600">✓ Guardado</span>
+          }
+        </div>
+      </div>
+
+      <!-- Lista de compras -->
+      @if (compras().length > 0) {
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <p class="mb-3 text-xs font-medium uppercase tracking-wider text-gray-500">Compras registradas ({{ compras().length }})</p>
+          <div class="space-y-1">
+            @for (c of compras(); track c.id) {
+              <div class="flex flex-wrap items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
+                <span class="h-2 w-2 rounded-full" [class.bg-emerald-500]="c.estado === 'activa'" [class.bg-gray-400]="c.estado === 'vendida'"></span>
+                <span class="min-w-40 font-semibold text-gray-900">{{ c.entidad }}</span>
+                <span class="text-gray-500">{{ formatFecha(c.fecha) }}</span>
+                <span class="font-medium text-gray-700">{{ c.monto.toLocaleString('es-ES') }} €</span>
+                <span class="text-gray-400">{{ c.rendimiento ?? '-' }}%</span>
+                <span
+                  class="rounded-full px-2 py-0.5 text-xs font-medium"
+                  [class.bg-emerald-100]="c.estado === 'activa'"
+                  [class.bg-gray-100]="c.estado === 'vendida'"
+                  [class.text-emerald-700]="c.estado === 'activa'"
+                  [class.text-gray-500]="c.estado === 'vendida'"
+                >{{ c.estado === 'activa' ? 'Activa' : 'Vendida' }}</span>
+                <div class="ml-auto flex items-center gap-1">
+                  <button
+                    class="rounded-lg px-3 py-1 text-xs font-medium transition-colors"
+                    [class.bg-gray-100]="c.estado === 'activa'"
+                    [class.hover:bg-gray-200]="c.estado === 'activa'"
+                    [class.text-gray-700]="c.estado === 'activa'"
+                    [class.bg-emerald-50]="c.estado === 'vendida'"
+                    [class.hover:bg-emerald-100]="c.estado === 'vendida'"
+                    [class.text-emerald-700]="c.estado === 'vendida'"
+                    (click)="toggleEstado(c)"
+                  >{{ c.estado === 'activa' ? 'Marcar como vendida' : 'Marcar como activa' }}</button>
+                  <button
+                    class="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-500"
+                    (click)="onEditCompra(c)"
+                    title="Editar compra"
+                    aria-label="Editar compra"
+                  >
+                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
+                    </svg>
+                  </button>
+                  <button
+                    class="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                    (click)="deleteCompra(c.id)"
+                    title="Eliminar compra"
+                    aria-label="Eliminar compra"
+                  >
+                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
     </div>
   `,
 })
 export class EquitoFormComponent {
   private readonly service = inject(FinancialDataService);
 
-  readonly accounts = input.required<Account[]>();
-
-  private readonly PLATFORM_ID = 'equito';
-
   protected readonly months = MONTH_OPTIONS;
-  protected readonly years = YEARS;
 
-  // --- Inversiones ---
-  protected readonly projectName = signal('');
-  protected readonly investedAmount = signal(0);
-  protected readonly interestRate = signal(0);
-  protected readonly startDate = signal('');
-  protected readonly endDate = signal('');
-  protected readonly savedInvestment = signal(false);
-  protected readonly editingInvestment = signal<CrowdlendingInvestment | null>(null);
-
-  protected readonly investments = computed(() =>
-    this.service.getCrowdlendingByPlatform(this.PLATFORM_ID)
-  );
-
-  protected readonly monthlyReturnEstimate = computed(() => {
-    const amount = this.investedAmount();
-    const rate = this.interestRate();
-    if (amount <= 0 || rate <= 0) { return 0; }
-    return Math.round((amount * rate / 100 / 12) * 100) / 100;
-  });
-
-  protected readonly canSave = computed(() =>
-    this.projectName().trim().length > 0 &&
-    this.investedAmount() > 0 &&
-    this.interestRate() > 0 &&
-    this.startDate().trim().length > 0
-  );
+  private static readonly HACIENDA_PERCENT = 19;
+  private static readonly HACIENDA_RATE = 0.19;
 
   // --- Balance mensual ---
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = computed(() => this.service.currentYear());
+
+  protected readonly editingBalance = signal<EquitoBalance | null>(null);
   protected readonly balance = signal<number | null>(null);
-  protected readonly income = signal<number | null>(null);
-  protected readonly contribution = signal<number | null>(null);
-  protected readonly withdrawal = signal<number | null>(null);
+  protected readonly aporte = signal<number | null>(null);
+  protected readonly dineroTotal = signal<number | null>(null);
+  protected readonly hacienda = signal<number | null>(null);
+  protected readonly dineroFinal = signal<number | null>(null);
   protected readonly savedBalance = signal(false);
-  protected readonly editingSnapshot = signal<MonthlySnapshot | null>(null);
 
-  private readonly accountId = computed(() => {
-    const accs = this.accounts();
-    return accs.find(a => a.platformId === this.PLATFORM_ID)?.id ?? '';
+  protected readonly previousBalance = computed(() => this.getPreviousBalance());
+
+  protected readonly history = computed(() => {
+    const since = EquitoFormComponent.toMes(this.localYear(), this.localMonth());
+    return this.service.getEquitoBalances()
+      .filter(b => b.mes <= since)
+      .sort((a, b) => (a.mes < b.mes ? 1 : -1));
   });
 
-  protected readonly snapshotId = computed(() =>
-    `${this.accountId()}-${this.localYear()}-${String(this.localMonth()).padStart(2, '0')}`
+  // --- Compras ---
+  protected readonly editingCompra = signal<EquitoCompra | null>(null);
+  protected readonly compraFecha = signal(new Date().toISOString().slice(0, 10));
+  protected readonly compraEntidad = signal('');
+  protected readonly compraMonto = signal<number | null>(null);
+  protected readonly compraRendimiento = signal<number | null>(null);
+  protected readonly compraEstado = signal<EquitoCompraEstado>('activa');
+  protected readonly savedCompra = signal(false);
+
+  protected readonly compras = computed(() => this.service.getEquitoCompras());
+
+  protected readonly canSaveCompra = computed(() =>
+    this.compraFecha().trim().length > 0 &&
+    this.compraEntidad().trim().length > 0 &&
+    this.compraMonto() != null && Number(this.compraMonto()) > 0
   );
-
-  protected readonly previousBalance = computed(() => {
-    const accId = this.accountId();
-    if (!accId) { return null; }
-    const snapshots = this.service.getSnapshotsByAccount(accId);
-    let prevMonth = this.localMonth() - 1;
-    let prevYear = this.localYear();
-    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
-    const prev = snapshots.find(s => s.year === prevYear && s.month === prevMonth);
-    return prev?.balance ?? null;
-  });
-
-  protected readonly balanceHistory = computed(() => {
-    const accId = this.accountId();
-    if (!accId) { return []; }
-    return this.service.getSnapshotsByAccount(accId)
-      .filter(s => s.year === this.localYear())
-      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + b.month));
-  });
 
   constructor() {
     effect(() => {
-      this.service.snapshots();
-      const accId = this.accountId();
-      if (!accId) { return; }
-      const snap = this.service.getSnapshot(accId, this.localYear(), this.localMonth());
-      if (this.editingSnapshot()) { return; }
-      this.balance.set(snap?.balance ?? null);
-      this.income.set(snap?.income ?? null);
-      this.contribution.set(snap?.contribution ?? null);
-      this.withdrawal.set(snap?.expenses && snap.expenses > 0 ? snap.expenses : null);
+      const year = this.localYear();
+      const month = this.localMonth();
+      this.service.loadEquitoHistory(year, month);
+      this.editingBalance.set(null);
+      this.resetBalanceFields();
+
+      const balance = this.service.getEquitoBalance(year, month);
+      if (balance) {
+        this.editingBalance.set(balance);
+        this.balance.set(balance.balanceMensual);
+        this.aporte.set(balance.aporteMensual ?? null);
+        this.dineroTotal.set(balance.dineroTotal ?? null);
+        this.hacienda.set(balance.dineroHacienda ?? null);
+        this.dineroFinal.set(balance.dineroFinal ?? null);
+      }
     }, { allowSignalWrites: true });
-  }
 
-  // --- Inversiones ---
-  protected onEditInvestment(inv: CrowdlendingInvestment): void {
-    this.editingInvestment.set(inv);
-    this.projectName.set(inv.projectName);
-    this.investedAmount.set(inv.investedAmount);
-    this.interestRate.set(inv.interestRate);
-    this.startDate.set(inv.startDate);
-    this.endDate.set(inv.endDate ?? '');
-  }
-
-  protected cancelEditInvestment(): void {
-    this.editingInvestment.set(null);
-    this.projectName.set('');
-    this.investedAmount.set(0);
-    this.interestRate.set(0);
-    this.startDate.set('');
-    this.endDate.set('');
-  }
-
-  protected saveInvestment(): void {
-    const amount = this.investedAmount();
-    const rate = this.interestRate();
-    const monthlyReturn = Math.round((amount * rate / 100 / 12) * 100) / 100;
-
-    const editing = this.editingInvestment();
-    const payload: CrowdlendingInvestment = {
-      id: editing?.id ?? `cl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      platformId: this.PLATFORM_ID,
-      projectName: this.projectName(),
-      investedAmount: amount,
-      interestRate: rate,
-      termMonths: editing?.termMonths ?? 0,
-      startDate: this.startDate(),
-      endDate: this.endDate() || undefined,
-      monthlyReturn,
-      totalReturned: editing?.totalReturned ?? 0,
-      status: editing?.status ?? ProjectStatus.Active,
-    };
-
-    const request = editing
-      ? this.service.updateCrowdlendingInvestment(editing.id, payload)
-      : this.service.addCrowdlendingInvestment(payload);
-
-    request.subscribe(() => {
-      this.cancelEditInvestment();
-      this.savedInvestment.set(true);
-      setTimeout(() => this.savedInvestment.set(false), 2000);
-    });
-  }
-
-  protected deleteInvestment(inv: CrowdlendingInvestment): void {
-    this.service.deleteCrowdlendingInvestment(inv.id).subscribe();
+    this.service.loadEquitoCompras();
   }
 
   // --- Balance mensual ---
-  protected onEdit(snap: MonthlySnapshot): void {
-    this.localMonth.set(snap.month);
-    this.service.currentYear.set(snap.year);
-    this.balance.set(snap.balance);
-    this.income.set(snap.income ?? null);
-    this.contribution.set(snap.contribution ?? null);
-    this.withdrawal.set(snap.expenses && snap.expenses > 0 ? snap.expenses : null);
-    this.editingSnapshot.set(snap);
+  private getPreviousBalance(): number | null {
+    let prevMonth = this.localMonth() - 1;
+    let prevYear = this.localYear();
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+    return this.service.getEquitoBalance(prevYear, prevMonth)?.balanceMensual ?? null;
   }
 
-  protected cancelEdit(): void {
-    this.editingSnapshot.set(null);
-    this.income.set(null);
-    this.contribution.set(null);
-    this.withdrawal.set(null);
+  private static toMes(year: number, month: number): string {
+    return `${year}-${String(month).padStart(2, '0')}`;
   }
 
-  protected onDelete(id: string): void {
-    this.service.deleteSnapshot(id);
-    if (this.editingSnapshot()?.id === id) {
-      this.cancelEdit();
-    }
+  private static parseMes(mes: string): { year: number; month: number } {
+    const [year, month] = mes.split('-').map(Number);
+    return { year, month };
+  }
+
+  protected onDineroTotalChange(value: number | null): void {
+    this.dineroTotal.set(value);
+    this.hacienda.set(EquitoFormComponent.computeHacienda(value));
+    this.dineroFinal.set(EquitoFormComponent.computeFinal(value, this.hacienda()));
+  }
+
+  protected onHaciendaChange(value: number | null): void {
+    this.hacienda.set(value);
+    this.dineroFinal.set(EquitoFormComponent.computeFinal(this.dineroTotal(), value));
+  }
+
+  private static computeHacienda(dineroTotal: number | null): number | null {
+    if (dineroTotal == null) { return null; }
+    return roundMoney(dineroTotal * EquitoFormComponent.HACIENDA_RATE) ?? null;
+  }
+
+  private static computeFinal(dineroTotal: number | null, hacienda: number | null): number | null {
+    if (dineroTotal == null || hacienda == null) { return null; }
+    return roundMoney(dineroTotal - hacienda) ?? null;
+  }
+
+  private resetBalanceFields(): void {
+    this.balance.set(null);
+    this.aporte.set(null);
+    this.dineroTotal.set(null);
+    this.hacienda.set(null);
+    this.dineroFinal.set(null);
+  }
+
+  private fillFromBalance(balance: EquitoBalance): void {
+    const { year, month } = EquitoFormComponent.parseMes(balance.mes);
+    this.service.currentYear.set(year);
+    this.localMonth.set(month);
+    this.balance.set(balance.balanceMensual);
+    this.aporte.set(balance.aporteMensual ?? null);
+    this.dineroTotal.set(balance.dineroTotal ?? null);
+    this.hacienda.set(balance.dineroHacienda ?? null);
+    this.dineroFinal.set(balance.dineroFinal ?? null);
+  }
+
+  protected onEditBalance(balance: EquitoBalance): void {
+    this.editingBalance.set(balance);
+    this.fillFromBalance(balance);
+  }
+
+  protected cancelEditBalance(): void {
+    this.editingBalance.set(null);
+    this.resetBalanceFields();
+  }
+
+  protected onDeleteBalance(id: string): void {
+    this.service.deleteEquitoBalance(id).subscribe();
   }
 
   protected saveBalance(): void {
     const bal = roundMoney(this.balance() ?? 0) ?? 0;
     if (bal === null) { return; }
 
-    const accId = this.accountId();
-    if (!accId) { return; }
+    const data: EquitoBalanceSave = {
+      balanceMensual: bal,
+      aporteMensual: roundMoney(this.aporte() ?? 0) ?? 0,
+      dineroTotal: roundMoney(this.dineroTotal() ?? 0) ?? 0,
+      dineroHacienda: roundMoney(this.hacienda() ?? 0) ?? 0,
+      dineroFinal: roundMoney(this.dineroFinal() ?? 0) ?? 0,
+    };
 
-    const inc = roundMoney(this.income() ?? 0) ?? 0;
-    const contrib = roundMoney(this.contribution() ?? 0) ?? 0;
-    const withdrawal = roundMoney(this.withdrawal() ?? 0) ?? 0;
+    this.service.saveEquitoBalance(this.localYear(), this.localMonth(), data).subscribe({
+      next: () => {
+        this.cancelEditBalance();
+        this.savedBalance.set(true);
+        setTimeout(() => this.savedBalance.set(false), 2000);
+      },
+    });
+  }
 
-    const editing = this.editingSnapshot();
-    if (editing) {
-      this.service.updateSnapshot(editing.id, {
-        balance: bal,
-        income: inc,
-        contribution: contrib,
-        expenses: withdrawal,
-      });
-      this.cancelEdit();
-    } else {
-      this.service.upsertSnapshot(accId, this.localYear(), this.localMonth(), bal, inc, withdrawal, contrib).subscribe();
-    }
+  // --- Compras ---
+  protected formatFecha(fecha: string): string {
+    const [year, month, day] = fecha.split('-');
+    return `${day}/${month}/${year}`;
+  }
 
-    this.income.set(null);
-    this.contribution.set(null);
-    this.withdrawal.set(null);
-    this.savedBalance.set(true);
-    setTimeout(() => this.savedBalance.set(false), 2000);
+  protected onEditCompra(compra: EquitoCompra): void {
+    this.editingCompra.set(compra);
+    this.compraFecha.set(compra.fecha);
+    this.compraEntidad.set(compra.entidad);
+    this.compraMonto.set(compra.monto);
+    this.compraRendimiento.set(compra.rendimiento ?? null);
+    this.compraEstado.set(compra.estado);
+  }
+
+  protected cancelEditCompra(): void {
+    this.editingCompra.set(null);
+    this.compraFecha.set(new Date().toISOString().slice(0, 10));
+    this.compraEntidad.set('');
+    this.compraMonto.set(null);
+    this.compraRendimiento.set(null);
+    this.compraEstado.set('activa');
+  }
+
+  protected toggleEstado(compra: EquitoCompra): void {
+    const next: EquitoCompraEstado = compra.estado === 'activa' ? 'vendida' : 'activa';
+    this.service.setEquitoCompraEstado(compra.id, next).subscribe();
+  }
+
+  protected deleteCompra(id: string): void {
+    this.service.deleteEquitoCompra(id).subscribe();
+  }
+
+  protected saveCompra(): void {
+    const monto = roundMoney(this.compraMonto() ?? 0) ?? 0;
+    if (monto === null) { return; }
+
+    const data: EquitoCompraSave = {
+      fecha: this.compraFecha(),
+      entidad: this.compraEntidad().trim(),
+      monto,
+      rendimiento: this.compraRendimiento() ?? undefined,
+      estado: this.compraEstado(),
+    };
+
+    const call$ = this.editingCompra()
+      ? this.service.updateEquitoCompra(this.editingCompra()!.id, data)
+      : this.service.saveEquitoCompra(data);
+
+    call$.subscribe({
+      next: () => {
+        this.cancelEditCompra();
+        this.savedCompra.set(true);
+        setTimeout(() => this.savedCompra.set(false), 2000);
+      },
+    });
   }
 }

@@ -15,6 +15,8 @@ import { MintosBalanceDataService } from './mintos-balance.service';
 import { BancoBalanceDataService } from './banco-balance.service';
 import { UrbanitaeBalanceDataService } from './urbanitae-balance.service';
 import { UrbanitaeCompraDataService } from './urbanitae-compra.service';
+import { EquitoBalanceDataService } from './equito-balance.service';
+import { EquitoCompraDataService } from './equito-compra.service';
 import { roundMoney } from '../utils/money.util';
 
 import {
@@ -45,6 +47,11 @@ import {
   UrbanitaeCompra,
   UrbanitaeCompraEstado,
   UrbanitaeCompraSave,
+  EquitoBalance,
+  EquitoBalanceSave,
+  EquitoCompra,
+  EquitoCompraEstado,
+  EquitoCompraSave,
 } from '../../models';
 import { EXPENSES_PLATFORM_ID } from '../constants/platform.constants';
 
@@ -70,6 +77,8 @@ export class FinancialDataService {
   private readonly bancoData = inject(BancoBalanceDataService);
   private readonly urbanitaeBalanceData = inject(UrbanitaeBalanceDataService);
   private readonly urbanitaeCompraData = inject(UrbanitaeCompraDataService);
+  private readonly equitoBalanceData = inject(EquitoBalanceDataService);
+  private readonly equitoCompraData = inject(EquitoCompraDataService);
 
   readonly platforms = computed(() => this.platformsData.platforms());
   readonly accounts = computed(() => this.platformsData.accounts());
@@ -92,6 +101,8 @@ export class FinancialDataService {
   readonly bancoBalances = computed(() => this.bancoData.balances());
   readonly urbanitaeBalances = computed(() => this.urbanitaeBalanceData.balances());
   readonly urbanitaeCompras = computed(() => this.urbanitaeCompraData.compras());
+  readonly equitoBalances = computed(() => this.equitoBalanceData.balances());
+  readonly equitoCompras = computed(() => this.equitoCompraData.compras());
 
   private autoAdjustedToData = false;
 
@@ -523,5 +534,49 @@ export class FinancialDataService {
 
   deleteUrbanitaeCompra(id: string): Observable<any> {
     return this.urbanitaeCompraData.delete(id);
+  }
+
+  loadEquitoHistory(year: number, month: number, force = false): void {
+    this.equitoBalanceData.loadHistory(year, month, force);
+  }
+
+  getEquitoBalances(): EquitoBalance[] {
+    return this.equitoBalanceData.getBalances();
+  }
+
+  getEquitoBalance(year: number, month: number): EquitoBalance | undefined {
+    return this.equitoBalanceData.getBalance(year, month);
+  }
+
+  saveEquitoBalance(year: number, month: number, data: EquitoBalanceSave): Observable<EquitoBalance> {
+    return this.equitoBalanceData.save(year, month, data);
+  }
+
+  deleteEquitoBalance(id: string): Observable<any> {
+    return this.equitoBalanceData.delete(id);
+  }
+
+  loadEquitoCompras(force = false): void {
+    this.equitoCompraData.loadCompras(force);
+  }
+
+  getEquitoCompras(): EquitoCompra[] {
+    return this.equitoCompraData.getCompras();
+  }
+
+  saveEquitoCompra(data: EquitoCompraSave): Observable<EquitoCompra> {
+    return this.equitoCompraData.save(data);
+  }
+
+  updateEquitoCompra(id: string, data: EquitoCompraSave): Observable<EquitoCompra> {
+    return this.equitoCompraData.update(id, data);
+  }
+
+  setEquitoCompraEstado(id: string, estado: EquitoCompraEstado): Observable<EquitoCompra> {
+    return this.equitoCompraData.setEstado(id, estado);
+  }
+
+  deleteEquitoCompra(id: string): Observable<any> {
+    return this.equitoCompraData.delete(id);
   }
 }

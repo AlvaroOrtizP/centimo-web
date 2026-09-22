@@ -142,7 +142,7 @@ interface TabConfig {
               <div class="mb-3">
                 <app-collapsible-description description="Registra el saldo e intereses de tus préstamos en Equito. Los intereses se suman al balance de la plataforma." storageKey="desc-entry-equito" />
               </div>
-              <app-equito-form [accounts]="allAccounts()" />
+              <app-equito-form />
             }
             @case ('urbanitae') {
               <div class="mb-3">
@@ -193,7 +193,7 @@ export class EntryFormComponent {
     { key: 'b100', label: 'B100', color: '#6C3FD1', done: true, pending: false },
     { key: 'myinvestor', label: 'MyInvestor', color: '#00A3E0', done: true, pending: true },
     { key: 'mintos', label: 'Mintos', color: '#00BFA5', done: true, pending: false },
-    { key: 'equito', label: 'Equito', color: '#FF6B35', done: true, pending: true },
+    { key: 'equito', label: 'Equito', color: '#FF6B35', done: true, pending: false },
     { key: 'urbanitae', label: 'Urbanitae', color: '#E63946', done: true, pending: false },
   ];
 

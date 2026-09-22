@@ -1,6 +1,6 @@
 # Entidades: Equito — Balance mensual y registro de compras
 
-> **Implementado:** `false`
+> **Implementado:** `true`
 
 Entidad dedicada a Equito (crowdlending). Está dividida en dos partes:
 
