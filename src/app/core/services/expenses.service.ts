@@ -1,16 +1,25 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { tap, map, catchError } from 'rxjs/operators';
 
-// TODO(BACKEND): servicios y modelos eliminados del swagger (solo queda B100). Se reactivarán al ampliar la nueva API.
-// import { ExpensesService } from '../../api/generated/api/expenses.service';
-// import { ExpenseCreate } from '../../api/generated/model/expenseCreate';
-// import { ExpenseUpdate } from '../../api/generated/model/expenseUpdate';
-// import { Expense as ApiExpense } from '../../api/generated/model/expense';
+import {
+  ExpensesService,
+} from '../../api/generated/api/expenses.service';
+import { ExpenseCreate } from '../../api/generated/model/expenseCreate';
+import { ExpenseUpdate } from '../../api/generated/model/expenseUpdate';
+import { Expense as ApiExpense } from '../../api/generated/model/expense';
 import { Expense } from '../../models';
 import { LoggerService } from './logger.service';
 
-// function toExpense(e: ApiExpense): Expense { ... } // TODO(BACKEND): pendiente de la nueva API.
+function toExpense(e: ApiExpense): Expense {
+  return {
+    id: e.id,
+    category: e.category as Expense['category'],
+    amount: e.amount,
+    date: e.date,
+    description: e.description,
+  };
+}
 
 function sameMonth(date: string, year: number, month: number): boolean {
   const d = new Date(date);
@@ -19,7 +28,7 @@ function sameMonth(date: string, year: number, month: number): boolean {
 
 @Injectable({ providedIn: 'root' })
 export class ExpensesDataService {
-  // private readonly expensesApi = inject(ExpensesService);
+  private readonly expensesApi = inject(ExpensesService);
   private readonly logger = inject(LoggerService);
 
   readonly expenses = signal<Expense[]>([]);
@@ -30,10 +39,6 @@ export class ExpensesDataService {
    */
   private readonly loadedPeriods = signal<Set<string>>(new Set());
 
-  getExpensesBySnapshot(snapshotId: string): Expense[] {
-    return this.expenses().filter(e => e.snapshotId === snapshotId);
-  }
-
   /**
    * Carga todos los gastos de un mes en UNA sola llamada (GET /expenses?year&month).
    * El merge se hace por fecha del gasto, de modo que es robusto aunque el backend
@@ -43,63 +48,71 @@ export class ExpensesDataService {
     const key = `${year}-${month}`;
     if (!force && this.loadedPeriods().has(key)) { return; }
 
-    // TODO(BACKEND): llamada a GET /expenses (por mes) comentada.
-    // this.expensesApi.listExpenses(undefined, year, month).pipe(
-    //   map(list => list.map(toExpense)),
-    //   catchError((err) => {
-    //     this.logger.error('ExpensesData', 'loadExpensesByMonth error', err);
-    //     return of([]);
-    //   }),
-    // ).subscribe(list => {
-    //   const monthList = list.filter(e => sameMonth(e.date, year, month));
-    //   this.expenses.update(arr => {
-    //     const others = arr.filter(e => !sameMonth(e.date, year, month));
-    //     return [...others, ...monthList];
-    //   });
-    //   this.loadedPeriods.update(set => new Set(set).add(key));
-    // });
+    this.expensesApi.listExpenses(year, month, 'desc').pipe(
+      map(list => list.map(toExpense)),
+      catchError((err) => {
+        this.logger.error('ExpensesData', 'loadExpensesByMonth error', err);
+        return of([]);
+      }),
+    ).subscribe(list => {
+      const monthList = list.filter(e => sameMonth(e.date, year, month));
+      this.expenses.update(arr => {
+        const others = arr.filter(e => !sameMonth(e.date, year, month));
+        return [...others, ...monthList];
+      });
+      this.loadedPeriods.update(set => new Set(set).add(key));
+    });
   }
 
-  loadExpenses(snapshotId: string): void {
-    // TODO(BACKEND): llamada a GET /expenses (por snapshot) comentada.
-    // this.expensesApi.listExpenses(snapshotId).pipe(
-    //   map(list => list.map(toExpense)),
-    //   catchError((err) => {
-    //     this.logger.error('ExpensesData', 'loadExpenses error', err);
-    //     return of([]);
-    //   }),
-    // ).subscribe(expenses => {
-    //   this.expenses.update(arr => {
-    //     if (expenses.length === 0) { return arr; }
-    //     const others = arr.filter(e => e.snapshotId !== snapshotId);
-    //     return [...others, ...expenses];
-    //   });
-    // });
+  addExpense(expense: Omit<Expense, 'id'>): Observable<Expense> {
+    const request: ExpenseCreate = {
+      category: expense.category,
+      amount: expense.amount,
+      date: expense.date,
+      description: expense.description,
+    };
+
+    return this.expensesApi.createExpense(request).pipe(
+      map(toExpense),
+      tap(item => {
+        this.expenses.update(arr => [...arr, item]);
+      }),
+      catchError((err) => {
+        this.logger.error('ExpensesData', 'addExpense error', err);
+        throw err;
+      }),
+    );
   }
 
-  addExpense(expense: Expense): Observable<Expense> {
-    // TODO(BACKEND): llamada a POST /expenses comentada.
-    this.expenses.update(arr => [...arr, expense]);
-    return of(expense);
-  }
-
-  updateExpense(id: string, data: any): Observable<Expense> {
-    // TODO(BACKEND): llamada a PUT /expenses/{id} comentada.
-    const expense: Expense = {
-      id,
-      snapshotId: data.snapshotId ?? '',
+  updateExpense(id: string, data: Partial<Expense>): Observable<Expense> {
+    const request: ExpenseUpdate = {
       category: data.category,
       amount: data.amount,
       date: data.date,
-      description: data.description ?? undefined,
+      description: data.description,
     };
-    this.expenses.update(arr => arr.map(e => e.id === id ? expense : e));
-    return of(expense);
+
+    return this.expensesApi.updateExpense(id, request).pipe(
+      map(toExpense),
+      tap(item => {
+        this.expenses.update(arr => arr.map(e => e.id === id ? item : e));
+      }),
+      catchError((err) => {
+        this.logger.error('ExpensesData', `updateExpense(${id}) error`, err);
+        throw err;
+      }),
+    );
   }
 
-  deleteExpense(id: string, snapshotId: string): void {
-    // TODO(BACKEND): llamada a DELETE /expenses/{id} comentada.
-    this.expenses.update(arr => arr.filter(e => e.id !== id));
+  deleteExpense(id: string): Observable<void> {
+    return this.expensesApi.deleteExpense(id).pipe(
+      tap(() => {
+        this.expenses.update(arr => arr.filter(e => e.id !== id));
+      }),
+      catchError((err) => {
+        this.logger.error('ExpensesData', `deleteExpense(${id}) error`, err);
+        throw err;
+      }),
+    );
   }
-
 }

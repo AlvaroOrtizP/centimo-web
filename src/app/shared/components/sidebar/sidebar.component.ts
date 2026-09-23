@@ -6,6 +6,7 @@ interface NavItem {
   label: string;
   icon: string;
   done?: boolean;
+  blue?: boolean;
 }
 
 @Component({
@@ -34,12 +35,22 @@ interface NavItem {
         @for (item of navItems; track item.path) {
           <a
             [routerLink]="item.path"
-            routerLinkActive="before:bg-blue-600"
+            routerLinkActive=""
             #rla="routerLinkActive"
-            class="relative flex items-center gap-3 rounded-lg bg-blue-50 px-3 py-2.5 text-sm font-medium text-blue-700 transition-all duration-150 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-r before:transition-all hover:bg-blue-100"
+            class="relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-r before:transition-all"
+            [class.bg-orange-50]="!item.blue"
+            [class.text-orange-700]="!item.blue"
+            [class.hover:bg-orange-100]="!item.blue"
+            [class.bg-blue-50]="item.blue"
+            [class.text-blue-700]="item.blue"
+            [class.hover:bg-blue-100]="item.blue"
+            [class.bg-orange-100]="rla.isActive && !item.blue"
+            [class.text-orange-800]="rla.isActive && !item.blue"
+            [class.before:bg-orange-600]="rla.isActive && !item.blue"
+            [class.bg-blue-100]="rla.isActive && item.blue"
+            [class.text-blue-800]="rla.isActive && item.blue"
+            [class.before:bg-blue-600]="rla.isActive && item.blue"
             [class.pl-10]="compact()"
-            [class.bg-blue-100]="rla.isActive"
-            [class.text-blue-800]="rla.isActive"
             (click)="navigate.emit()"
           >
             <span class="flex-shrink-0" [innerHTML]="item.icon"></span>
@@ -85,6 +96,7 @@ export class SidebarComponent {
     {
       path: '/entry',
       label: 'Entrada Datos',
+      blue: true,
       icon: `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
       // TODO: eliminar la línea verde (done) una vez entregado
       done: true,
@@ -92,6 +104,7 @@ export class SidebarComponent {
     {
       path: '/expenses',
       label: 'Gastos',
+      blue: true,
       icon: `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
     },
   ];

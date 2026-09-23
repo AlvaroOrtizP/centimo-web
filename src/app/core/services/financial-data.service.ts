@@ -201,21 +201,15 @@ export class FinancialDataService {
     return this.investmentsData.getCrowdlendingByPlatform(platformId);
   }
 
-  loadExpenses(snapshotId: string): void {
-    this.expensesData.loadExpenses(snapshotId);
-  }
-
   loadExpensesByPeriod(year: number, month: number, force = false): void {
     this.expensesData.loadExpensesByMonth(year, month, force);
   }
 
-  getExpensesBySnapshot(snapshotId: string): Expense[] {
-    return this.expensesData.getExpensesBySnapshot(snapshotId);
-  }
-
   getExpensesByPeriod(year: number, month: number): Expense[] {
-    const snapshotIds = new Set(this.getSnapshotsByMonth(year, month).map(s => s.id));
-    return this.expenses().filter(e => snapshotIds.has(e.snapshotId));
+    return this.expensesData.expenses().filter(e => {
+      const d = new Date(e.date);
+      return d.getFullYear() === year && d.getMonth() + 1 === month;
+    });
   }
 
   getIncomesBySnapshot(snapshotId: string): IncomeSource[] {
@@ -278,16 +272,16 @@ export class FinancialDataService {
     this.snapshotsData.toggleChecklistItem(snapshotId, itemId);
   }
 
-  addExpense(expense: Expense): Observable<Expense> {
+  addExpense(expense: Omit<Expense, 'id'>): Observable<Expense> {
     return this.expensesData.addExpense(expense);
   }
 
-  updateExpense(id: string, data: any): Observable<Expense> {
+  updateExpense(id: string, data: Partial<Expense>): Observable<Expense> {
     return this.expensesData.updateExpense(id, data);
   }
 
-  deleteExpense(id: string, snapshotId: string): void {
-    this.expensesData.deleteExpense(id, snapshotId);
+  deleteExpense(id: string): Observable<void> {
+    return this.expensesData.deleteExpense(id);
   }
 
   addIncome(income: IncomeSource): void {

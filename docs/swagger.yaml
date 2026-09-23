@@ -27,6 +27,8 @@ tags:
     description: Balance mensual de Equito
   - name: EquitoCompra
     description: Registro de compras de Equito
+  - name: Expenses
+    description: Gastos del mes categorizados
   - name: MyInvestorFunds
     description: Activos de MyInvestor (fondos indexados y roboadvisor)
   - name: FundBalances
@@ -715,6 +717,100 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  # ── Expenses ──
+  /expenses:
+    get:
+      tags: [Expenses]
+      operationId: listExpenses
+      summary: Listar gastos por periodo (año y/o mes), ordenados por fecha
+      parameters:
+        - name: year
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Año del gasto (filtra por la fecha). Si se indica month, year es obligatorio
+        - name: month
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Mes del gasto (1-12); requiere year
+        - name: order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Orden por fecha (asc o desc; por defecto desc)
+      responses:
+        '200':
+          description: Lista de gastos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Expense'
+        '400':
+          description: Error generico 400
+    post:
+      tags: [Expenses]
+      operationId: createExpense
+      summary: Crear gasto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseCreate'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '400':
+          description: Error generico 400
+
+  /expenses/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ExpenseId'
+    put:
+      tags: [Expenses]
+      operationId: updateExpense
+      summary: Actualizar gasto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseUpdate'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '400':
+          description: Error generico 400
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Expenses]
+      operationId: deleteExpense
+      summary: Eliminar gasto
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /myinvestor-funds:
     get:
       tags: [MyInvestorFunds]
@@ -936,6 +1032,12 @@ components:
       schema:
         type: string
     FundBalanceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    ExpenseId:
       name: id
       in: path
       required: true
@@ -1488,6 +1590,62 @@ components:
         expenses:
           type: number
           format: float
+
+    # ═══════════ Expense ═══════════
+    ExpenseCreate:
+      type: object
+      required: [category, amount, date]
+      properties:
+        category:
+          type: string
+          description: Categoría del gasto (Aseo, Coche, Comida, Discord, Ejercicio, Hacienda, Medicamento, Ocio, Otros, Trabajo)
+        amount:
+          type: number
+          format: float
+          description: Importe del gasto
+        date:
+          type: string
+          format: date
+          example: "2026-06-15"
+          description: Fecha del gasto
+        description:
+          type: string
+          description: Nota opcional
+
+    ExpenseUpdate:
+      type: object
+      properties:
+        category:
+          type: string
+          description: Categoría del gasto (Aseo, Coche, Comida, Discord, Ejercicio, Hacienda, Medicamento, Ocio, Otros, Trabajo)
+        amount:
+          type: number
+          format: float
+          description: Importe del gasto
+        date:
+          type: string
+          format: date
+          description: Fecha del gasto
+        description:
+          type: string
+          description: Nota opcional (null la vacía)
+
+    Expense:
+      type: object
+      required: [id, category, amount, date]
+      properties:
+        id:
+          type: string
+        category:
+          type: string
+        amount:
+          type: number
+          format: float
+        date:
+          type: string
+          format: date
+        description:
+          type: string
 
     # ═══════════ Error ═══════════
     Error:

@@ -51,7 +51,7 @@ import { Expense } from '../../../../models/expense';
 
         <button
           class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-          [disabled]="!snapshotId() || !category() || !amount() || !date()"
+          [disabled]="!category() || !amount() || !date()"
           (click)="save()"
         >{{ editingExpense() ? 'Guardar cambios' : 'Añadir Gasto' }}</button>
 
@@ -129,10 +129,6 @@ export class ExpenseFormComponent {
   readonly year = input.required<number>();
   readonly month = input.required<number>();
 
-  private readonly ACCOUNT_ID = 'bbva-gasto';
-
-  protected readonly snapshotId = signal('');
-
   protected readonly listMonth = signal(this.service.currentMonth());
   protected readonly listYear = signal(this.service.currentYear());
 
@@ -140,20 +136,6 @@ export class ExpenseFormComponent {
     effect(() => {
       this.listYear.set(this.year());
       this.listMonth.set(this.month());
-    }, { allowSignalWrites: true });
-
-    effect(() => {
-      const y = this.year();
-      const m = this.month();
-
-      const existing = this.service.getSnapshot(this.ACCOUNT_ID, y, m);
-      if (existing) {
-        this.snapshotId.set(existing.id);
-        return;
-      }
-      this.service.upsertSnapshot(this.ACCOUNT_ID, y, m, 0, 0).subscribe(res => {
-        this.snapshotId.set(res.id);
-      });
     }, { allowSignalWrites: true });
 
     effect(() => {
@@ -190,36 +172,26 @@ export class ExpenseFormComponent {
 
   protected save(): void {
     const editing = this.editingExpense();
-
-    if (editing) {
-      this.service.updateExpense(editing.id, {
-        snapshotId: editing.snapshotId,
-        category: this.category() as ExpenseCategory,
-        amount: this.amount(),
-        date: this.date(),
-        description: this.description() || undefined,
-      }).subscribe(() => {
-        this.cancelEdit();
-        this.saved.set(true);
-        setTimeout(() => this.saved.set(false), 2000);
-      });
-      return;
-    }
-
-    const snapId = this.snapshotId();
-
-    this.service.addExpense({
-      id: `exp-${snapId}-${Date.now()}`,
-      snapshotId: snapId,
+    const payload: Omit<Expense, 'id'> = {
       category: this.category() as ExpenseCategory,
       amount: this.amount(),
       date: this.date(),
       description: this.description() || undefined,
-    }).subscribe(() => {
+    };
+
+    const onSaved = () => {
       this.resetForm();
+      this.editingExpense.set(null);
       this.saved.set(true);
       setTimeout(() => this.saved.set(false), 2000);
-    });
+    };
+
+    if (editing) {
+      this.service.updateExpense(editing.id, payload).subscribe(onSaved);
+      return;
+    }
+
+    this.service.addExpense(payload).subscribe(onSaved);
   }
 
   protected startEdit(exp: Expense): void {
@@ -236,13 +208,16 @@ export class ExpenseFormComponent {
   }
 
   protected deleteExpense(exp: Expense): void {
-    this.service.deleteExpense(exp.id, exp.snapshotId);
+    this.service.deleteExpense(exp.id).subscribe(() => {
+      if (this.editingExpense()?.id === exp.id) {
+        this.cancelEdit();
+      }
+    });
   }
 
   private resetForm(): void {
     this.category.set('');
     this.amount.set(0);
-    this.date.set('');
     this.description.set('');
   }
 }

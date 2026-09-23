@@ -86,6 +86,17 @@ Obtener la lista de gastos de una instantánea o de un periodo, ordenada por `fe
 - Al crear/actualizar/eliminar un gasto se mantiene consistente el acumulado `expenses` de la instantánea mensual.
 - Patrón hexagonal del proyecto, como `InteresAnualMintos` o `BalanceFondo`.
 
+## Frontend (formulario de gasto)
+
+El formulario de gastos (`ExpenseFormComponent`, ruta `/expenses`) permite crear, editar y eliminar gastos por periodo. Detalle de comportamiento del campo **fecha**:
+
+- Al abrir la pantalla la fecha se inicializa con el día de hoy (auto).
+- Tras **crear un gasto**, la fecha **se mantiene**: el formulario conserva la última fecha usada en lugar de vaciarse a `dd/mm/aaaa`. Así puedes introducir varios gastos para la misma fecha sin reescribirla cada vez.
+- Si cambias manualmente la fecha (p. ej. a `10/08/2026`) y creas otro gasto, la fecha se queda en `10/08/2026` para los siguientes gastos.
+- El mismo criterio aplica al **cancelar una edición**: no se pierde la fecha en curso.
+
+Los demás campos (`categoría`, `cantidad`, `descripción`) sí se limpian tras crear o cancelar.
+
 ## Capas de implementación previstas
 
 - **Capa de aplicación**: `Gasto` (domain model), `GastoDrivingPort`, `GastoUseCase`, `GastoDrivenPort`.

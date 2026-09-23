@@ -48,7 +48,6 @@ import { CollapsibleDescriptionComponent } from '../../shared/components/collaps
             [platforms]="service.platforms()"
             [accounts]="service.accounts()"
             [snapshots]="snapshots()"
-            [expenses]="expenses()"
           />
         </div>
         <div class="space-y-6">
@@ -77,6 +76,10 @@ export class MonthlyViewComponent {
         this.service.currentMonth.set(m);
       }
     }, { allowSignalWrites: true });
+
+    effect(() => {
+      this.service.loadExpensesByPeriod(this.parsedYear(), this.parsedMonth());
+    }, { allowSignalWrites: true });
   }
 
   protected readonly title = computed(() => {
@@ -91,10 +94,9 @@ export class MonthlyViewComponent {
     this.service.getMonthlySummary(this.parsedYear(), this.parsedMonth())
   );
 
-  protected readonly expenses = computed(() => {
-    const snapshotIds = this.snapshots().map(s => s.id);
-    return this.service.expenses().filter(e => snapshotIds.includes(e.snapshotId));
-  });
+  protected readonly expenses = computed(() =>
+    this.service.getExpensesByPeriod(this.parsedYear(), this.parsedMonth())
+  );
 
   protected readonly incomes = computed(() => {
     const snapshotIds = this.snapshots().map(s => s.id);
