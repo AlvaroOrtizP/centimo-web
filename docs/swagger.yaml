@@ -3,7 +3,7 @@ info:
   title: Centimo API
   description: |
     API REST de Centimo.
-    Gestiona el balance mensual de las entidades financieras (B100, Revolut, Mintos, Banco, Urbanitae, Equito).
+    Gestiona el balance mensual de las entidades financieras (B100, Revolut, Mintos, Banco, Urbanitae, Equito, MyInvestor).
   version: 1.0.0
 
 servers:
@@ -27,6 +27,10 @@ tags:
     description: Balance mensual de Equito
   - name: EquitoCompra
     description: Registro de compras de Equito
+  - name: MyInvestorFunds
+    description: Activos de MyInvestor (fondos indexados y roboadvisor)
+  - name: FundBalances
+    description: Balance mensual por activo de MyInvestor
 
 paths:
   /b100-balances:
@@ -711,6 +715,170 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /myinvestor-funds:
+    get:
+      tags: [MyInvestorFunds]
+      operationId: listMyInvestorFunds
+      summary: Listar los activos de MyInvestor (fondos y roboadvisor)
+      responses:
+        '200':
+          description: Lista de activos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MyInvestorFund'
+        '400':
+          description: Error generico 400
+    post:
+      tags: [MyInvestorFunds]
+      operationId: createMyInvestorFund
+      summary: Crear un activo de MyInvestor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MyInvestorFundCreate'
+      responses:
+        '200':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyInvestorFund'
+        '400':
+          description: Error generico 400
+
+  /myinvestor-funds/{id}:
+    parameters:
+      - $ref: '#/components/parameters/MyInvestorFundId'
+    get:
+      tags: [MyInvestorFunds]
+      operationId: getMyInvestorFund
+      summary: Obtener un activo por su id
+      responses:
+        '200':
+          description: Activo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyInvestorFund'
+        '404':
+          description: Error generico 404
+    put:
+      tags: [MyInvestorFunds]
+      operationId: updateMyInvestorFund
+      summary: Actualizar un activo de MyInvestor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MyInvestorFundUpdate'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyInvestorFund'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    delete:
+      tags: [MyInvestorFunds]
+      operationId: deleteMyInvestorFund
+      summary: Eliminar un activo
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          description: Error generico 404
+
+  /fund-balances:
+    get:
+      tags: [FundBalances]
+      operationId: listFundBalances
+      summary: Listar los balances de todos los activos para un mes concreto
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de balances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FundBalance'
+        '400':
+          description: Error generico 400
+    post:
+      tags: [FundBalances]
+      operationId: createFundBalance
+      summary: Crear el balance de un mes para un activo (upsert por fondo, año y mes)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FundBalanceCreate'
+      responses:
+        '200':
+          description: Creado o actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundBalance'
+        '400':
+          description: Error generico 400
+
+  /fund-balances/{id}:
+    parameters:
+      - $ref: '#/components/parameters/FundBalanceId'
+    put:
+      tags: [FundBalances]
+      operationId: updateFundBalance
+      summary: Actualizar balance, intereses, aporte y retirada
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FundBalanceUpdate'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundBalance'
+        '400':
+          description: Error generico 400
+        '404':
+          description: Error generico 404
+    delete:
+      tags: [FundBalances]
+      operationId: deleteFundBalance
+      summary: Eliminar un balance
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          description: Error generico 404
+
 components:
   parameters:
     B100BalanceId:
@@ -756,6 +924,18 @@ components:
       schema:
         type: string
     EquitoCompraId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    MyInvestorFundId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    FundBalanceId:
       name: id
       in: path
       required: true
@@ -1188,6 +1368,126 @@ components:
           format: float
         estado:
           type: string
+
+    # ═══════════ MyInvestorFunds ═══════════
+    MyInvestorFundCreate:
+      type: object
+      required: [id, name, tipo]
+      properties:
+        id:
+          type: string
+          description: Identificador del activo (p. ej. mi-msci-word, mi-robo)
+        code:
+          type: string
+          description: ISIN del fondo (nulo para el roboadvisor)
+        name:
+          type: string
+          description: Nombre del activo
+        tipo:
+          type: string
+          description: Tipo de activo (fondo o roboadvisor)
+
+    MyInvestorFundUpdate:
+      type: object
+      properties:
+        code:
+          type: string
+          description: ISIN del fondo (nulo para el roboadvisor)
+        name:
+          type: string
+          description: Nombre del activo
+        tipo:
+          type: string
+          description: Tipo de activo (fondo o roboadvisor)
+
+    MyInvestorFund:
+      type: object
+      required: [id, name, tipo]
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        tipo:
+          type: string
+
+    # ═══════════ FundBalances ═══════════
+    FundBalanceCreate:
+      type: object
+      required: [fundId, year, month, balance]
+      properties:
+        fundId:
+          type: string
+          description: Activo al que pertenece el balance
+        year:
+          type: integer
+          description: Año del balance
+        month:
+          type: integer
+          description: Mes del balance (1-12)
+        balance:
+          type: number
+          format: float
+          description: Balance del activo a final de mes
+        income:
+          type: number
+          format: float
+          description: Intereses generados en el mes
+        contribution:
+          type: number
+          format: float
+          description: Aporte hecho ese mes
+        expenses:
+          type: number
+          format: float
+          description: Retirada hecha ese mes
+
+    FundBalanceUpdate:
+      type: object
+      properties:
+        balance:
+          type: number
+          format: float
+          description: Balance del activo a final de mes
+        income:
+          type: number
+          format: float
+          description: Intereses generados en el mes
+        contribution:
+          type: number
+          format: float
+          description: Aporte hecho ese mes
+        expenses:
+          type: number
+          format: float
+          description: Retirada hecha ese mes
+
+    FundBalance:
+      type: object
+      required: [id, fundId, year, month]
+      properties:
+        id:
+          type: string
+        fundId:
+          type: string
+        year:
+          type: integer
+        month:
+          type: integer
+        balance:
+          type: number
+          format: float
+        income:
+          type: number
+          format: float
+        contribution:
+          type: number
+          format: float
+        expenses:
+          type: number
+          format: float
 
     # ═══════════ Error ═══════════
     Error:

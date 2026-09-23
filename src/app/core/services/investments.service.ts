@@ -1,17 +1,15 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
-import { HttpErrorResponse } from '@angular/common/http';
+import { catchError, map, tap } from 'rxjs/operators';
 
-// TODO(BACKEND): servicios y modelos eliminados del swagger (solo queda B100). Se reactivarán al ampliar la nueva API.
-// import { CrowdlendingService } from '../../api/generated/api/crowdlending.service';
-// import { CrowdlendingInvestment as CrowdlendingInvestmentApi } from '../../api/generated/model/crowdlendingInvestment';
-// import { CrowdlendingInvestmentCreate } from '../../api/generated/model/crowdlendingInvestmentCreate';
-// import { MyInvestorFundsService } from '../../api/generated/api/myInvestorFunds.service';
-// import { FundBalancesService } from '../../api/generated/api/fundBalances.service';
-// import { MyInvestorFundCreate } from '../../api/generated/model/myInvestorFundCreate';
-// import { FundBalanceCreate } from '../../api/generated/model/fundBalanceCreate';
-// import { FundBalanceUpdate } from '../../api/generated/model/fundBalanceUpdate';
+import { MyInvestorFundsService } from '../../api/generated/api/myInvestorFunds.service';
+import { FundBalancesService } from '../../api/generated/api/fundBalances.service';
+import { MyInvestorFundCreate } from '../../api/generated/model/myInvestorFundCreate';
+import { MyInvestorFundUpdate } from '../../api/generated/model/myInvestorFundUpdate';
+import { MyInvestorFund as MyInvestorFundApi } from '../../api/generated/model/myInvestorFund';
+import { FundBalanceCreate } from '../../api/generated/model/fundBalanceCreate';
+import { FundBalanceUpdate } from '../../api/generated/model/fundBalanceUpdate';
+import { FundBalance as FundBalanceApi } from '../../api/generated/model/fundBalance';
 
 import {
   CrowdlendingInvestment,
@@ -22,65 +20,121 @@ import { LoggerService } from './logger.service';
 
 @Injectable({ providedIn: 'root' })
 export class InvestmentsDataService {
-  // private readonly crowdlendingApi = inject(CrowdlendingService);
-  // private readonly myInvestorFundsApi = inject(MyInvestorFundsService);
-  // private readonly fundBalancesApi = inject(FundBalancesService);
+  private readonly myInvestorFundsApi = inject(MyInvestorFundsService);
+  private readonly fundBalancesApi = inject(FundBalancesService);
   private readonly logger = inject(LoggerService);
 
   readonly crowdlending = signal<CrowdlendingInvestment[]>([]);
   readonly myInvestorFunds = signal<MyInvestorFund[]>([]);
   readonly fundBalances = signal<FundBalance[]>([]);
 
+  private fundsLoaded = false;
+  private readonly loadedBalanceMonths = new Set<string>();
+
   getCrowdlendingByPlatform(platformId: string): CrowdlendingInvestment[] {
     return this.crowdlending().filter(c => c.platformId === platformId);
   }
 
-  /** @deprecated El endpoint /crowdlending ya no se carga al iniciar la web. Solo se usa al entrar datos (entry-form). */
+  /** @deprecated El endpoint /crowdlending ya no se usa. Las plataformas de crowdlending usan sus propias entidades (compras). */
   loadAllCrowdlending(): void {
-    // TODO(BACKEND): llamada a GET /crowdlending comentada.
+    // no-op: crowdlending genérico sin backend.
   }
 
   addCrowdlendingInvestment(investment: CrowdlendingInvestment): Observable<CrowdlendingInvestment> {
-    // TODO(BACKEND): llamada a POST /crowdlending comentada.
     this.crowdlending.update(arr => [...arr, investment]);
     return of(investment);
   }
 
   deleteCrowdlendingInvestment(id: string): Observable<void> {
-    // TODO(BACKEND): llamada a DELETE /crowdlending/{id} comentada.
     this.crowdlending.update(arr => arr.filter(c => c.id !== id));
     return of(undefined);
   }
 
   updateCrowdlendingInvestment(id: string, investment: CrowdlendingInvestment): Observable<CrowdlendingInvestment> {
-    // TODO(BACKEND): llamada a PUT /crowdlending/{id} comentada.
     this.crowdlending.update(arr => arr.map(c => c.id === id ? investment : c));
     return of(investment);
   }
 
-  addMyInvestorFund(fund: MyInvestorFund): Observable<MyInvestorFund> {
-    // TODO(BACKEND): llamada a POST /myinvestor-funds comentada.
-    this.myInvestorFunds.update(arr => [...arr, fund]);
-    return of(fund);
+  loadAllMyInvestorFunds(): void {
+    if (this.fundsLoaded) { return; }
+    this.fundsLoaded = true;
+
+    this.myInvestorFundsApi.listMyInvestorFunds().pipe(
+      map(list => list.map(r => this.mapFundFromApi(r))),
+      catchError((err) => {
+        this.logger.error('InvestmentsData', 'loadAllMyInvestorFunds error', err);
+        return of<MyInvestorFund[]>([]);
+      }),
+    ).subscribe(items => {
+      this.myInvestorFunds.set(items);
+    });
   }
 
-  updateMyInvestorFund(id: string, data: Partial<MyInvestorFund>): void {
-    this.myInvestorFunds.update(arr => arr.map(f => f.id === id ? { ...f, ...data } : f));
+  addMyInvestorFund(fund: MyInvestorFund): Observable<MyInvestorFund> {
+    if (this.myInvestorFunds().some(f => f.id === fund.id)) {
+      return this.updateMyInvestorFund(fund.id, { name: fund.name, code: fund.code, tipo: fund.tipo });
+    }
+
+    const request: MyInvestorFundCreate = {
+      id: fund.id,
+      code: fund.code,
+      name: fund.name,
+      tipo: fund.tipo,
+    };
+
+    return this.myInvestorFundsApi.createMyInvestorFund(request).pipe(
+      map(r => this.mapFundFromApi(r)),
+      tap(item => this.upsertFundLocal(item)),
+      catchError((err) => {
+        this.logger.error('InvestmentsData', 'addMyInvestorFund error', err);
+        throw err;
+      }),
+    );
+  }
+
+  updateMyInvestorFund(id: string, data: Partial<MyInvestorFund>): Observable<MyInvestorFund> {
+    const request: MyInvestorFundUpdate = {
+      code: data.code,
+      name: data.name,
+      tipo: data.tipo,
+    };
+
+    return this.myInvestorFundsApi.updateMyInvestorFund(id, request).pipe(
+      map(r => this.mapFundFromApi(r)),
+      tap(item => this.upsertFundLocal(item)),
+      catchError((err) => {
+        this.logger.error('InvestmentsData', `updateMyInvestorFund(${id}) error`, err);
+        throw err;
+      }),
+    );
   }
 
   deleteMyInvestorFund(id: string): Observable<void> {
-    // TODO(BACKEND): llamada a DELETE /myinvestor-funds/{id} comentada.
-    this.myInvestorFunds.update(arr => arr.filter(f => f.id !== id));
-    return of(undefined);
-  }
-
-  /** @deprecated El endpoint /myinvestor-funds ya no se carga al iniciar la web. Solo se usa al entrar datos (entry-form). */
-  loadAllMyInvestorFunds(): void {
-    // TODO(BACKEND): llamada a GET /myinvestor-funds comentada.
+    return this.myInvestorFundsApi.deleteMyInvestorFund(id).pipe(
+      map(() => {
+        this.myInvestorFunds.update(arr => arr.filter(f => f.id !== id));
+      }),
+      catchError((err) => {
+        this.logger.error('InvestmentsData', `deleteMyInvestorFund(${id}) error`, err);
+        throw err;
+      }),
+    );
   }
 
   loadFundBalances(year: number, month: number): void {
-    // TODO(BACKEND): llamada a GET /fund-balances comentada.
+    const key = InvestmentsDataService.monthKey(year, month);
+    if (this.loadedBalanceMonths.has(key)) { return; }
+    this.loadedBalanceMonths.add(key);
+
+    this.fundBalancesApi.listFundBalances(year, month).pipe(
+      map(list => list.map(r => this.mapBalanceFromApi(r))),
+      catchError((err) => {
+        this.logger.error('InvestmentsData', `loadFundBalances(${key}) error`, err);
+        return of<FundBalance[]>([]);
+      }),
+    ).subscribe(items => {
+      this.upsertBalanceMonthLocal(year, month, items);
+    });
   }
 
   getFundBalancesByMonth(year: number, month: number): FundBalance[] {
@@ -92,27 +146,105 @@ export class InvestmentsDataService {
   }
 
   addFundBalance(balance: FundBalance): Observable<FundBalance> {
-    // TODO(BACKEND): llamada a POST /fund-balances comentada.
-    this.fundBalances.update(arr => [...arr, balance]);
-    return of(balance);
+    const existing = this.getFundBalance(balance.fundId, balance.year, balance.month);
+    if (existing) {
+      return this.updateFundBalance(existing.id, balance);
+    }
+
+    const request: FundBalanceCreate = {
+      fundId: balance.fundId,
+      year: balance.year,
+      month: balance.month,
+      balance: balance.balance ?? 0,
+      income: balance.income,
+      contribution: balance.contribution,
+      expenses: balance.expenses,
+    };
+
+    return this.fundBalancesApi.createFundBalance(request).pipe(
+      map(r => this.mapBalanceFromApi(r)),
+      tap(item => this.upsertBalanceLocal(item)),
+      catchError((err) => {
+        this.logger.error('InvestmentsData', 'addFundBalance error', err);
+        throw err;
+      }),
+    );
   }
 
   updateFundBalance(id: string, data: Partial<FundBalance>): Observable<FundBalance> {
-    // TODO(BACKEND): llamada a PUT /fund-balances/{id} comentada.
-    const existing = this.fundBalances().find(b => b.id === id);
-    const updated: FundBalance = Object.assign({}, existing, data) as FundBalance;
-    this.fundBalances.update(arr => arr.map(b => b.id === id ? updated : b));
-    return of(updated);
+    const request: FundBalanceUpdate = {
+      balance: data.balance,
+      income: data.income,
+      contribution: data.contribution,
+      expenses: data.expenses,
+    };
+
+    return this.fundBalancesApi.updateFundBalance(id, request).pipe(
+      map(r => this.mapBalanceFromApi(r)),
+      tap(item => this.upsertBalanceLocal(item)),
+      catchError((err) => {
+        this.logger.error('InvestmentsData', `updateFundBalance(${id}) error`, err);
+        throw err;
+      }),
+    );
   }
 
   deleteFundBalance(id: string): Observable<void> {
-    // TODO(BACKEND): llamada a DELETE /fund-balances/{id} comentada.
-    this.fundBalances.update(arr => arr.filter(b => b.id !== id));
-    return of(undefined);
+    return this.fundBalancesApi.deleteFundBalance(id).pipe(
+      map(() => {
+        this.fundBalances.update(arr => arr.filter(b => b.id !== id));
+      }),
+      catchError((err) => {
+        this.logger.error('InvestmentsData', `deleteFundBalance(${id}) error`, err);
+        throw err;
+      }),
+    );
   }
 
-  // TODO(BACKEND): pendiente de la nueva API.
-  // private mapFromApi(api: CrowdlendingInvestmentApi): CrowdlendingInvestment {
-  //   ...
-  // }
+  private static monthKey(year: number, month: number): string {
+    return `${year}-${month}`;
+  }
+
+  private upsertBalanceMonthLocal(year: number, month: number, items: FundBalance[]): void {
+    this.fundBalances.update(current => {
+      const withoutMonth = current.filter(b => !(b.year === year && b.month === month));
+      return [...withoutMonth, ...items];
+    });
+  }
+
+  private upsertBalanceLocal(item: FundBalance): void {
+    this.fundBalances.update(current => {
+      const withoutPrevious = current.filter(b => b.id !== item.id);
+      return [...withoutPrevious, item];
+    });
+  }
+
+  private upsertFundLocal(fund: MyInvestorFund): void {
+    this.myInvestorFunds.update(current => {
+      const withoutPrevious = current.filter(f => f.id !== fund.id);
+      return [...withoutPrevious, fund];
+    });
+  }
+
+  private mapFundFromApi(api: MyInvestorFundApi): MyInvestorFund {
+    return {
+      id: api.id,
+      code: api.code,
+      name: api.name,
+      tipo: api.tipo as MyInvestorFund['tipo'],
+    };
+  }
+
+  private mapBalanceFromApi(api: FundBalanceApi): FundBalance {
+    return {
+      id: api.id,
+      fundId: api.fundId,
+      year: api.year,
+      month: api.month,
+      balance: api.balance ?? 0,
+      income: api.income,
+      contribution: api.contribution,
+      expenses: api.expenses,
+    };
+  }
 }

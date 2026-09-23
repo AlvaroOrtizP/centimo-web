@@ -389,7 +389,7 @@ export class FinancialDataService {
   }
 
   getTotalFundBalanceForMonth(year: number, month: number): number {
-    return this.investmentsData.getFundBalancesByMonth(year, month).reduce((sum, b) => sum + b.balance, 0);
+    return this.investmentsData.getFundBalancesByMonth(year, month).reduce((sum, b) => sum + (b.balance ?? 0), 0);
   }
 
   addFundBalance(balance: FundBalance): Observable<FundBalance> {
