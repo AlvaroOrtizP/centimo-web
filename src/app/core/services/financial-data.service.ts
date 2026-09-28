@@ -17,6 +17,11 @@ import { UrbanitaeBalanceDataService } from './urbanitae-balance.service';
 import { UrbanitaeCompraDataService } from './urbanitae-compra.service';
 import { EquitoBalanceDataService } from './equito-balance.service';
 import { EquitoCompraDataService } from './equito-compra.service';
+import { DashboardDataService } from './dashboard-data.service';
+import { DashboardCategoria } from '../../api/generated/model/dashboardCategoria';
+import { DashboardCategoriaBalance } from '../../api/generated/model/dashboardCategoriaBalance';
+import { DashboardResponse } from '../../api/generated/model/dashboardResponse';
+import { DashboardSerieBalance } from '../../api/generated/model/dashboardSerieBalance';
 import { roundMoney } from '../utils/money.util';
 
 import {
@@ -79,6 +84,7 @@ export class FinancialDataService {
   private readonly urbanitaeCompraData = inject(UrbanitaeCompraDataService);
   private readonly equitoBalanceData = inject(EquitoBalanceDataService);
   private readonly equitoCompraData = inject(EquitoCompraDataService);
+  private readonly dashboardData = inject(DashboardDataService);
 
   readonly platforms = computed(() => this.platformsData.platforms());
   readonly accounts = computed(() => this.platformsData.accounts());
@@ -187,6 +193,30 @@ export class FinancialDataService {
 
   loadPlatformMonthlyBalances(year: number, month: number, months: number, force = false): void {
     this.summaryData.loadPlatformMonthlyBalances(year, month, months, force);
+  }
+
+  getDashboardBalance(mes: string): DashboardResponse | undefined {
+    return this.dashboardData.getBalance(mes);
+  }
+
+  loadDashboardBalance(mes: string, force = false): void {
+    this.dashboardData.loadBalance(mes, force);
+  }
+
+  getDashboardSerie(entidad: string | undefined, mes: string, mesesAtras?: number): DashboardSerieBalance[] | undefined {
+    return this.dashboardData.getSerie(entidad, mes, mesesAtras);
+  }
+
+  loadDashboardSerie(entidad: string | undefined, mes: string, mesesAtras?: number, force = false): void {
+    this.dashboardData.loadSerie(entidad, mes, mesesAtras, force);
+  }
+
+  getDashboardCategoriaSerie(categoria: DashboardCategoria, mes: string, mesesAtras?: number): DashboardCategoriaBalance[] | undefined {
+    return this.dashboardData.getSerieCategoria(categoria, mes, mesesAtras);
+  }
+
+  loadDashboardCategoriaSerie(categoria: DashboardCategoria, mes: string, mesesAtras?: number, force = false): void {
+    this.dashboardData.loadSerieCategoria(categoria, mes, mesesAtras, force);
   }
 
   fetchNominaFromBackend(year: number, month: number): Observable<any | null> {

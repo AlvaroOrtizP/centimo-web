@@ -33,6 +33,8 @@ tags:
     description: Activos de MyInvestor (fondos indexados y roboadvisor)
   - name: FundBalances
     description: Balance mensual por activo de MyInvestor
+  - name: Dashboard
+    description: Balance consolidado del mes y series de balances por entidad o categoría
 
 paths:
   /b100-balances:
@@ -975,6 +977,123 @@ paths:
         '404':
           description: Error generico 404
 
+  /dashboard/balances:
+    get:
+      tags: [Dashboard]
+      operationId: getDashboardBalance
+      summary: Balance mensual de todas las entidades con su total
+      description: |
+        Devuelve una fila por entidad financiera con su balance y aporte del mes consultado,
+        más el total agregado. Las entidades sin registro para ese mes no aparecen.
+      parameters:
+        - name: mes
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Fecha mes-año (YYYY-MM)
+      responses:
+        '200':
+          description: Balance del mes con el detalle por entidad
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+        '400':
+          description: Error generico 400
+
+  /dashboard/balances/serie:
+    get:
+      tags: [Dashboard]
+      operationId: listDashboardBalanceSerie
+      summary: Serie mensual de balances de una entidad
+      description: |
+        Devuelve una fila por mes con el balance y el aporte de la entidad indicada.
+        El rango va del mes recibido (el más reciente) hacia atrás, con mesesAtras meses
+        anteriores, por lo que devuelve mesesAtras + 1 filas en orden ascendente.
+        Los meses sin registro devuelven balance 0 y aporte 0.
+        Si no se indica entidad, cada fila es el total agregado de todas las entidades
+        (gastos excluido).
+      parameters:
+        - name: mes
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Fecha mes-año (YYYY-MM) del mes más reciente de la serie
+        - name: entidad
+          in: query
+          required: false
+          schema:
+            type: string
+          description: |
+            Código de entidad (p. ej. revolut, bbva, caixabank, b100, mintos, equito,
+            urbanitae, myinvestor, gastos). Si se omite se devuelve el total agregado.
+        - name: mesesAtras
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 24
+            default: 6
+          description: Meses anteriores a incluir (por defecto 6)
+      responses:
+        '200':
+          description: Serie mensual de la entidad
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DashboardSerieBalance'
+        '400':
+          description: Error generico 400
+
+  /dashboard/categorias/serie:
+    get:
+      tags: [Dashboard]
+      operationId: listDashboardCategoriaSerie
+      summary: Serie mensual de balances de las entidades de una categoría
+      description: |
+        Devuelve el detalle por entidad y mes de las entidades que pertenecen a la categoría
+        indicada. Liquidez: revolut, bbva, caixabank y b100. Fija: mintos, equito y urbanitae.
+        Variable: myinvestor, crypto y acciones. Todas: las tres categorías (gastos excluido).
+        El número de filas es entidades de la categoría x (mesesAtras + 1) y el rango va del
+        mes recibido hacia atrás con mesesAtras meses anteriores, en orden ascendente.
+      parameters:
+        - name: categoria
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/DashboardCategoria'
+        - name: mes
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Fecha mes-año (YYYY-MM) del mes más reciente de la serie
+        - name: mesesAtras
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 24
+            default: 6
+          description: Meses anteriores a incluir (por defecto 6)
+      responses:
+        '200':
+          description: Serie mensual por entidad de la categoría
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DashboardCategoriaBalance'
+        '400':
+          description: Error generico 400
+
 components:
   parameters:
     B100BalanceId:
@@ -1646,6 +1765,70 @@ components:
           format: date
         description:
           type: string
+
+    # ═══════════ Dashboard ═══════════
+    DashboardCategoria:
+      type: string
+      description: Categoría de activo a la que pertenece la entidad
+      enum: [Liquidez, Fija, Variable, Todas]
+      example: Liquidez
+
+    DashboardEntityBalance:
+      type: object
+      required: [codigo, nombre, balance, aporte]
+      properties:
+        codigo:
+          type: string
+        nombre:
+          type: string
+        balance:
+          type: number
+          format: float
+        aporte:
+          type: number
+          format: float
+
+    DashboardResponse:
+      type: object
+      required: [mes, total, entidades]
+      properties:
+        mes:
+          type: string
+        total:
+          type: number
+          format: float
+        entidades:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardEntityBalance'
+
+    DashboardSerieBalance:
+      type: object
+      required: [mes, balance, aporte]
+      properties:
+        mes:
+          type: string
+        balance:
+          type: number
+          format: float
+        aporte:
+          type: number
+          format: float
+
+    DashboardCategoriaBalance:
+      type: object
+      required: [mes, codigo, balance, aporte]
+      properties:
+        mes:
+          type: string
+        codigo:
+          type: string
+        balance:
+          type: number
+          format: float
+        aporte:
+          type: number
+          format: float
 
     # ═══════════ Error ═══════════
     Error:
