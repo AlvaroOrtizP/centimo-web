@@ -16,6 +16,7 @@ export * from './mintos-annual-interest';
 export * from './mintos-balance';
 export * from './monthly-summary';
 export * from './myinvestor-fund';
+export * from './nomina';
 export * from './platform';
 export * from './platform-type';
 export * from './platform-monthly-balance';

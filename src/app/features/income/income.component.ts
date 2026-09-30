@@ -21,23 +21,23 @@ import { CollapsibleDescriptionComponent } from '../../shared/components/collaps
       <div class="border-b border-gray-200">
         <nav aria-label="Navegación de ingresos" class="-mb-px flex gap-4 overflow-x-auto sm:gap-6">
           <button
-            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium text-orange-600 transition-colors"
-            [class.border-orange-500]="activeTab() === 'income'"
-            [class.text-orange-700]="activeTab() === 'income'"
+            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium text-yellow-600 transition-colors"
+            [class.border-yellow-500]="activeTab() === 'income'"
+            [class.text-yellow-700]="activeTab() === 'income'"
             [class.border-transparent]="activeTab() !== 'income'"
             (click)="activeTab.set('income')"
           >Distribución Mensual</button>
           <button
-            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium text-orange-600 transition-colors"
-            [class.border-orange-500]="activeTab() === 'config'"
-            [class.text-orange-700]="activeTab() === 'config'"
+            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium text-yellow-600 transition-colors"
+            [class.border-yellow-500]="activeTab() === 'config'"
+            [class.text-yellow-700]="activeTab() === 'config'"
             [class.border-transparent]="activeTab() !== 'config'"
             (click)="activeTab.set('config')"
           >Planificación</button>
           <button
-            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium text-orange-600 transition-colors"
-            [class.border-orange-500]="activeTab() === 'commitments'"
-            [class.text-orange-700]="activeTab() === 'commitments'"
+            class="shrink-0 whitespace-nowrap border-b-2 px-1 py-2 text-sm font-medium text-yellow-600 transition-colors"
+            [class.border-yellow-500]="activeTab() === 'commitments'"
+            [class.text-yellow-700]="activeTab() === 'commitments'"
             [class.border-transparent]="activeTab() !== 'commitments'"
             (click)="activeTab.set('commitments')"
           >Compromisos</button>

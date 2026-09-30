@@ -35,6 +35,8 @@ tags:
     description: Balance mensual por activo de MyInvestor
   - name: Dashboard
     description: Balance consolidado del mes y series de balances por entidad o categoría
+  - name: Nomina
+    description: Ingreso mensual recibido (nómina)
 
 paths:
   /b100-balances:
@@ -1094,6 +1096,83 @@ paths:
         '400':
           description: Error generico 400
 
+  /nomina:
+    get:
+      tags: [Nomina]
+      operationId: getNomina
+      summary: Obtener el ingreso del mes (nómina)
+      parameters:
+        - name: mes
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Mes del ingreso (YYYY-MM)
+      responses:
+        '200':
+          description: Ingreso del mes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NominaResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags: [Nomina]
+      operationId: createNomina
+      summary: Crear o actualizar el ingreso del mes (upsert por mes)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NominaRequest'
+      responses:
+        '201':
+          description: Creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NominaResponse'
+        '400':
+          description: Error generico 400
+
+  /nomina/{mes}:
+    parameters:
+      - $ref: '#/components/parameters/NominaMes'
+    put:
+      tags: [Nomina]
+      operationId: updateNomina
+      summary: Actualizar el ingreso de un mes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NominaRequest'
+      responses:
+        '200':
+          description: Actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NominaResponse'
+        '400':
+          description: Error generico 400
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Nomina]
+      operationId: deleteNomina
+      summary: Eliminar el ingreso de un mes
+      responses:
+        '204':
+          description: Eliminado
+        '404':
+          $ref: '#/components/responses/NotFound'
+
 components:
   parameters:
     B100BalanceId:
@@ -1158,6 +1237,12 @@ components:
         type: string
     ExpenseId:
       name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    NominaMes:
+      name: mes
       in: path
       required: true
       schema:
@@ -1282,6 +1367,34 @@ components:
         dineroFinal:
           type: number
           format: float
+
+    # ═══════════ Nomina ═══════════
+    NominaRequest:
+      type: object
+      required: [mes, cantidad]
+      properties:
+        mes:
+          type: string
+          description: Mes del ingreso (YYYY-MM)
+        cantidad:
+          type: number
+          format: float
+          description: Ingreso neto recibido ese mes (nómina)
+        nota:
+          type: string
+          description: Nota opcional (p. ej. el concepto)
+
+    NominaResponse:
+      type: object
+      required: [mes, cantidad]
+      properties:
+        mes:
+          type: string
+        cantidad:
+          type: number
+          format: float
+        nota:
+          type: string
 
     # ═══════════ MintosInteresesAnuales ═══════════
     MintosInterestAnnualCreate:

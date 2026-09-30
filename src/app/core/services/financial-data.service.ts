@@ -5,6 +5,7 @@ import { PlatformsDataService } from './platforms.service';
 import { SnapshotsDataService } from './snapshots.service';
 import { ExpensesDataService } from './expenses.service';
 import { IncomesDataService } from './incomes.service';
+import { NominaDataService } from './nomina.service';
 import { SalaryDataService } from './salary.service';
 import { InvestmentsDataService } from './investments.service';
 import { SummaryDataService } from './summary.service';
@@ -35,6 +36,7 @@ import {
   Expense,
   IncomeSource,
   MonthlySummary,
+  Nomina,
   SalaryAllocation,
   Commitment,
   PlatformMonthlyBalance,
@@ -62,8 +64,6 @@ import { EXPENSES_PLATFORM_ID } from '../constants/platform.constants';
 
 // TODO(BACKEND): modelos eliminados del swagger (solo queda B100). Se reactivarán al ampliar la nueva API.
 // import { SnapshotResponse } from '../../api/generated/model/snapshotResponse';
-// import { NominaCreate } from '../../api/generated/model/nominaCreate';
-// import { NominaResponse } from '../../api/generated/model/nominaResponse';
 // import { ExpenseUpdate } from '../../api/generated/model/expenseUpdate';
 
 @Injectable({ providedIn: 'root' })
@@ -72,6 +72,7 @@ export class FinancialDataService {
   private readonly snapshotsData = inject(SnapshotsDataService);
   private readonly expensesData = inject(ExpensesDataService);
   private readonly incomesData = inject(IncomesDataService);
+  private readonly nominaData = inject(NominaDataService);
   private readonly salaryData = inject(SalaryDataService);
   private readonly investmentsData = inject(InvestmentsDataService);
   private readonly summaryData = inject(SummaryDataService);
@@ -219,12 +220,20 @@ export class FinancialDataService {
     this.dashboardData.loadSerieCategoria(categoria, mes, mesesAtras, force);
   }
 
-  fetchNominaFromBackend(year: number, month: number): Observable<any | null> {
-    return this.incomesData.fetchNominaFromBackend(year, month);
+  getNomina(year: number, month: number): Nomina | undefined {
+    return this.nominaData.getNomina(year, month);
   }
 
-  createNomina(nomina: any): Observable<any | null> {
-    return this.incomesData.createNomina(nomina);
+  loadNomina(year: number, month: number, force = false): Observable<Nomina | null> {
+    return this.nominaData.loadNomina(year, month, force);
+  }
+
+  saveNomina(year: number, month: number, cantidad: number, nota?: string): Observable<Nomina> {
+    return this.nominaData.saveNomina(year, month, cantidad, nota);
+  }
+
+  deleteNomina(year: number, month: number): Observable<void> {
+    return this.nominaData.deleteNomina(year, month);
   }
 
   getCrowdlendingByPlatform(platformId: string): CrowdlendingInvestment[] {
