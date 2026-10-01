@@ -1,4 +1,5 @@
 export { FinancialDataService } from './financial-data.service';
+export { DashboardDataService } from './dashboard-data.service';
 export { PlatformsDataService } from './platforms.service';
 export { SnapshotsDataService } from './snapshots.service';
 export { ExpensesDataService } from './expenses.service';

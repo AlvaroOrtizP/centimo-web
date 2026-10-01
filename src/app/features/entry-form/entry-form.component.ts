@@ -1,5 +1,7 @@
-import { Component, inject, computed, signal, effect } from '@angular/core';
+import { Component, inject, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
 import { YEARS } from '../../core/constants/date.constants';
@@ -21,6 +23,7 @@ interface TabConfig {
   label: string;
   color: string;
   done: boolean;
+  pending: boolean;
 }
 
 @Component({
@@ -61,20 +64,22 @@ interface TabConfig {
             @for (tab of tabs; track tab.key) {
               <button
                 class="relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all duration-200"
-                [style.background-color]="activeTab() === tab.key ? tab.color : 'transparent'"
-                [class.text-white]="activeTab() === tab.key"
-                [class.text-gray-500]="activeTab() !== tab.key"
-                [class.hover:text-gray-700]="activeTab() !== tab.key"
-                [class.hover:bg-gray-100]="activeTab() !== tab.key"
+                [class.text-orange-700]="tab.pending"
+                [class.hover:text-orange-800]="tab.pending"
+                [class.text-white]="!tab.pending && activeTab() === tab.key"
+                [class.text-gray-500]="!tab.pending && activeTab() !== tab.key"
+                [class.hover:text-gray-700]="!tab.pending && activeTab() !== tab.key"
+                [class.hover:bg-gray-100]="!tab.pending && activeTab() !== tab.key"
+                [style.background-color]="tab.pending ? (activeTab() === tab.key ? ORANGE_BG_ACTIVE : ORANGE_BG) : (activeTab() === tab.key ? tab.color : 'transparent')"
                 [class.shadow-sm]="activeTab() === tab.key"
-                (click)="activeTab.set(tab.key)"
+                (click)="selectTab(tab.key)"
               >
                 <span
                   class="flex h-5 w-5 items-center justify-center rounded-full"
-                  [style.background-color]="activeTab() === tab.key ? 'rgba(255,255,255,0.25)' : tab.color + '20'"
+                  [style.background-color]="tab.pending ? 'rgba(249,115,22,0.15)' : (activeTab() === tab.key ? 'rgba(255,255,255,0.25)' : tab.color + '20')"
                 >
                   <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
-                    [style.color]="activeTab() === tab.key ? '#fff' : tab.color"
+                    [style.color]="tab.pending ? '#c2410c' : (activeTab() === tab.key ? '#fff' : tab.color)"
                   >
                     @if (tab.key === 'banks') {
                       <rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>
@@ -117,7 +122,7 @@ interface TabConfig {
             }
             @case ('b100') {
               <div class="mb-3">
-                <app-collapsible-description description="Actualiza saldos e intereses de tus cuentas B100 (corriente, ahorro, inversión). Los intereses se suman automáticamente al balance." storageKey="desc-entry-b100" />
+                <app-collapsible-description description="Actualiza balance, aportes y Hacienda de tus cuentas B100 (Save y Health) cada mes." storageKey="desc-entry-b100" />
               </div>
               <app-b100-form [accounts]="allAccounts()" />
             }
@@ -137,7 +142,7 @@ interface TabConfig {
               <div class="mb-3">
                 <app-collapsible-description description="Registra el saldo e intereses de tus préstamos en Equito. Los intereses se suman al balance de la plataforma." storageKey="desc-entry-equito" />
               </div>
-              <app-equito-form [accounts]="allAccounts()" />
+              <app-equito-form />
             }
             @case ('urbanitae') {
               <div class="mb-3">
@@ -157,7 +162,11 @@ interface TabConfig {
 })
 export class EntryFormComponent {
   protected readonly service = inject(FinancialDataService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   protected readonly activeTab = signal<Tab>('banks');
+  protected readonly ORANGE_BG = 'rgb(255 237 213)';
+  protected readonly ORANGE_BG_ACTIVE = 'rgb(254 215 170)';
 
   constructor() {
     // Por defecto el periodo es el año actual al abrir "Entrada de datos".
@@ -168,21 +177,29 @@ export class EntryFormComponent {
     // de datos, así que se cargan aquí en lugar de en el resolver global.
     this.service.loadAllCrowdlending();
     this.service.loadAllMyInvestorFunds();
+
+    // Restaura la pestaña activa desde la URL (?tab=b100) al recargar.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe(params => {
+      const tab = params.get('tab') as Tab | null;
+      if (tab && this.tabs.some(t => t.key === tab)) {
+        this.activeTab.set(tab);
+      }
+    });
   }
 
   protected readonly tabs: TabConfig[] = [
-    { key: 'banks', label: 'Bancos', color: '#004481', done: true },
-    { key: 'revolut', label: 'Revolut', color: '#EB008B', done: true },
-    { key: 'b100', label: 'B100', color: '#6C3FD1', done: true },
-    { key: 'myinvestor', label: 'MyInvestor', color: '#00A3E0', done: true },
-    { key: 'mintos', label: 'Mintos', color: '#00BFA5', done: true },
-    { key: 'equito', label: 'Equito', color: '#FF6B35', done: true },
-    { key: 'urbanitae', label: 'Urbanitae', color: '#E63946', done: true },
+    { key: 'banks', label: 'Bancos', color: '#004481', done: true, pending: false },
+    { key: 'revolut', label: 'Revolut', color: '#EB008B', done: true, pending: false },
+    { key: 'b100', label: 'B100', color: '#6C3FD1', done: true, pending: false },
+    { key: 'myinvestor', label: 'MyInvestor', color: '#00A3E0', done: true, pending: false },
+    { key: 'mintos', label: 'Mintos', color: '#00BFA5', done: true, pending: false },
+    { key: 'equito', label: 'Equito', color: '#FF6B35', done: true, pending: false },
+    { key: 'urbanitae', label: 'Urbanitae', color: '#E63946', done: true, pending: false },
   ];
 
   protected readonly activeTabColor = computed(() => {
-    const tab = this.tabs.find(t => t.key === this.activeTab());
-    return tab?.color ?? '#6b7280';
+    const active = this.tabs.find(t => t.key === this.activeTab());
+    return active && !active.pending ? active.color : '#f97316';
   });
 
   protected readonly allAccounts = computed(() => this.service.accounts());
@@ -192,6 +209,11 @@ export class EntryFormComponent {
     this.service.snapshots().forEach(s => set.add(s.year));
     return [...set].sort((a, b) => b - a);
   });
+
+  protected selectTab(tab: Tab): void {
+    this.activeTab.set(tab);
+    this.router.navigate([], { queryParams: { tab }, queryParamsHandling: 'merge', replaceUrl: true });
+  }
 
   protected onYearChange(year: number): void {
     this.service.currentYear.set(year);

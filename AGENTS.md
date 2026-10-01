@@ -50,7 +50,7 @@ ng generate enum models/status
 | `/platform/:id` | `PlatformDetailComponent` |
 | `/trends` | `TrendsComponent` |
 | `/trades` | `TradeLogComponent` |
-| `/entry/:platformId` | `EntryFormComponent` |
+| `/entry` | `EntryFormComponent` |
 
 ### Data Layer
 

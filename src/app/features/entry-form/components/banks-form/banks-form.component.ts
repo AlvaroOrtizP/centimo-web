@@ -1,21 +1,47 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, WritableSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
-import { MONTH_OPTIONS, YEARS, getMonthLabel } from '../../../../core/constants/date.constants';
+import { MONTH_OPTIONS } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
-import { MonthlySnapshot } from '../../../../models/monthly-snapshot';
-import { createSnapshotField, resetSnapshotFields } from '../../snapshot-field.helper';
-import { SnapshotHistoryTableComponent } from '../snapshot-history-table/snapshot-history-table.component';
+import { BancoBalance, BancoBalanceSave } from '../../../../models';
+import { BancoHistoryTableComponent } from '../banco-history-table/banco-history-table.component';
 import { roundMoney } from '../../../../core/utils/money.util';
+
+interface BancoState {
+  entidad: string;
+  label: string;
+  color: string;
+  focus: string;
+  editing: WritableSignal<BancoBalance | null>;
+  balance: WritableSignal<number | null>;
+  aporte: WritableSignal<number | null>;
+  saved: WritableSignal<boolean>;
+}
+
+const BBVA_ENTIDAD = 'bbva';
+const CAIXA_ENTIDAD = 'caixa';
+
+function createBancoState(entidad: string, label: string, color: string, focus: string): BancoState {
+  return {
+    entidad,
+    label,
+    color,
+    focus,
+    editing: signal<BancoBalance | null>(null),
+    balance: signal<number | null>(null),
+    aporte: signal<number | null>(null),
+    saved: signal(false),
+  };
+}
 
 @Component({
   selector: 'app-banks-form',
   standalone: true,
-  imports: [FormsModule, SnapshotHistoryTableComponent],
+  imports: [FormsModule, BancoHistoryTableComponent],
   template: `
     <div class="space-y-4">
-      <!-- Selector mes/año -->
+      <!-- Selector mes -->
       <div class="flex gap-2">
         <select
           aria-label="Mes"
@@ -24,119 +50,76 @@ import { roundMoney } from '../../../../core/utils/money.util';
           (ngModelChange)="localMonth.set($event)"
         >
           @for (m of months; track m.value) {
-            <option [value]="m.value">{{ m.label }}</option>
+            <option [ngValue]="m.value">{{ m.label }}</option>
           }
         </select>
       </div>
 
-      <!-- BBVA -->
-      <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h3 class="mb-4 text-sm font-semibold text-gray-900">BBVA — Cuenta Nómina</h3>
+      @for (banco of bancoStates; track banco.entidad) {
+        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <h3 class="mb-4 text-sm font-semibold text-gray-900">{{ banco.label }}</h3>
 
-        @if (previousBBVABalance() !== null) {
-          <div class="mb-4 rounded-lg bg-gray-50 px-4 py-2 text-sm text-gray-600">
-            Balance mes anterior: <strong>{{ previousBBVABalance()!.toLocaleString('es-ES') }} €</strong>
+          @if (previousBancoBalance(banco) !== null) {
+            <div class="mb-4 rounded-lg bg-gray-50 px-4 py-2 text-sm text-gray-600">
+              Balance mes anterior: <strong>{{ previousBancoBalance(banco)!.toLocaleString('es-ES') }} €</strong>
+            </div>
+          }
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
+              <input
+                type="number"
+                step="any"
+                placeholder="ej: 4000"
+                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm {{ banco.focus }}"
+                [ngModel]="banco.balance()"
+                (ngModelChange)="banco.balance.set($event)"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Aportación este mes (€)</label>
+              <input
+                type="number"
+                step="any"
+                placeholder="ej: 100"
+                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm {{ banco.focus }}"
+                [ngModel]="banco.aporte()"
+                (ngModelChange)="banco.aporte.set($event)"
+              />
+            </div>
+          </div>
+
+          <div class="mt-4 flex items-center gap-3">
+            <button
+              class="rounded-lg px-5 py-2 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:opacity-50"
+              [style.background-color]="banco.color"
+              [disabled]="banco.balance() == null"
+              (click)="save(banco)"
+            >{{ banco.editing() ? 'Actualizar balance' : 'Guardar' }}</button>
+            @if (banco.editing()) {
+              <button
+                class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                (click)="cancelEdit(banco)"
+              >Cancelar</button>
+            }
+            @if (banco.saved()) {
+              <span class="text-sm text-emerald-600">✓ Guardado</span>
+            }
+          </div>
+        </div>
+
+        <!-- Historial -->
+        @if (bancoHistory(banco).length > 0) {
+          <div>
+            <app-banco-history-table
+              [balances]="bancoHistory(banco)"
+              [headingTooltip]="'Balance y aportación de ' + banco.label"
+              (edit)="onEdit(banco, $event)"
+              (delete)="onDelete($event)"
+            />
           </div>
         }
-
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
-            <input
-              type="number"
-              step="any"
-              placeholder="ej: 4000"
-              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-800 focus:outline-none focus:ring-1 focus:ring-blue-800"
-              [ngModel]="bbvaBalance.display()"
-              (ngModelChange)="bbvaBalance.userValue.set($event)"
-            />
-            <p class="mt-0.5 text-xs text-gray-400">Valor total en BBVA a 31 del mes</p>
-          </div>
-        </div>
-
-        <div class="mt-4 flex items-center gap-3">
-          <button
-            class="rounded-lg bg-[#004481] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#003366] disabled:opacity-50"
-            [disabled]="!bbvaBalance.display()"
-            (click)="saveBBVA()"
-          >{{ editingBBVA() ? 'Actualizar balance' : (hasExistingBBVA() ? 'Editar balance' : 'Guardar') }}</button>
-          @if (editingBBVA()) {
-            <button
-              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              (click)="cancelEditBBVA()"
-            >Cancelar</button>
-          }
-          @if (savedBBVA()) {
-            <span class="text-sm text-emerald-600">✓ Guardado</span>
-          }
-        </div>
-      </div>
-
-      <!-- CaixaBank -->
-      <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-        <h3 class="mb-4 text-sm font-semibold text-gray-900">CaixaBank — Cuenta alternativa</h3>
-
-        @if (previousCaixaBalance() !== null) {
-          <div class="mb-4 rounded-lg bg-gray-50 px-4 py-2 text-sm text-gray-600">
-            Balance mes anterior: <strong>{{ previousCaixaBalance()!.toLocaleString('es-ES') }} €</strong>
-          </div>
-        }
-
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Balance a final de mes (€)</label>
-            <input
-              type="number"
-              step="any"
-              placeholder="ej: 3000"
-              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-600 focus:outline-none focus:ring-1 focus:ring-orange-600"
-              [ngModel]="caixaBalance.display()"
-              (ngModelChange)="caixaBalance.userValue.set($event)"
-            />
-            <p class="mt-0.5 text-xs text-gray-400">Valor total en CaixaBank a 31 del mes</p>
-          </div>
-        </div>
-
-        <div class="mt-4 flex items-center gap-3">
-          <button
-            class="rounded-lg bg-[#E65100] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#BF360C] disabled:opacity-50"
-            [disabled]="!caixaBalance.display()"
-            (click)="saveCaixa()"
-          >{{ editingCaixa() ? 'Actualizar balance' : (hasExistingCaixa() ? 'Editar balance' : 'Guardar') }}</button>
-          @if (editingCaixa()) {
-            <button
-              class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              (click)="cancelEditCaixa()"
-            >Cancelar</button>
-          }
-          @if (savedCaixa()) {
-            <span class="text-sm text-emerald-600">✓ Guardado</span>
-          }
-        </div>
-      </div>
-
-      <!-- Historial BBVA -->
-      @if (historyBBVA().length > 0) {
-        <div>
-          <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Historial BBVA</p>
-          <app-snapshot-history-table
-            [snapshots]="historyBBVA()"
-            (edit)="onEditBBVA($event)"
-            (delete)="onDeleteBBVA($event)"
-          />
-        </div>
-      }
-
-      <!-- Historial CaixaBank -->
-      @if (historyCaixa().length > 0) {
-        <div>
-          <p class="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500">Historial CaixaBank</p>
-          <app-snapshot-history-table
-            [snapshots]="historyCaixa()"
-            (edit)="onEditCaixa($event)"
-            (delete)="onDeleteCaixa($event)"
-          />
-        </div>
       }
     </div>
   `,
@@ -146,140 +129,111 @@ export class BanksFormComponent {
 
   readonly accounts = input.required<Account[]>();
 
-  private readonly BBVA_ID = 'bbva-checking';
-  private readonly CAIXA_ID = 'caixa-main';
-
   protected readonly months = MONTH_OPTIONS;
-  protected readonly years = YEARS;
-  protected readonly getMonthLabel = getMonthLabel;
 
   protected readonly localMonth = signal(this.service.currentMonth());
   protected readonly localYear = computed(() => this.service.currentYear());
 
-  protected readonly editingBBVA = signal<MonthlySnapshot | null>(null);
-  protected readonly editingCaixa = signal<MonthlySnapshot | null>(null);
-
-  protected readonly bbvaBalance = createSnapshotField(this.service, this.BBVA_ID, () => this.localYear(), () => this.localMonth());
-  protected readonly savedBBVA = signal(false);
-
-  protected readonly caixaBalance = createSnapshotField(this.service, this.CAIXA_ID, () => this.localYear(), () => this.localMonth());
-  protected readonly savedCaixa = signal(false);
-
-  protected readonly previousBBVABalance = computed(() => {
-    const snapshots = this.service.getSnapshotsByAccount(this.BBVA_ID);
-    let prevMonth = this.localMonth() - 1;
-    let prevYear = this.localYear();
-    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
-    const prev = snapshots.find(s => s.year === prevYear && s.month === prevMonth);
-    return prev?.balance ?? null;
-  });
-
-  protected readonly previousCaixaBalance = computed(() => {
-    const snapshots = this.service.getSnapshotsByAccount(this.CAIXA_ID);
-    let prevMonth = this.localMonth() - 1;
-    let prevYear = this.localYear();
-    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
-    const prev = snapshots.find(s => s.year === prevYear && s.month === prevMonth);
-    return prev?.balance ?? null;
-  });
-
-  protected readonly hasExistingBBVA = computed(() =>
-    this.service.getSnapshotsByAccount(this.BBVA_ID)
-      .some(s => s.year === this.localYear() && s.month === this.localMonth())
-  );
-
-  protected readonly hasExistingCaixa = computed(() =>
-    this.service.getSnapshotsByAccount(this.CAIXA_ID)
-      .some(s => s.year === this.localYear() && s.month === this.localMonth())
-  );
-
-  protected readonly historyBBVA = computed(() =>
-    this.service.getSnapshotsByAccount(this.BBVA_ID)
-      .filter(s => s.year === this.localYear())
-      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + b.month))
-  );
-
-  protected readonly historyCaixa = computed(() =>
-    this.service.getSnapshotsByAccount(this.CAIXA_ID)
-      .filter(s => s.year === this.localYear())
-      .sort((a, b) => b.year * 100 + b.month - (a.year * 100 + b.month))
-  );
+  protected readonly bancoStates: BancoState[] = [
+    createBancoState(BBVA_ENTIDAD, 'BBVA — Cuenta Nómina', '#004481', 'focus:border-blue-800 focus:ring-blue-800'),
+    createBancoState(CAIXA_ENTIDAD, 'CaixaBank — Cuenta alternativa', '#E65100', 'focus:border-orange-600 focus:ring-orange-600'),
+  ];
 
   constructor() {
+    // Solo limpia y carga al cambiar de mes/año. No depende de `balances`, así
+    // que guardar un banco no resetea los campos no guardados del otro.
     effect(() => {
-      this.localYear();
-      this.localMonth();
-      this.editingBBVA.set(null);
-      this.editingCaixa.set(null);
-      resetSnapshotFields(this.bbvaBalance, this.caixaBalance);
+      const year = this.localYear();
+      const month = this.localMonth();
+
+      this.service.loadBancoHistory(BBVA_ENTIDAD, year, month);
+      this.service.loadBancoHistory(CAIXA_ENTIDAD, year, month);
+
+      this.resetFields();
+    }, { allowSignalWrites: true });
+
+    // Precarga el balance del mes cuando llegan datos, sin pisar lo que el
+    // usuario esté escribiendo (solo rellena si el campo está vacío).
+    effect(() => {
+      const year = this.localYear();
+      const month = this.localMonth();
+
+      this.fillExisting(BBVA_ENTIDAD, year, month);
+      this.fillExisting(CAIXA_ENTIDAD, year, month);
     }, { allowSignalWrites: true });
   }
 
-  protected onEditBBVA(snap: MonthlySnapshot): void {
-    this.editingBBVA.set(snap);
-    this.service.currentYear.set(snap.year);
-    this.localMonth.set(snap.month);
-    this.bbvaBalance.userValue.set(snap.balance);
-    this.bbvaBalance.hasUserValue.set(true);
+  protected previousBancoBalance(banco: BancoState): number | null {
+    let prevMonth = this.localMonth() - 1;
+    let prevYear = this.localYear();
+    if (prevMonth < 1) { prevMonth = 12; prevYear--; }
+    return this.service.getBancoBalance(banco.entidad, prevYear, prevMonth)?.balanceMensual ?? null;
   }
 
-  protected cancelEditBBVA(): void {
-    this.editingBBVA.set(null);
-    this.bbvaBalance.userValue.set(null);
-    this.bbvaBalance.hasUserValue.set(false);
+  protected bancoHistory(banco: BancoState): BancoBalance[] {
+    const since = BanksFormComponent.toMes(this.localYear(), this.localMonth());
+    return this.service.getBancoBalances(banco.entidad)
+      .filter(b => b.mes <= since)
+      .sort((a, b) => (a.mes < b.mes ? 1 : -1));
   }
 
-  protected onDeleteBBVA(id: string): void {
-    this.service.deleteSnapshot(id);
+  protected onEdit(banco: BancoState, balance: BancoBalance): void {
+    banco.editing.set(balance);
+    const { year, month } = BanksFormComponent.parseMes(balance.mes);
+    this.service.currentYear.set(year);
+    this.localMonth.set(month);
+    banco.balance.set(balance.balanceMensual);
+    banco.aporte.set(balance.aporteMensual ?? null);
   }
 
-  protected onEditCaixa(snap: MonthlySnapshot): void {
-    this.editingCaixa.set(snap);
-    this.service.currentYear.set(snap.year);
-    this.localMonth.set(snap.month);
-    this.caixaBalance.userValue.set(snap.balance);
-    this.caixaBalance.hasUserValue.set(true);
+  protected cancelEdit(banco: BancoState): void {
+    banco.editing.set(null);
+    banco.balance.set(null);
+    banco.aporte.set(null);
   }
 
-  protected cancelEditCaixa(): void {
-    this.editingCaixa.set(null);
-    this.caixaBalance.userValue.set(null);
-    this.caixaBalance.hasUserValue.set(false);
+  protected onDelete(id: string): void {
+    this.service.deleteBancoBalance(id).subscribe();
   }
 
-  protected onDeleteCaixa(id: string): void {
-    this.service.deleteSnapshot(id);
-  }
-
-  protected saveBBVA(): void {
-    const bal = roundMoney(this.bbvaBalance.display());
+  protected save(banco: BancoState): void {
+    const bal = roundMoney(banco.balance() ?? 0) ?? 0;
     if (bal === null) { return; }
 
-    const existing = this.editingBBVA();
-    if (existing) {
-      this.service.updateSnapshot(existing.id, { balance: bal });
-      this.cancelEditBBVA();
-    } else {
-      this.service.upsertSnapshot(this.BBVA_ID, this.localYear(), this.localMonth(), bal, 0).subscribe();
-    }
+    const data: BancoBalanceSave = {
+      balanceMensual: bal,
+      aporteMensual: roundMoney(banco.aporte() ?? 0) ?? 0,
+    };
 
-    this.savedBBVA.set(true);
-    setTimeout(() => this.savedBBVA.set(false), 2000);
+    this.service.saveBancoBalance(banco.entidad, this.localYear(), this.localMonth(), data).subscribe({
+      next: () => {
+        this.cancelEdit(banco);
+        banco.saved.set(true);
+        setTimeout(() => banco.saved.set(false), 2000);
+      },
+    });
   }
 
-  protected saveCaixa(): void {
-    const bal = roundMoney(this.caixaBalance.display());
-    if (bal === null) { return; }
+  private resetFields(): void {
+    this.bancoStates.forEach(banco => this.cancelEdit(banco));
+  }
 
-    const existing = this.editingCaixa();
-    if (existing) {
-      this.service.updateSnapshot(existing.id, { balance: bal });
-      this.cancelEditCaixa();
-    } else {
-      this.service.upsertSnapshot(this.CAIXA_ID, this.localYear(), this.localMonth(), bal, 0).subscribe();
+  private fillExisting(entidad: string, year: number, month: number): void {
+    const balance = this.service.getBancoBalance(entidad, year, month);
+    const banco = this.bancoStates.find(s => s.entidad === entidad);
+    if (balance && banco && banco.balance() === null) {
+      banco.editing.set(balance);
+      banco.balance.set(balance.balanceMensual);
+      banco.aporte.set(balance.aporteMensual ?? null);
     }
+  }
 
-    this.savedCaixa.set(true);
-    setTimeout(() => this.savedCaixa.set(false), 2000);
+  private static toMes(year: number, month: number): string {
+    return `${year}-${String(month).padStart(2, '0')}`;
+  }
+
+  private static parseMes(mes: string): { year: number; month: number } {
+    const [year, month] = mes.split('-').map(Number);
+    return { year, month };
   }
 }

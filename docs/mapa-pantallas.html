@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Centimo — Mapa de pantallas, tablas y endpoints</title>
+<style>
+  :root {
+    --bg: #0b1220;
+    --panel: #101a30;
+    --panel-2: #16233c;
+    --border: #223250;
+    --border-soft: #1b2942;
+    --text: #e6edf7;
+    --muted: #8ea2c0;
+    --accent: #38bdf8;
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --bad: #fb7185;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 24px 64px; }
+  header { margin-bottom: 28px; }
+  header h1 { margin: 0 0 6px; font-size: 24px; letter-spacing: .2px; }
+  header p { margin: 0 0 16px; color: var(--muted); }
+  header p code, footer code { font-family: var(--mono); background: var(--panel-2); padding: 1px 5px; border-radius: 5px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 18px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 11px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--panel); font-size: 12.5px; color: var(--text);
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .dot.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .dot.warn { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+  .dot.bad { background: var(--bad); box-shadow: 0 0 8px var(--bad); }
+  .stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 4px; }
+  .stat {
+    padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--panel); font-size: 13px; color: var(--muted);
+  }
+  .stat b { color: var(--text); font-variant-numeric: tabular-nums; }
+  input[type=search] {
+    width: 100%; max-width: 420px; margin: 18px 0 4px; padding: 9px 14px;
+    border-radius: 10px; border: 1px solid var(--border); background: var(--panel);
+    color: var(--text); font-size: 14px; outline: none;
+  }
+  input[type=search]:focus { border-color: var(--accent); }
+
+  section.block { margin-top: 34px; }
+  .block-title {
+    display: flex; align-items: baseline; gap: 10px; margin: 0 0 14px;
+    font-size: 16px; font-weight: 600;
+  }
+  .block-title span { color: var(--accent); font-size: 22px; }
+  .block-title small { color: var(--muted); font-weight: 400; font-size: 13px; }
+
+  /* ---------- Árbol por pantalla ---------- */
+  .tree-card {
+    border: 1px solid var(--border); border-radius: 16px; background: var(--panel);
+    overflow: hidden; margin-bottom: 16px;
+  }
+  .tree-head {
+    display: flex; align-items: center; gap: 12px; padding: 14px 18px;
+    cursor: pointer; user-select: none; border-bottom: 1px solid var(--border-soft);
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  }
+  .tree-head:hover { background: var(--panel-2); }
+  .tree-head .chev { color: var(--muted); transition: transform .15s ease; flex: none; }
+  .tree-head.open .chev { transform: rotate(90deg); }
+  .tree-head .name { font-weight: 600; font-size: 15px; }
+  .tree-head .route { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+  .tree-head .count { color: var(--muted); font-size: 12px; border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; }
+  .badge {
+    margin-left: auto; font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+    padding: 4px 10px; border-radius: 999px; border: 1px solid; flex: none;
+  }
+  .badge.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); background: color-mix(in srgb, var(--ok) 10%, transparent); }
+  .badge.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); background: color-mix(in srgb, var(--warn) 10%, transparent); }
+  .badge.bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); background: color-mix(in srgb, var(--bad) 10%, transparent); }
+
+  .tree-body { padding: 6px 18px 14px; }
+  .tree { list-style: none; margin: 0; padding: 0; }
+  .tree li { position: relative; padding: 10px 0 2px 22px; }
+  .tree li::before {
+    content: ""; position: absolute; left: 6px; top: 0; bottom: 2px; width: 1px; background: var(--border);
+  }
+  .tree li:last-child::before { bottom: 50%; }
+  .tree li::after {
+    content: ""; position: absolute; left: 6px; top: 16px; width: 16px; height: 1px; background: var(--border);
+  }
+  .node {
+    display: inline-flex; align-items: center; gap: 9px; flex-wrap: wrap;
+    padding: 7px 12px; border-radius: 10px; background: var(--panel-2);
+    border: 1px solid var(--border); font-size: 13.5px;
+  }
+  .node .kind { text-transform: uppercase; font-size: 10px; letter-spacing: .8px; color: var(--muted); }
+  .node .kind.r { color: var(--accent); }
+  .node .kind.w { color: var(--warn); }
+  .node .tbl { font-family: var(--mono); font-size: 13px; color: #bae6fd; }
+  .node .ep-path { font-family: var(--mono); font-size: 12.5px; color: #d8b4fe; }
+  .node .q { color: var(--muted); font-family: var(--mono); font-size: 11.5px; }
+  .node .methods { display: inline-flex; gap: 4px; }
+  .node .meth {
+    font-family: var(--mono); font-size: 10px; padding: 1px 5px; border-radius: 5px;
+    border: 1px solid var(--border); color: var(--muted);
+  }
+  .node.ok { border-color: color-mix(in srgb, var(--ok) 35%, transparent); }
+  .node.warn { border-color: color-mix(in srgb, var(--warn) 40%, transparent); }
+  .node.bad { border-color: color-mix(in srgb, var(--bad) 40%, transparent); }
+  .node a {
+    color: var(--accent); text-decoration: none; font-size: 12px;
+    border-bottom: 1px dotted color-mix(in srgb, var(--accent) 50%, transparent);
+  }
+  .node a:hover { color: #7dd3fc; }
+  .screen-note { margin: 10px 0 0 28px; font-size: 12.5px; color: var(--warn); }
+  .screen-note.muted { color: var(--muted); }
+  .tags {
+    display: flex; flex-wrap: wrap; gap: 6px 8px;
+    margin: 10px 0 4px 23px; padding-left: 14px; border-left: 1px solid var(--border);
+  }
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 9px; border-radius: 8px; background: var(--panel-2);
+    border: 1px solid var(--border); font-family: var(--mono); font-size: 12px; color: #bae6fd;
+  }
+  .tag a { font-family: sans-serif; font-size: 11px; color: var(--accent); text-decoration: none; border-bottom: 1px dotted color-mix(in srgb, var(--accent) 50%, transparent); }
+  .tag a:hover { color: #7dd3fc; }
+  .tdot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .tdot.ok { background: var(--ok); }
+  .tdot.warn { background: var(--warn); }
+  .tdot.bad { background: var(--bad); }
+
+  /* ---------- Directorios ---------- */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+  .cell {
+    border: 1px solid var(--border); border-radius: 12px; background: var(--panel);
+    padding: 12px 14px;
+  }
+  .cell .t { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .cell .t code { font-family: var(--mono); font-size: 13px; color: #bae6fd; }
+  .cell .t a { color: var(--accent); text-decoration: none; font-size: 11.5px; margin-left: auto; }
+  .cell .grp { display: flex; align-items: center; gap: 8px; margin: 8px 0 4px; }
+  .cell .grp .lbl { text-transform: uppercase; font-size: 10px; letter-spacing: .8px; color: var(--muted); }
+  .cell .grp .lbl.r { color: var(--accent); }
+  .cell ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+  .cell li { display: flex; }
+  .cell li .ep { font-family: var(--mono); font-size: 12px; color: #d8b4fe; }
+  .row {
+    display: flex; align-items: center; gap: 12px; padding: 10px 14px; margin-bottom: 8px;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--panel); font-size: 12.5px;
+  }
+  .row .m { display: flex; gap: 4px; flex: none; }
+  .row .m .meth { font-size: 10px; padding: 1px 5px; border-radius: 5px; border: 1px solid var(--border); color: var(--muted); font-family: var(--mono); }
+  .row code { color: #d8b4fe; font-family: var(--mono); }
+  .row .role { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: var(--accent); }
+  .row .meta { color: var(--muted); margin-left: auto; font-size: 11.5px; text-align: right; }
+  .row .meta a { color: var(--accent); text-decoration: none; }
+  .row .tab { font-family: var(--mono); font-size: 11.5px; color: #bae6fd; }
+  .empty { color: var(--muted); font-size: 13px; padding: 12px; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--border-soft); padding-top: 14px; }
+  @media (max-width: 640px) {
+    .tree-head .route { display: none; }
+    .badge { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Centimo — Mapa pantallas → tablas → endpoints</h1>
+    <p>Qué tablas toca cada pantalla y qué endpoints las alimentan. Generado a partir de la documentación de <code>docs/</code>.</p>
+    <div class="legend">
+      <div class="chip"><span class="dot ok"></span> Backend real</div>
+      <div class="chip"><span class="dot warn"></span> Legacy / comentado</div>
+      <div class="chip"><span class="dot bad"></span> Pendiente de implementar</div>
+      <div class="chip" style="color:var(--accent)">lectura</div>
+      <div class="chip">crud</div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <input type="search" id="filter" placeholder="Filtrar por pantalla, tabla o endpoint…" aria-label="Filtrar">
+  </header>
+
+  <section class="block" id="trees">
+    <h2 class="block-title"><span>1</span> Árbol por pantalla <small>pantalla → endpoint que llama → tabla(s) a las que ataca · clic para plegar/desplegar</small></h2>
+    <div id="trees-box"></div>
+  </section>
+
+  <section class="block" id="dirs">
+    <h2 class="block-title"><span>2</span> Directorio de tablas <small>endpoints de escritura (CRUD) + endpoints de lectura (dashboard)</small></h2>
+    <div class="grid" id="tables-grid"></div>
+  </section>
+
+  <section class="block" id="eps">
+    <h2 class="block-title"><span>3</span> Directorio de endpoints <small>cada endpoint muestra las tablas que consulta/escribe</small></h2>
+    <div id="eps-list"></div>
+  </section>
+
+  <footer>Mapa visual de la app Centimo · generado desde <code>docs/README.md</code>, <code>docs/dashboard.md</code>, <code>docs/vistaMensual.md</code>, <code>docs/nomina.md</code> y los docs de entidad.</footer>
+</div>
+
+<script>
+  "use strict";
+
+  const S = { ok: "ok", warn: "warn", bad: "bad" };
+
+  // ---------- Tablas (se definen primero: los endpoints de lectura las referencian) ----------
+  // eps  = endpoints que ESCRIBEN la tabla (CRUD propio)
+  // readBy = endpoints de LECTURA agregada que consultan esta tabla (p. ej. los del dashboard)
+  const TBS = {
+    "tb-revolut":        { name: "revolut_balances",     state: S.ok, doc: "revolut.md", eps: ["ep-revolut"], readBy: ["ep-dashboard-balances", "ep-dashboard-serie", "ep-dashboard-categorias"] },
+    "tb-banco":          { name: "banco_balances",       state: S.ok, doc: "banco.md",   eps: ["ep-banco"],   readBy: ["ep-dashboard-balances", "ep-dashboard-serie", "ep-dashboard-categorias"] },
+    "tb-b100":           { name: "b100_balances",        state: S.ok, doc: "b100.md",    eps: ["ep-b100"],    readBy: ["ep-dashboard-balances", "ep-dashboard-serie", "ep-dashboard-categorias"] },
+    "tb-mintos":         { name: "mintos",               state: S.ok, doc: "mintos.md",  eps: ["ep-mintos"],  readBy: ["ep-dashboard-balances", "ep-dashboard-serie", "ep-dashboard-categorias"] },
+    "tb-fondos":         { name: "fondos_myinvestor",    state: S.ok, doc: "myinvestor.md", eps: ["ep-myinvestor-funds"], readBy: [] },
+    "tb-balances-fondo": { name: "balances_fondo",       state: S.ok, doc: "myinvestor.md", eps: ["ep-fund-balances"],  readBy: ["ep-dashboard-balances", "ep-dashboard-serie", "ep-dashboard-categorias"] },
+    "tb-equito-balances":{ name: "equito_balances",      state: S.ok, doc: "equito.md",  eps: ["ep-equito-balances"],  readBy: ["ep-dashboard-balances", "ep-dashboard-serie", "ep-dashboard-categorias"] },
+    "tb-equito-compras": { name: "equito_compras",       state: S.ok, doc: "equito.md",  eps: ["ep-equito-compras"],   readBy: [] },
+    "tb-urbanitae-balances":{ name: "urbanitae_balances",state: S.ok, doc: "urbanitae.md", eps: ["ep-urbanitae-balances"], readBy: ["ep-dashboard-balances", "ep-dashboard-serie", "ep-dashboard-categorias"] },
+    "tb-urbanitae-compras":{ name: "urbanitae_compras",  state: S.ok, doc: "urbanitae.md", eps: ["ep-urbanitae-compras"], readBy: [] },
+    "tb-gastos":         { name: "gastos",               state: S.ok, doc: "gastos.md",  eps: ["ep-expenses"], readBy: ["ep-dashboard-serie"] },
+    "tb-nominas":        { name: "nominas",              state: S.ok, doc: "nomina.md", eps: ["ep-nomina"],  readBy: [] },
+    "tb-acciones":       { name: "acciones_balances",    state: S.bad, doc: "acciones.md", eps: [], readBy: ["ep-dashboard-balances", "ep-dashboard-serie", "ep-dashboard-categorias"] },
+    "tb-operaciones":    { name: "operaciones_inversion",state: S.bad, doc: "acciones.md", eps: [], readBy: [] },
+    "tb-crypto":         { name: "crypto_balances",      state: S.bad, doc: "crypto.md", eps: [], readBy: ["ep-dashboard-balances", "ep-dashboard-serie", "ep-dashboard-categorias"] },
+    "tb-platforms":      { name: "plataformas",          state: S.warn, doc: null, eps: ["ep-platforms"], readBy: [] },
+    "tb-cuentas":        { name: "cuentas",              state: S.warn, doc: null, eps: ["ep-accounts"],  readBy: [] },
+    "tb-instantaneas":   { name: "instantaneas_mensuales", state: S.warn, doc: null, eps: ["ep-snapshots", "ep-summaries"], readBy: [] },
+  };
+
+  // ---------- Endpoints ----------
+  // role: "crud" (escribe) | "lectura" (consulta) | "legacy" (comentado)
+  // tables: para endpoints de lectura, las tablas que consultan (agregación)
+  const EPS = {
+    "ep-dashboard-balances": {
+      path: "/dashboard/balances", method: ["GET"], role: "lectura", q: "?mes=", state: S.ok, doc: "dashboard.md",
+      tables: ["tb-revolut", "tb-banco", "tb-b100", "tb-balances-fondo", "tb-mintos", "tb-equito-balances", "tb-urbanitae-balances", "tb-acciones", "tb-crypto"],
+    },
+    "ep-dashboard-serie": {
+      path: "/dashboard/balances/serie", method: ["GET"], role: "lectura", q: "?mes=&entidad=&mesesAtras=", state: S.ok, doc: "dashboard.md",
+      tables: ["tb-revolut", "tb-banco", "tb-b100", "tb-balances-fondo", "tb-mintos", "tb-equito-balances", "tb-urbanitae-balances", "tb-acciones", "tb-crypto", "tb-gastos"],
+    },
+    "ep-dashboard-categorias": {
+      path: "/dashboard/categorias/serie", method: ["GET"], role: "lectura", q: "?categoria=&mes=&mesesAtras=", state: S.ok, doc: "dashboard.md",
+      tables: ["tb-revolut", "tb-banco", "tb-b100", "tb-balances-fondo", "tb-mintos", "tb-equito-balances", "tb-urbanitae-balances", "tb-acciones", "tb-crypto"],
+    },
+    "ep-expenses":  { path: "/expenses", method: ["GET", "POST", "PUT", "DELETE"], role: "crud", q: "GET ?year=&month= · PUT/DELETE /{id}", state: S.ok, doc: "gastos.md" },
+    "ep-nomina":    { path: "/nomina", method: ["GET", "POST"], role: "crud", q: "GET ?mes= · PUT/DELETE /{mes}", state: S.ok, doc: "nomina.md" },
+    "ep-b100":      { path: "/b100-balances", method: ["GET", "POST", "PUT", "DELETE"], role: "crud", q: "", state: S.ok, doc: "b100.md" },
+    "ep-revolut":   { path: "/revolut-balances", method: ["GET", "POST", "PUT", "DELETE"], role: "crud", q: "", state: S.ok, doc: "revolut.md" },
+    "ep-banco":     { path: "/banco/balances", method: ["GET", "POST", "PUT", "DELETE"], role: "crud", q: "", state: S.ok, doc: "banco.md" },
+    "ep-mintos":    { path: "/mintos/intereses-anuales", method: ["GET", "POST", "PUT", "DELETE"], role: "crud", q: "", state: S.ok, doc: "mintos.md" },
+    "ep-myinvestor-funds": { path: "/myinvestor-funds", method: ["GET", "POST", "PUT", "DELETE"], role: "crud", q: "", state: S.ok, doc: "myinvestor.md" },
+    "ep-fund-balances":    { path: "/fund-balances", method: ["GET", "POST", "PUT", "DELETE"], role: "crud", q: "", state: S.ok, doc: "myinvestor.md" },
+    "ep-equito-balances":  { path: "/equito/balances", method: ["GET", "POST", "PUT", "DELETE"], role: "crud", q: "", state: S.ok, doc: "equito.md" },
+    "ep-equito-compras":   { path: "/equito/compras", method: ["GET", "POST", "PUT", "DELETE"], role: "crud", q: "", state: S.ok, doc: "equito.md" },
+    "ep-urbanitae-balances":{ path: "/urbanitae/balances", method: ["GET", "POST", "PUT", "DELETE"], role: "crud", q: "", state: S.ok, doc: "urbanitae.md" },
+    "ep-urbanitae-compras": { path: "/urbanitae/compras", method: ["GET", "POST", "PUT", "DELETE"], role: "crud", q: "", state: S.ok, doc: "urbanitae.md" },
+    "ep-platforms": { path: "/platforms", method: ["GET"], role: "legacy", q: "", state: S.warn, doc: null },
+    "ep-accounts":  { path: "/accounts", method: ["GET"], role: "legacy", q: "", state: S.warn, doc: null },
+    "ep-snapshots": { path: "/snapshots", method: ["GET"], role: "legacy", q: "", state: S.warn, doc: null },
+    "ep-summaries": { path: "/summaries", method: ["GET"], role: "legacy", q: "/monthly, /platform-balances", state: S.warn, doc: null },
+  };
+
+  // ---------- Pantallas ----------
+  // Cada fila = endpoint que llama la pantalla; las tablas que ataca salen del endpoint
+  // (EPS[ep].tables) o de su CRUD (tabs). "ep: null" = dependencia prevista sin endpoint.
+  const SCREENS = [
+    {
+      id: "sc-dashboard", name: "Dashboard", route: "/", state: S.ok,
+      note: "Sin tabla propia: es SOLO LECTURA y agrega los balances que cada tab de Entrada Datos escribe en su propia tabla.",
+      rows: [
+        { ep: "ep-dashboard-balances", note: "una fila por entidad + total (sin gastos)" },
+        { ep: "ep-dashboard-serie", note: "evolución de una entidad por mes; entidad=gastos agrega gastos" },
+        { ep: "ep-dashboard-categorias", note: "filas por entidad y mes agrupadas por categoría, sin gastos" },
+      ],
+    },
+    {
+      id: "sc-income", name: "Nómina", route: "/income", state: S.ok,
+      note: "El ingreso del mes ya va al backend (POST /nomina upsert, GET ?mes=). Distribución del sueldo, planificación y compromisos siguen en memoria del front (sin tabla ni endpoint)",
+      rows: [ { ep: "ep-nomina" } ],
+    },
+    {
+      id: "sc-monthly", name: "Vista Mensual", route: "/month/:year/:month", state: S.warn,
+      note: "Tras la migración usará los 3 endpoints de dashboard + los CRUD de cada entidad y /nomina (ver vistaMensual.md)",
+      rows: [
+        { ep: "ep-expenses", note: "gastos del mes (reales, backend)" },
+        { ep: "ep-nomina", note: "ingresos del mes (GET /nomina?mes=)" },
+        { ep: "ep-platforms" },
+        { ep: "ep-accounts" },
+        { ep: "ep-snapshots" },
+      ],
+    },
+    {
+      id: "sc-platform", name: "Detalle Plataforma", route: "/platform/:id", state: S.warn,
+      note: null,
+      rows: [
+        { ep: "ep-platforms" },
+        { ep: "ep-accounts" },
+        { ep: "ep-snapshots" },
+      ],
+    },
+    {
+      id: "sc-trends", name: "Tendencias", route: "/trends", state: S.warn,
+      note: null,
+      rows: [
+        { ep: "ep-snapshots" },
+        { ep: "ep-summaries" },
+      ],
+    },
+    {
+      id: "sc-expenses", name: "Gastos", route: "/expenses", state: S.ok,
+      note: null,
+      rows: [ { ep: "ep-expenses" } ],
+    },
+    {
+      id: "sc-entry", name: "Entrada Datos", route: "/entry", state: S.ok,
+      note: "El volcado del total de fondos al snapshot de inversión (POST /snapshots/upsert) sigue en memoria",
+      rows: [
+        { ep: "ep-banco", note: "tab: Bancos" },
+        { ep: "ep-revolut", note: "tab: Revolut" },
+        { ep: "ep-b100", note: "tab: B100" },
+        { ep: "ep-myinvestor-funds", note: "tab: MyInvestor" },
+        { ep: "ep-fund-balances", note: "tab: MyInvestor" },
+        { ep: "ep-mintos", note: "tab: Mintos" },
+        { ep: "ep-equito-balances", note: "tab: Equito" },
+        { ep: "ep-equito-compras", note: "tab: Equito" },
+        { ep: "ep-urbanitae-balances", note: "tab: Urbanitae" },
+        { ep: "ep-urbanitae-compras", note: "tab: Urbanitae" },
+        { ep: null, tabs: ["tb-crypto"], note: "tab oculta (bitvavo), prevista" },
+      ],
+    },
+  ];
+
+  const STATE_LABEL = { ok: "Backend real", warn: "Legacy / comentado", bad: "Pendiente" };
+  const ROLE_LABEL = { crud: "", lectura: "lectura", legacy: "legacy" };
+  const ROLE_META = { lect: { role: "lectura", state: S.ok, label: "lectura" } };
+
+  function roleKind(role) { return role === "lectura" ? "r" : role === "legacy" ? "w" : ""; }
+
+  function epNodeHtml(ep) {
+    const m = ep.method.map(x => `<span class="meth">${x}</span>`).join("");
+    const roleTag = ep.role !== "crud" ? `<span class="kind ${roleKind(ep.role)}">${ep.role}</span>` : "";
+    const doc = ep.doc ? `<a href="${ep.doc}" title="Ver ${ep.doc}">${ep.doc}</a>` : `<span style="color:var(--muted)">—</span>`;
+    return `<span class="node ${ep.state}">${m}${roleTag}<span class="ep-path">${ep.path}</span><span class="q">${ep.q}</span>${doc}</span>`;
+  }
+
+  // Resuelve qué tablas ataca un endpoint: las declaradas en EPS[ep].tables (lectura)
+  // o las tablas cuyo CRUD es ese endpoint (escritura).
+  function resolveTables(epId, tabs) {
+    if (tabs) return tabs;
+    if (epId && EPS[epId] && EPS[epId].tables) return EPS[epId].tables;
+    return Object.entries(TBS)
+      .filter(([, t]) => epId && (t.eps || []).includes(epId))
+      .map(([tid]) => tid);
+  }
+
+  function tableTag(tid) {
+    const t = TBS[tid];
+    const doc = t.doc ? `<a href="${t.doc}" title="Ver ${t.doc}">${t.doc}</a>` : "";
+    return `<span class="tag"><span class="tdot ${t.state}"></span>${t.name}${doc}</span>`;
+  }
+
+  function treeRows(rows) {
+    if (!rows || rows.length === 0) return `<li><span class="empty">Sin endpoints vinculados.</span></li>`;
+    let html = "";
+    for (const r of rows) {
+      const ep = r.ep && EPS[r.ep];
+      const tabs = resolveTables(r.ep, r.tabs);
+      const node = ep
+        ? epNodeHtml(ep)
+        : `<span class="node ${S.bad}"><span class="kind w">pendiente</span><span class="ep-path">— sin endpoint aún</span></span>`;
+      const note = r.note ? ` <span class="screen-note muted" style="display:inline">${r.note}</span>` : "";
+      const tags = tabs.map(tableTag).join("");
+      html += `
+        <li>
+          ${node}${note}
+          ${tags ? `<div class="tags">${tags}</div>` : ""}
+        </li>`;
+    }
+    return html;
+  }
+
+  function renderTrees() {
+    const box = document.getElementById("trees-box");
+    box.innerHTML = SCREENS.map((s, i) => {
+      const open = i < 3 ? "open" : "";
+      const nEps = s.rows.filter(rx => rx.ep).length;
+      const nTables = new Set(s.rows.flatMap(rx => resolveTables(rx.ep, rx.tabs))).size;
+      return `
+      <article class="tree-card" data-s="${i}" data-text="${s.name} ${s.route} ${tRowText(s)}">
+        <div class="tree-head ${open}" onclick="toggleTree(this)">
+          <span class="chev">▶</span>
+          <span class="name">${s.name}</span>
+          <span class="route">${s.route}</span>
+          <span class="count">${nTables} tablas · ${nEps} endpoints</span>
+          <span class="badge ${s.state}">${STATE_LABEL[s.state]}</span>
+        </div>
+        <div class="tree-body" ${open ? "" : 'style="display:none"'}>
+          <ul class="tree">${treeRows(s.rows)}</ul>
+          ${s.note ? `<p class="screen-note">Nota: ${s.note}</p>` : ""}
+        </div>
+      </article>`;
+    }).join("");
+  }
+
+  function tRowText(s) {
+    return (s.rows || []).map(r => {
+      const p = r.ep && EPS[r.ep] ? EPS[r.ep].path : "";
+      const ts = resolveTables(r.ep, r.tabs).map(tid => TBS[tid].name).join(" ");
+      return `${p} ${ts}`;
+    }).join(" ");
+  }
+
+  function toggleTree(head) {
+    head.classList.toggle("open");
+    const body = head.nextElementSibling;
+    body.style.display = body.style.display === "none" ? "" : "none";
+  }
+
+  function renderTables() {
+    const box = document.getElementById("tables-grid");
+    box.innerHTML = Object.entries(TBS).map(([id, t]) => {
+      const dot = `<span class="dot ${t.state}"></span>`;
+      const doc = t.doc ? `<a href="${t.doc}">${t.doc}</a>` : "";
+      const cruds = (t.eps || []).map(e => `<li>${epNodeHtml(EPS[e])}</li>`).join("");
+      const reads = (t.readBy || []).map(e => `<li>${epNodeHtml(EPS[e])}</li>`).join("");
+      let body = "";
+      body += `<div class="grp"><span class="lbl">Escritura (CRUD)</span></div>`;
+      body += `<ul>${cruds || `<li><span class="empty">— pendiente aún</span></li>`}</ul>`;
+      if (reads) {
+        body += `<div class="grp" style="margin-top:10px"><span class="lbl r">Lectura (dashboard)</span></div>`;
+        body += `<ul>${reads}</ul>`;
+      }
+      return `<div class="cell"><div class="t">${dot}<code>${t.name}</code>${doc}</div>${body}</div>`;
+    }).join("");
+  }
+
+  function epSourceTables(epId) {
+    const e = EPS[epId];
+    if (e.tables) return e.tables;
+    return Object.entries(TBS)
+      .filter(([, t]) => (t.eps || []).includes(epId) || (t.readBy || []).includes(epId))
+      .map(([tid]) => tid);
+  }
+
+  function renderEndpoints() {
+    const box = document.getElementById("eps-list");
+    box.innerHTML = Object.entries(EPS).map(([id, e]) => {
+      const srcs = epSourceTables(id);
+      const doc = e.doc ? `<a href="${e.doc}">${e.doc}</a>` : "—";
+      const m = e.method.map(x => `<span class="meth">${x}</span>`).join("");
+      const role = e.role === "crud" ? `<span class="role">crud</span>` : `<span class="role">${e.role}</span>`;
+      const tabs = srcs.map(tid => `<span style="margin-right:6px">${TBS[tid].name}</span>`).join("") || "—";
+      return `<div class="row"><span class="dot ${e.state}"></span><span class="m">${m}</span>${role}<code>${e.path}</code><span class="meta">${e.q}<br><span class="tab">${tabs}</span><br>${doc}</span></div>`;
+    }).join("");
+  }
+
+  function renderStats() {
+    const box = document.getElementById("stats");
+    const ok = Object.values(EPS).filter(e => e.state === S.ok).length;
+    const legacy = Object.values(EPS).filter(e => e.state === S.warn).length;
+    const pending = Object.values(EPS).filter(e => e.state === S.bad).length;
+    const reads = Object.values(EPS).filter(e => e.role === "lectura").length;
+    box.innerHTML = `
+      <div class="stat"><b>${SCREENS.length}</b> pantallas</div>
+      <div class="stat"><b>${Object.keys(TBS).length}</b> tablas</div>
+      <div class="stat"><b>${Object.keys(EPS).length}</b> endpoints</div>
+      <div class="stat"><b>${ok}</b> endpoints reales</div>
+      <div class="stat"><b>${legacy}</b> legacy / comentados</div>
+      <div class="stat"><b>${pending}</b> pendientes</div>
+      <div class="stat"><b>${reads}</b> de solo lectura (dashboard)</div>`;
+  }
+
+  function applyFilter(value) {
+    const q = value.trim().toLowerCase();
+    document.querySelectorAll(".tree-card").forEach(c => {
+      const hay = !q || (c.dataset.text || "").toLowerCase().includes(q);
+      c.style.display = hay ? "" : "none";
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    renderStats();
+    renderTrees();
+    renderTables();
+    renderEndpoints();
+    document.getElementById("filter").addEventListener("input", e => applyFilter(e.target.value));
+  });
+</script>
+</body>
+</html>

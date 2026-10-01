@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { FinancialDataService } from '../../../../core/services/financial-data.service';
 import { MONTH_OPTIONS, MONTHS, YEARS } from '../../../../core/constants/date.constants';
 import { Account } from '../../../../models/account';
-import { MyInvestorFund } from '../../../../models/myinvestor-fund';
+import { MyInvestorFund, MyInvestorFundTipo } from '../../../../models/myinvestor-fund';
 import { FundBalance } from '../../../../models/fund-balance';
 import { roundMoney } from '../../../../core/utils/money.util';
 
@@ -156,7 +156,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
                       <tr class="transition-all duration-150 hover:bg-gray-50/80">
                         <td class="px-4 py-3 font-semibold text-gray-900">{{ getFundName(b.fundId) }}</td>
                         <td class="px-4 py-3 font-semibold text-gray-900">{{ MONTHS[b.month - 1] }} {{ b.year }}</td>
-                        <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ b.balance.toLocaleString('es-ES') }} €</td>
+                        <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ (b.balance ?? 0).toLocaleString('es-ES') }} €</td>
                         <td class="px-4 py-3 text-right font-medium text-emerald-600">{{ (b.income ?? 0) > 0 ? '+' + b.income!.toLocaleString('es-ES') : '-' }}</td>
                         <td class="px-4 py-3 text-right font-medium text-red-600">{{ (b.expenses ?? 0) > 0 ? b.expenses!.toLocaleString('es-ES') + ' €' : '-' }}</td>
                         <td class="px-4 py-3 text-right text-gray-500">{{ b.contribution ? b.contribution!.toLocaleString('es-ES') + ' €' : '-' }}</td>
@@ -200,15 +200,27 @@ import { roundMoney } from '../../../../core/utils/money.util';
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Código / ISIN</label>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Tipo</label>
+            <select
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
+              [ngModel]="newTipo()"
+              (ngModelChange)="newTipo.set($event)"
+            >
+              <option [ngValue]="'fondo'">Fondo indexado</option>
+              <option [ngValue]="'roboadvisor'">Roboadvisor</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Código / ISIN <span class="normal-case text-gray-400">(opcional)</span></label>
             <input
               type="text" placeholder="ej: ES0110237023"
               class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#00A3E0] focus:outline-none focus:ring-1 focus:ring-[#00A3E0]"
               [ngModel]="newCode()"
               (ngModelChange)="newCode.set($event)"
             />
+            <p class="mt-0.5 text-xs text-gray-400">Solo fondos; el roboadvisor no tiene ISIN</p>
           </div>
-          <div>
+          <div class="sm:col-span-2">
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Nombre del fondo</label>
             <input
               type="text" placeholder="ej: Indexa Capital Plan Mixto"
@@ -222,7 +234,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
         <div class="mt-4 flex items-center gap-3">
           <button
             class="rounded-lg bg-[#00A3E0] px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0089C0] disabled:opacity-50"
-            [disabled]="!newCode() || !newName()"
+            [disabled]="!newName().trim()"
             (click)="addFund()"
           >Registrar fondo</button>
           @if (savedFund()) {
@@ -258,7 +270,14 @@ import { roundMoney } from '../../../../core/utils/money.util';
               @for (fund of funds(); track fund.id) {
                 <div class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-gray-50">
                   <span class="flex-1 font-semibold text-gray-900 truncate">{{ fund.name }}</span>
-                  <span class="text-xs text-gray-400">{{ fund.code }}</span>
+                  <span
+                    class="rounded-full px-2 py-0.5 text-xs font-medium"
+                    [class.bg-blue-100]="fund.tipo === 'fondo'"
+                    [class.text-blue-700]="fund.tipo === 'fondo'"
+                    [class.bg-purple-100]="fund.tipo === 'roboadvisor'"
+                    [class.text-purple-700]="fund.tipo === 'roboadvisor'"
+                  >{{ fund.tipo === 'fondo' ? 'Fondo' : 'Roboadvisor' }}</span>
+                  <span class="text-xs text-gray-400">{{ fund.code ?? '—' }}</span>
                   <button
                     class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
                     (click)="deleteFund(fund)"
@@ -296,6 +315,7 @@ export class MyInvestorFormComponent {
   protected readonly fundsListExpanded = signal(false);
 
   // --- Formulario nuevo fondo ---
+  protected readonly newTipo = signal<MyInvestorFundTipo>('fondo');
   protected readonly newCode = signal('');
   protected readonly newName = signal('');
   protected readonly savedFund = signal(false);
@@ -335,7 +355,9 @@ export class MyInvestorFormComponent {
   });
 
   constructor() {
-    this.service.loadFundBalances(this.fundsLocalYear(), this.fundsLocalMonth());
+    effect(() => {
+      this.service.loadFundBalances(this.fundsLocalYear(), this.fundsLocalMonth());
+    });
 
     effect(() => {
       const fundId = this.selectedFundId();
@@ -379,15 +401,17 @@ export class MyInvestorFormComponent {
 
   // --- Registro fondo ---
   protected addFund(): void {
-    const code = this.newCode();
-    const name = this.newName();
-    if (!code || !name) { return; }
+    const name = this.newName().trim();
+    const code = this.newCode().trim();
+    if (!name) { return; }
 
     this.service.addMyInvestorFund({
-      id: `mif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      code,
+      id: `mi-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      code: code || undefined,
       name,
+      tipo: this.newTipo(),
     }).subscribe(() => {
+      this.newTipo.set('fondo');
       this.newCode.set('');
       this.newName.set('');
       this.savedFund.set(true);
@@ -439,7 +463,7 @@ export class MyInvestorFormComponent {
   protected onEditBalance(balance: FundBalance): void {
     this.selectedFundId.set(balance.fundId);
     this.editingFundBalance.set(balance);
-    this.fundBalanceValue.set(balance.balance);
+    this.fundBalanceValue.set(balance.balance ?? null);
     this.fundsIncomeValue.set(balance.income ?? null);
     this.fundsContributionValue.set(balance.contribution ?? null);
     this.fundsWithdrawalValue.set(balance.expenses ?? null);

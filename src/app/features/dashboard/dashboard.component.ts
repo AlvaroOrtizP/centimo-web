@@ -2,36 +2,42 @@ import { Component, computed, effect, inject, signal, untracked } from '@angular
 import { FormsModule } from '@angular/forms';
 
 import { FinancialDataService } from '../../core/services/financial-data.service';
-import { MONTHS } from '../../core/constants/date.constants';
-import { EXPENSES_PLATFORM_ID, PLATFORM_GROUPS } from '../../core/constants/platform.constants';
+import { MONTHS_SHORT } from '../../core/constants/date.constants';
+import {
+  DASHBOARD_CATEGORIA_OPTIONS,
+  DASHBOARD_CATEGORIAS,
+  DASHBOARD_DEFAULT_MESES_ATRAS,
+  DASHBOARD_ENTITY_COLORS,
+  DASHBOARD_ENTITY_NAMES,
+  DASHBOARD_ENTITY_ORDER,
+  DASHBOARD_GASTOS_CODE,
+} from '../../core/constants/dashboard.constants';
+import { DashboardCategoria } from '../../api/generated/model/dashboardCategoria';
+import { DashboardSerieBalance } from '../../api/generated/model/dashboardSerieBalance';
 import { MonthPickerComponent } from '../../shared/components/month-picker/month-picker.component';
 import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 import { SummaryCardsComponent } from './components/summary-cards/summary-cards.component';
-import { PlatformSummaryTableComponent } from './components/platform-summary-table/platform-summary-table.component';
+import { EntityBalanceTableComponent, EntityBalanceRow } from './components/entity-balance-table/entity-balance-table.component';
 import { NetWorthChartComponent, ChartDataset } from './components/net-worth-chart/net-worth-chart.component';
 import { ExpensesChartComponent } from './components/expenses-chart/expenses-chart.component';
-
-type ChartMode = 'total' | 'per-platform';
-type PlatformGroup = 'all' | 'liquidez' | 'fija' | 'variable';
-type ExpensesMode = 'acumulado' | 'mensual';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [FormsModule, CollapsibleDescriptionComponent, SummaryCardsComponent, PlatformSummaryTableComponent, NetWorthChartComponent, ExpensesChartComponent, MonthPickerComponent],
+  imports: [FormsModule, CollapsibleDescriptionComponent, SummaryCardsComponent, EntityBalanceTableComponent, NetWorthChartComponent, ExpensesChartComponent, MonthPickerComponent],
   template: `
     <div class="space-y-4 lg:space-y-6">
-      <app-collapsible-description description="Resumen general de tu patrimonio, distribución por plataformas y evolución en los últimos meses." storageKey="desc-dashboard" />
+      <app-collapsible-description description="Balance mensual consolidado de todas las entidades y evolución por entidad o categoría." storageKey="desc-dashboard" />
       <div class="flex justify-end items-center gap-3">
         <button
           type="button"
           title="resetear datos cache"
           class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100"
-          (click)="service.refreshCachedData()"
+          (click)="reloadDashboard()"
         >Resetear cache</button>
-        @if (selectedPlatformId()) {
+        @if (selectedEntidad()) {
           <div class="flex items-center gap-1.5 rounded-lg border border-[#00A3E0] bg-[#00A3E0]/5 px-2.5 py-1 text-xs font-medium text-[#00A3E0]">
-            <span class="max-w-[140px] truncate">{{ selectedPlatformName() }}</span>
+            <span class="max-w-[140px] truncate">{{ selectedEntityName() }}</span>
             <button
               type="button"
               class="font-semibold underline-offset-2 hover:underline"
@@ -41,242 +47,258 @@ type ExpensesMode = 'acumulado' | 'mensual';
         }
         <app-month-picker />
       </div>
-      <app-summary-cards [summary]="currentSummary()" [previousSummary]="previousSummary()" />
+      <app-summary-cards [summary]="summaryCards()" [previousSummary]="previousSummaryCards()" />
       <div class="grid grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6">
-        <app-platform-summary-table
-          [platforms]="service.platforms()"
-          [accounts]="service.accounts()"
-          [snapshots]="currentSnapshots()"
-          [platformMonthlyBalances]="service.platformMonthlyBalances()"
-          [year]="viewYear()"
-          [month]="viewMonth()"
-          [selectedPlatformId]="selectedPlatformId()"
-          (platformClick)="onPlatformClick($event)"
+        <app-entity-balance-table
+          [entities]="entityRows()"
+          [selectedCodigo]="selectedEntidad()"
+          (entityClick)="onEntityClick($event)"
         />
-        <div class="space-y-4 lg:space-y-6">
-          <app-net-worth-chart
-            [labels]="chartLabels()"
-            [datasets]="chartDatasets()"
-            [platformColor]="selectedPlatformColor()"
-            [selectedPlatformName]="selectedPlatformName()"
-            (clearSelection)="selectedPlatformId.set(null)"
-          >
-            <div actions class="flex items-center gap-2">
-              <select
-                aria-label="Modo de gráfico"
-                class="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 focus:border-gray-300 focus:outline-none"
-                [(ngModel)]="chartMode"
-              >
-                <option value="total">Total</option>
-                <option value="per-platform">Por plataforma</option>
-              </select>
-              @if (chartMode() === 'per-platform') {
-                <select
-                  aria-label="Filtrar por grupo"
-                  class="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 focus:border-gray-300 focus:outline-none"
-                  [(ngModel)]="chartGroupFilter"
-                >
-                  <option value="all">Todas</option>
-                  <option value="liquidez">Liquidez</option>
-                  <option value="fija">Fija</option>
-                  <option value="variable">Variable</option>
-                </select>
+        <app-net-worth-chart
+          [labels]="evolutionLabels()"
+          [datasets]="evolutionDatasets()"
+          [platformColor]="selectedEntityColor()"
+          [selectedPlatformName]="selectedEntityName()"
+          (clearSelection)="resetView()"
+        />
+      </div>
+      <div class="grid grid-cols-1 gap-4 xl:grid-cols-2 xl:gap-6">
+        <app-net-worth-chart
+          [labels]="categoryLabels()"
+          [datasets]="categoryDatasets()"
+          title="Evolución por Categoría"
+        >
+          <div actions class="flex items-center gap-2">
+            <select
+              aria-label="Categoría"
+              class="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 focus:border-gray-300 focus:outline-none"
+              [ngModel]="selectedCategoria()"
+              (ngModelChange)="onCategoriaChange($event)"
+            >
+              @for (option of DASHBOARD_CATEGORIA_OPTIONS; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
               }
-            </div>
-          </app-net-worth-chart>
-          <app-expenses-chart
-            [labels]="chartLabels()"
-            [data]="chartExpensesData()"
-            [platformColor]="selectedPlatformColor()"
-            [selectedPlatformName]="selectedPlatformName()"
-            [title]="expensesTitle()"
-          >
-            <div actions class="flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 p-0.5">
-              <button
-                type="button"
-                class="rounded-md px-2.5 py-0.5 text-xs font-medium transition-colors"
-                [class.bg-white]="expensesMode() === 'acumulado'"
-                [class.shadow-sm]="expensesMode() === 'acumulado'"
-                [class.text-gray-900]="expensesMode() === 'acumulado'"
-                [class.text-gray-500]="expensesMode() !== 'acumulado'"
-                (click)="expensesMode.set('acumulado')"
-              >Acumulados</button>
-              <button
-                type="button"
-                class="rounded-md px-2.5 py-0.5 text-xs font-medium transition-colors"
-                [class.bg-white]="expensesMode() === 'mensual'"
-                [class.shadow-sm]="expensesMode() === 'mensual'"
-                [class.text-gray-900]="expensesMode() === 'mensual'"
-                [class.text-gray-500]="expensesMode() !== 'mensual'"
-                (click)="expensesMode.set('mensual')"
-              >Por mes</button>
-            </div>
-          </app-expenses-chart>
-        </div>
+            </select>
+          </div>
+        </app-net-worth-chart>
+        <app-expenses-chart
+          [labels]="expensesLabels()"
+          [data]="expensesData()"
+          title="Gastos por Mes"
+        />
       </div>
     </div>
   `,
 })
 export class DashboardComponent {
+  protected readonly DASHBOARD_CATEGORIA_OPTIONS = DASHBOARD_CATEGORIA_OPTIONS;
+
   protected readonly service = inject(FinancialDataService);
-  protected readonly viewYear = computed(() => this.service.currentYear());
-  protected readonly viewMonth = computed(() => this.service.currentMonth());
-  protected readonly selectedPlatformId = signal<string | null>(null);
-  protected readonly chartMode = signal<ChartMode>('total');
-  protected readonly chartGroupFilter = signal<PlatformGroup>('all');
-  protected readonly expensesMode = signal<ExpensesMode>('mensual');
+  protected readonly selectedEntidad = signal<string | null>(null);
+  protected readonly selectedCategoria = signal<DashboardCategoria>(DashboardCategoria.Todas);
+
+  protected readonly currentMes = computed(() =>
+    DashboardComponent.toMes(this.service.currentYear(), this.service.currentMonth())
+  );
 
   constructor() {
     effect(() => {
-      const year = this.service.currentYear();
-      const month = this.service.currentMonth();
-
-      // Las cargas se ejecutan fuera del tracking del effect: sus métodos internos
-      // leen señales (p.ej. platformBalancesLoaded) que actualizan al completar,
-      // lo que de otro modo provocaría un bucle infinito de peticiones.
-      untracked(() => {
-        for (const { year: y, month: m } of this.last6Months()) {
-          this.service.loadMonthlySummary(y, m);
-        }
-        this.service.loadPlatformMonthlyBalances(year, month, 6, true);
-        this.service.loadFundBalances(year, month);
-      });
+      this.currentMes();
+      this.selectedEntidad();
+      this.selectedCategoria();
+      this.loadDashboards(false);
     }, { allowSignalWrites: true });
   }
 
-  protected readonly currentSnapshots = computed(() =>
-    this.service.getSnapshotsByMonth(this.viewYear(), this.viewMonth())
+  protected readonly dashboardBalance = computed(() =>
+    this.service.getDashboardBalance(this.currentMes())
   );
 
-  protected readonly currentSummary = computed(() =>
-    this.service.getMonthlySummary(this.viewYear(), this.viewMonth())
+  protected readonly serieTotal = computed(() =>
+    this.service.getDashboardSerie(undefined, this.currentMes())
   );
 
-  protected readonly previousSummary = computed(() => {
-    const { year, month } = this.previousMonth();
-    return this.service.getMonthlySummary(year, month);
+  protected readonly serieGastos = computed(() =>
+    this.service.getDashboardSerie(DASHBOARD_GASTOS_CODE, this.currentMes())
+  );
+
+  protected readonly serieEntidad = computed(() => {
+    const entidad = this.selectedEntidad();
+    return entidad ? this.service.getDashboardSerie(entidad, this.currentMes()) : undefined;
   });
 
-  protected readonly chartLabels = computed(() => {
-    return this.last6Months().map(({ year, month }) => `${MONTHS[month - 1]} ${year}`);
-  });
+  protected readonly serieCategoria = computed(() =>
+    this.service.getDashboardCategoriaSerie(this.selectedCategoria(), this.currentMes())
+  );
 
-  protected readonly chartDatasets = computed<ChartDataset[]>(() => {
-    const platformId = this.selectedPlatformId();
-    const mode = this.chartMode();
-    const group = this.chartGroupFilter();
-    const months = this.last6Months();
-
-    if (platformId) {
-      const platform = this.service.getPlatform(platformId);
-      return [{
-        label: platform?.name ?? platformId,
-        data: months.map(({ year, month }) => this.getPlatformBalanceForMonth(platformId, year, month)),
-        color: platform?.color ?? '#3B82F6',
-      }];
+  protected readonly entityRows = computed<EntityBalanceRow[]>(() => {
+    const entidades = this.dashboardBalance()?.entidades ?? [];
+    const byCode = new Map(entidades.map(e => [e.codigo, e]));
+    const ordered = [
+      ...DASHBOARD_ENTITY_ORDER.filter(code => byCode.has(code)).map(code => byCode.get(code)!),
+      ...entidades.filter(e => !DASHBOARD_ENTITY_ORDER.includes(e.codigo)),
+    ];
+    const rows: EntityBalanceRow[] = ordered.map(e => ({
+      codigo: e.codigo,
+      nombre: e.nombre,
+      balance: e.balance,
+      aporte: e.aporte,
+      color: DASHBOARD_ENTITY_COLORS[e.codigo] ?? '#6B7280',
+      pct: 0,
+    }));
+    const maxBalance = Math.max(...rows.map(r => r.balance), 1);
+    for (const row of rows) {
+      row.pct = (row.balance / maxBalance) * 100;
     }
-
-    if (mode === 'total') {
-      return [{
-        label: 'Patrimonio',
-        data: months.map(({ year, month }) => this.service.getMonthlySummary(year, month).balanceWithoutExpenses),
-        color: '#3B82F6',
-      }];
-    }
-
-    const platformIds = group === 'all'
-      ? this.service.platforms().filter(p => p.id !== EXPENSES_PLATFORM_ID).map(p => p.id)
-      : PLATFORM_GROUPS[group] ?? [];
-
-    return platformIds.map(id => {
-      const platform = this.service.getPlatform(id);
-      return {
-        label: platform?.name ?? id,
-        data: months.map(({ year, month }) => this.getPlatformBalanceForMonth(id, year, month)),
-        color: platform?.color ?? '#6B7280',
-      };
-    });
+    return rows;
   });
 
-  protected readonly chartExpensesData = computed(() => {
-    const platformId = this.selectedPlatformId();
-    const cumulative = this.expensesMode() === 'acumulado';
-    const monthlyExpenses = (year: number, month: number) => {
-      if (platformId) {
-        return this.getPlatformExpensesForMonth(platformId, year, month);
-      }
-      return this.service.getMonthlySummary(year, month).totalExpenses;
+  protected readonly summaryCards = computed(() => {
+    const balance = this.dashboardBalance();
+    return {
+      total: balance?.total ?? 0,
+      aportes: balance?.entidades.reduce((sum, e) => sum + (e.aporte ?? 0), 0) ?? 0,
+      entidades: balance?.entidades.length ?? 0,
+      gastos: this.serieGastos()?.at(-1)?.balance ?? 0,
     };
-
-    return this.last6Months().map(({ year, month }) => {
-      if (!cumulative) {
-        return monthlyExpenses(year, month);
-      }
-      let cumulativeTotal = 0;
-      for (let m = 1; m <= month; m++) {
-        cumulativeTotal += monthlyExpenses(year, m);
-      }
-      return cumulativeTotal;
-    });
   });
 
-  protected readonly expensesTitle = computed(() =>
-    this.expensesMode() === 'acumulado' ? 'Gastos Acumulados' : 'Gastos por Mes'
+  protected readonly previousSummaryCards = computed(() => {
+    const total = this.serieTotal();
+    const gastos = this.serieGastos();
+    return {
+      total: this.secondToLast(total)?.balance ?? 0,
+      aportes: this.secondToLast(total)?.aporte ?? 0,
+      gastos: this.secondToLast(gastos)?.balance ?? 0,
+    };
+  });
+
+  protected readonly evolutionSerie = computed(() =>
+    this.selectedEntidad() ? this.serieEntidad() : this.serieTotal()
   );
 
-  protected readonly selectedPlatformColor = computed(() => {
-    const platformId = this.selectedPlatformId();
-    if (!platformId) { return ''; }
-    return this.service.getPlatform(platformId)?.color ?? '';
+  protected readonly evolutionLabels = computed(() =>
+    (this.evolutionSerie() ?? []).map(s => this.mesLabel(s.mes))
+  );
+
+  protected readonly evolutionDatasets = computed<ChartDataset[]>(() => {
+    const serie = this.evolutionSerie();
+    if (!serie) { return []; }
+    const entidad = this.selectedEntidad();
+    if (entidad) {
+      return [{
+        label: DASHBOARD_ENTITY_NAMES[entidad] ?? entidad,
+        data: serie.map(s => s.balance),
+        color: DASHBOARD_ENTITY_COLORS[entidad] ?? '#3B82F6',
+      }];
+    }
+    return [{
+      label: 'Patrimonio',
+      data: serie.map(s => s.balance),
+      color: '#3B82F6',
+    }];
   });
 
-  protected readonly selectedPlatformName = computed(() => {
-    const platformId = this.selectedPlatformId();
-    if (!platformId) { return ''; }
-    return this.service.getPlatform(platformId)?.name ?? '';
+  protected readonly categoryLabels = computed(() =>
+    this.categoryMesLabels().map(mes => this.mesLabel(mes))
+  );
+
+  protected readonly categoryDatasets = computed<ChartDataset[]>(() => {
+    const labels = this.categoryMesLabels();
+    const rows = this.serieCategoria() ?? [];
+    const byCode = new Map<string, Map<string, number>>();
+    for (const row of rows) {
+      let months = byCode.get(row.codigo);
+      if (!months) {
+        months = new Map<string, number>();
+        byCode.set(row.codigo, months);
+      }
+      months.set(row.mes, row.balance);
+    }
+    const order = DASHBOARD_CATEGORIAS[this.selectedCategoria()] ?? DASHBOARD_ENTITY_ORDER;
+    return order
+      .filter(code => byCode.has(code))
+      .map(code => ({
+        label: DASHBOARD_ENTITY_NAMES[code] ?? code,
+        data: labels.map(mes => byCode.get(code)?.get(mes) ?? 0),
+        color: DASHBOARD_ENTITY_COLORS[code] ?? '#6B7280',
+      }));
   });
 
-  onPlatformClick(platformId: string): void {
-    this.selectedPlatformId.update(current => current === platformId ? null : platformId);
+  protected readonly expensesLabels = computed(() =>
+    (this.serieGastos() ?? []).map(s => this.mesLabel(s.mes))
+  );
+
+  protected readonly expensesData = computed(() =>
+    (this.serieGastos() ?? []).map(s => s.balance)
+  );
+
+  protected readonly selectedEntityName = computed(() => {
+    const entidad = this.selectedEntidad();
+    return entidad ? (DASHBOARD_ENTITY_NAMES[entidad] ?? entidad) : '';
+  });
+
+  protected readonly selectedEntityColor = computed(() => {
+    const entidad = this.selectedEntidad();
+    return entidad ? (DASHBOARD_ENTITY_COLORS[entidad] ?? '') : '';
+  });
+
+  onEntityClick(codigo: string): void {
+    this.selectedEntidad.update(current => current === codigo ? null : codigo);
+  }
+
+  onCategoriaChange(value: unknown): void {
+    this.selectedCategoria.set(value as DashboardCategoria);
   }
 
   resetView(): void {
-    this.selectedPlatformId.set(null);
-    this.chartMode.set('total');
+    this.selectedEntidad.set(null);
   }
 
-  private getPlatformBalanceForMonth(platformId: string, year: number, month: number): number {
-    const accounts = this.service.getAccountsByPlatform(platformId);
-    const accountIds = new Set(accounts.map(a => a.id));
-    const snapshots = this.service.getSnapshotsByMonth(year, month);
-    return snapshots.filter(s => accountIds.has(s.accountId)).reduce((sum, s) => sum + s.balance, 0);
+  reloadDashboard(): void {
+    this.loadDashboards(true);
   }
 
-  private getPlatformExpensesForMonth(platformId: string, year: number, month: number): number {
-    const accounts = this.service.getAccountsByPlatform(platformId);
-    const accountIds = new Set(accounts.map(a => a.id));
-    const snapshots = this.service.getSnapshotsByMonth(year, month);
-    return snapshots.filter(s => accountIds.has(s.accountId)).reduce((sum, s) => sum + s.expenses, 0);
-  }
-
-  private last6Months(): { year: number; month: number }[] {
-    const result: { year: number; month: number }[] = [];
-    let y = this.viewYear();
-    let m = this.viewMonth();
-
-    for (let i = 0; i < 6; i++) {
-      result.unshift({ year: y, month: m });
-      m--;
-      if (m === 0) { m = 12; y--; }
+  private categoryMesLabels(): string[] {
+    const rows = this.serieCategoria() ?? [];
+    const seen = new Set<string>();
+    const labels: string[] = [];
+    for (const row of rows) {
+      if (!seen.has(row.mes)) {
+        seen.add(row.mes);
+        labels.push(row.mes);
+      }
     }
-
-    return result;
+    return labels;
   }
 
-  private previousMonth(): { year: number; month: number } {
-    let y = this.viewYear();
-    let m = this.viewMonth() - 1;
-    if (m === 0) { m = 12; y--; }
-    return { year: y, month: m };
+  private loadDashboards(force: boolean): void {
+    const mes = this.currentMes();
+    const entidad = this.selectedEntidad();
+    const categoria = this.selectedCategoria();
+
+    untracked(() => {
+      this.service.loadDashboardBalance(mes, force);
+      this.service.loadDashboardSerie(undefined, mes, DASHBOARD_DEFAULT_MESES_ATRAS, force);
+      this.service.loadDashboardSerie(DASHBOARD_GASTOS_CODE, mes, DASHBOARD_DEFAULT_MESES_ATRAS, force);
+      if (entidad) {
+        this.service.loadDashboardSerie(entidad, mes, DASHBOARD_DEFAULT_MESES_ATRAS, force);
+      }
+      this.service.loadDashboardCategoriaSerie(categoria, mes, DASHBOARD_DEFAULT_MESES_ATRAS, force);
+    });
+  }
+
+  private mesLabel(mes: string): string {
+    const [year, month] = mes.split('-').map(Number);
+    return `${MONTHS_SHORT[month - 1]} ${year}`;
+  }
+
+  private secondToLast(serie: DashboardSerieBalance[] | undefined): DashboardSerieBalance | undefined {
+    if (!serie || serie.length < 2) { return undefined; }
+    return serie[serie.length - 2];
+  }
+
+  private static toMes(year: number, month: number): string {
+    return `${year}-${String(month).padStart(2, '0')}`;
   }
 }

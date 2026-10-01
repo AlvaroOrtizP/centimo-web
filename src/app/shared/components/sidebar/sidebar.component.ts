@@ -6,6 +6,7 @@ interface NavItem {
   label: string;
   icon: string;
   done?: boolean;
+  blue?: boolean;
 }
 
 @Component({
@@ -34,11 +35,22 @@ interface NavItem {
         @for (item of navItems; track item.path) {
           <a
             [routerLink]="item.path"
-            routerLinkActive="bg-blue-50 text-blue-700 before:bg-blue-600"
+            routerLinkActive=""
             #rla="routerLinkActive"
-            class="relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-all duration-150 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-r before:transition-all hover:bg-gray-100 hover:text-gray-900"
+            class="relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-r before:transition-all"
+            [class.bg-orange-50]="!item.blue"
+            [class.text-orange-700]="!item.blue"
+            [class.hover:bg-orange-100]="!item.blue"
+            [class.bg-blue-50]="item.blue"
+            [class.text-blue-700]="item.blue"
+            [class.hover:bg-blue-100]="item.blue"
+            [class.bg-orange-100]="rla.isActive && !item.blue"
+            [class.text-orange-800]="rla.isActive && !item.blue"
+            [class.before:bg-orange-600]="rla.isActive && !item.blue"
+            [class.bg-blue-100]="rla.isActive && item.blue"
+            [class.text-blue-800]="rla.isActive && item.blue"
+            [class.before:bg-blue-600]="rla.isActive && item.blue"
             [class.pl-10]="compact()"
-            [class.text-blue-700]="rla.isActive"
             (click)="navigate.emit()"
           >
             <span class="flex-shrink-0" [innerHTML]="item.icon"></span>
@@ -64,6 +76,7 @@ export class SidebarComponent {
     {
       path: '/',
       label: 'Dashboard',
+      blue: true,
       icon: `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>`,
     },
     {
@@ -82,8 +95,9 @@ export class SidebarComponent {
       icon: `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`,
     },
     {
-      path: '/entry/bbva',
+      path: '/entry',
       label: 'Entrada Datos',
+      blue: true,
       icon: `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
       // TODO: eliminar la línea verde (done) una vez entregado
       done: true,
@@ -91,6 +105,7 @@ export class SidebarComponent {
     {
       path: '/expenses',
       label: 'Gastos',
+      blue: true,
       icon: `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
     },
   ];

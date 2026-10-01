@@ -6,13 +6,15 @@ import { environment } from '../../../environments/environment';
 import { LoginResponse, TotpSetupResponse } from '../../models/auth';
 
 const TOKEN_KEY = 'centimo_token';
+const MOCK_TOKEN = 'centimo_mock_token'; // TODO(BACKEND): mock - acceso directo sin login
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiUrl + '/api/v1';
 
-  private readonly token = signal<string | null>(localStorage.getItem(TOKEN_KEY));
+  // TODO(BACKEND): mock - se inicia autenticado para saltar el login.
+  private readonly token = signal<string | null>(MOCK_TOKEN);
   private readonly pendingPreAuth = signal<string | null>(null);
 
   readonly isAuthenticated = computed(() => !!this.token());
@@ -22,18 +24,9 @@ export class AuthService {
   }
 
   async login(username: string, password: string): Promise<{ requires2fa: boolean }> {
-    const res = await firstValueFrom(
-      this.http.post<LoginResponse>(`${this.base}/auth/login`, { username, password })
-    );
-    if (res.requires2fa && res.preAuthToken) {
-      this.pendingPreAuth.set(res.preAuthToken);
-      return { requires2fa: true };
-    }
-    if (res.token) {
-      this.setToken(res.token);
-      return { requires2fa: false };
-    }
-    throw new Error('Respuesta de login inválida');
+    // TODO(BACKEND): llamada a POST /auth/login comentada. Mock: login directo.
+    void username; void password;
+    return { requires2fa: false };
   }
 
   async verify2fa(code: string): Promise<void> {

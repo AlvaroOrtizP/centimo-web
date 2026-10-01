@@ -96,32 +96,22 @@ export class IncomeFormComponent {
       const year = this.year();
       const month = this.month();
 
-      this.service.fetchNominaFromBackend(year, month)
+      this.service.loadNomina(year, month)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(nomina => {
           this.existingNomina.set(nomina !== null);
+          this.amount.set(nomina?.cantidad ?? 0);
+          this.note.set(nomina?.nota ?? '');
         });
     });
   }
 
   protected save(): void {
-    if (this.existingNomina()) {
-      alert('PUT /nomina no implementado aún');
-      return;
-    }
+    const year = this.year();
+    const month = this.month();
 
-    const y = this.year();
-    const m = this.month();
-
-    this.service.createNomina({
-      year: y,
-      month: m,
-      value: this.amount(),
-      note: this.note(),
-    }).subscribe(() => {
+    this.service.saveNomina(year, month, this.amount(), this.note()).subscribe(() => {
       this.existingNomina.set(true);
-      this.amount.set(0);
-      this.note.set('');
       this.saved.set(true);
       setTimeout(() => this.saved.set(false), 2000);
     });
