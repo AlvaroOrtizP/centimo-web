@@ -4,7 +4,7 @@
 
 Ingreso mensual recibido (nómina). Una única fila por mes: la cantidad neta ingresada ese mes y una nota opcional. Es la fuente del **"Ingresos del mes"** que muestra la vista mensual.
 
-> **Alcance actual:** por ahora **solo se implementa el tema del ingreso** (registrar el ingreso del mes y consultarlo). La distribución del sueldo entre plataformas, la planificación y los compromisos siguen viviendo en el front (memoria local vía `SalaryDataService`) y quedan para una fase posterior.
+> **Alcance actual:** este documento cubre **únicamente el ingreso del mes**: registrarlo y consultarlo contra `/nomina`. La distribución del sueldo entre plataformas, la planificación y los compromisos son conceptos distintos, sin backend, y quedan fuera de este documento.
 
 ## Datos que guarda
 
@@ -64,18 +64,38 @@ COMMENT ON COLUMN nominas.fecha_actualizacion IS 'Auditoría: fecha de última a
 
 - **Una sola fila por mes**: no existe el concepto de "varios ingresos". El ingreso del mes es la nómina.
 - `mes` en una sola columna `YYYY-MM`, coherente con `b100_balances` y con los endpoints de dashboard.
-- **Solo el ingreso por ahora**: la distribución del sueldo (`SalaryAllocation`), la planificación y los compromisos (`Commitment`) no tienen backend en esta fase; siguen en memoria en el front y se podrán migrar después.
+- El importe es el dato que consume la pantalla: la distribución del sueldo lo lee como "sueldo del mes" y la vista mensual lo muestra como "Ingresos".
 - La vista mensual obtiene el total de ingresos del mes como `cantidad` de este endpoint (una fila por mes, sin sumatorio).
 - Modelo de dominio: `Nomina` (`mes, cantidad, nota` + auditoría), `cantidad` en `BigDecimal`.
 - Patrón hexagonal del proyecto, como `InteresAnualMintos` o `BalanceFondo`.
 
-## Frontend
+## Frontend (pantalla de Nómina)
 
-- **Pestaña Nómina** (`/income`): el formulario "Añadir Ingreso" (`IncomeFormComponent`) ya está preparado para consumir este endpoint: llama a `fetchNominaFromBackend(year, month)` y `createNomina({year, month, value, note})`, hoy comentados con `TODO(BACKEND)` en `incomes.service.ts`.
-- Al implementar: `IncomeFormComponent` muestra "Modificar Nómina" cuando el mes ya tiene ingreso (hoy depende de la respuesta del backend) y el backend hace el upsert.
-- La **Vista Mensual** usa este dato en la tarjeta "Ingresos" y en el desglose por fuente.
+La pantalla `/income` muestra la pestaña **Distribución Mensual** con un selector de mes y año y dos formularios: el **ingreso del mes** y la **distribución del sueldo**.
 
-## Capas de implementación previstas
+### Selector de mes y año
+
+- La pestaña se abre con el mes y año en curso (signals globales `currentMonth` / `currentYear`) y permite cambiarlos con dos desplegables.
+- El mes/año seleccionado se pasa como `input` a los dos formularios (ingreso y distribución); ambos recargan al cambiar de mes/año.
+
+### Formulario "Añadir Ingreso" (`IncomeFormComponent`)
+
+- Al entrar (y cada vez que cambia el mes/año) hace `GET /nomina?mes=YYYY-MM` (`loadNomina`). El resultado queda cacheado por mes en memoria (señal `Map<mes, Nomina|null>`), así que al volver a un mes ya consultado no se rellama al backend.
+- **Mes sin nómina** (el backend responde 404 → `null`): el botón muestra **"Añadir Nomina"** y los campos `Cantidad` y `Nota` quedan a `0`/vacío.
+- **Mes con nómina**: el botón muestra **"Modificar Nomina"** y los campos se **precargan** con la `cantidad` y la `nota` guardadas.
+- Al guardar, `saveNomina` decide el método solo: **`POST /nomina`** si el mes no existía en caché, **`PUT /nomina/{mes}`** si ya existía (upsert en el front).
+- Tras guardar: mensaje "Ingreso añadido correctamente" durante 2 segundos y el botón pasa a "Modificar Nomina". La `cantidad` y la `nota` **se mantienen** en el formulario (no se resetean), para poder ajustar el dato sin volver a teclearlo.
+- El botón de guardar está deshabilitado si `Cantidad` es `0`.
+
+### Distribución del Sueldo (`SalaryDistributionComponent`)
+
+- El campo **"Sueldo neto del mes"** es de **solo lectura** y sale de la `cantidad` de la nómina del mes seleccionado (`getNomina`): a `0` si ese mes no tiene nómina guardada. Hace `loadNomina` al entrar y al cambiar de mes/año para que el campo esté al día.
+- La **barra de progreso** calcula, sobre ese sueldo:
+  - *Asignado* = suma de las distribuciones del mes: las de tipo fijo (`€`) suman su valor; las de porcentaje (`%`) suman `sueldo × valor / 100`.
+  - *% asignado* = `redondeo(asignado / sueldo × 100)` (solo si sueldo > 0; si no, 0 %).
+  - *Restante* = `sueldo − asignado`.
+
+## Capas de implementación previstas (backend)
 
 - **Capa de aplicación**: `Nomina` (domain model), `NominaDrivingPort`, `NominaUseCase`, `NominaDrivenPort`.
 - **Capa driven**: `NominaMO`, `NominaRepository`, `NominaDatasourceAdapter`, `NominaDatasourceMapper`.
