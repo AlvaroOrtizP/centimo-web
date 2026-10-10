@@ -12,9 +12,10 @@ import { B100FormComponent } from './components/b100-form/b100-form.component';
 import { BanksFormComponent } from './components/banks-form/banks-form.component';
 import { MyInvestorFormComponent } from './components/myinvestor-form/myinvestor-form.component';
 import { BitvavoFormComponent } from './components/bitvavo-form/bitvavo-form.component';
+import { CryptoFormComponent } from './components/crypto-form/crypto-form.component';
 import { CollapsibleDescriptionComponent } from '../../shared/components/collapsible-description/collapsible-description.component';
 
-type Tab = 'banks' | 'revolut' | 'b100' | 'myinvestor' | 'mintos' | 'equito' | 'urbanitae' | 'bitvavo';
+type Tab = 'banks' | 'revolut' | 'b100' | 'myinvestor' | 'mintos' | 'equito' | 'urbanitae' | 'bitvavo' | 'crypto';
 
 interface TabConfig {
   key: Tab;
@@ -29,7 +30,7 @@ interface TabConfig {
   imports: [
     FormsModule,
     CollapsibleDescriptionComponent,
-    CrowdlendingFormComponent, MintosFormComponent, EquitoFormComponent, UrbanitaeFormComponent, RevolutFormComponent, B100FormComponent, BanksFormComponent, MyInvestorFormComponent, BitvavoFormComponent,
+    CrowdlendingFormComponent, MintosFormComponent, EquitoFormComponent, UrbanitaeFormComponent, RevolutFormComponent, B100FormComponent, BanksFormComponent, MyInvestorFormComponent, BitvavoFormComponent, CryptoFormComponent,
   ],
   template: `
     <div class="space-y-6">
@@ -88,8 +89,10 @@ interface TabConfig {
                       <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>
                     } @else if (tab.key === 'equito') {
                       <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-                    } @else if (tab.key === 'bitvavo') {
-                      <path d="M11.76 0H8.32a.32.32 0 0 0-.32.32v3.2H4.8a.32.32 0 0 0-.32.32v3.2c0 .177.143.32.32.32h3.2v3.2H4.8a.32.32 0 0 0-.32.32v3.2c0 .177.143.32.32.32h3.2v3.2c0 .177.143.32.32.32h3.44a.32.32 0 0 0 .32-.32v-3.2h3.2a.32.32 0 0 0 .32-.32v-3.2a.32.32 0 0 0-.32-.32h-3.2v-3.2h3.2a.32.32 0 0 0 .32-.32v-3.2a.32.32 0 0 0-.32-.32h-3.2V.32a.32.32 0 0 0-.32-.32z"/>
+} @else if (tab.key === 'bitvavo') {
+                      <path d="M11.76 0H8.32a.32.32 0 0 0-.32.32v3.2H4.8a.32.32 0 0 0-.32.32v3.2c0 .177.143.32.32.32h3.2v3.2H4.8a.32.32 0 0 0-.32.32v3.2c0 .177.143.32.32.32h3.44a.32.32 0 0 0 .32-.32v-3.2h3.2a.32.32 0 0 0 .32-.32v-3.2a.32.32 0 0 0-.32-.32h-3.2v-3.2h3.2a.32.32 0 0 0 .32-.32v-3.2a.32.32 0 0 0-.32-.32h-3.2V.32a.32.32 0 0 0-.32-.32z"/>
+                    } @else if (tab.key === 'crypto') {
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm1-13h-2v6l5.25 3.15.75-1.23-4.5-2.67z"/>
                     } @else {
                       <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/>
                     }
@@ -149,6 +152,12 @@ interface TabConfig {
               <app-collapsible-description description="Registra el balance mensual de tu cuenta Bitvavo (cripto): saldo, ingresos, gastos y aportación." storageKey="desc-entry-bitvavo" />
               <app-bitvavo-form [accounts]="allAccounts()" />
             }
+            @case ('crypto') {
+              <div class="mb-3">
+                <app-collapsible-description description="Registra el balance mensual de tu cuenta de criptomonedas (Bitvavo) para el mes seleccionado." storageKey="desc-entry-crypto" />
+              </div>
+              <app-crypto-form [accounts]="allAccounts()" />
+            }
           }
         </div>
       </div>
@@ -178,6 +187,7 @@ export class EntryFormComponent {
     { key: 'mintos', label: 'Mintos', color: '#00BFA5', done: true },
     { key: 'equito', label: 'Equito', color: '#FF6B35', done: true },
     { key: 'urbanitae', label: 'Urbanitae', color: '#E63946', done: true },
+    { key: 'crypto', label: 'Crypto', color: '#F59E0B', done: true },
   ];
 
   protected readonly activeTabColor = computed(() => {
