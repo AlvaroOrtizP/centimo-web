@@ -1,5 +1,12 @@
 import { Component, input } from '@angular/core';
 
+interface SummaryCardsData {
+  total: number;
+  aportes: number;
+  entidades: number;
+  gastos: number;
+}
+
 interface CardConfig {
   label: string;
   value: string;
@@ -43,8 +50,8 @@ interface CardConfig {
   `,
 })
 export class SummaryCardsComponent {
-  readonly summary = input.required<{ totalBalance: number; totalIncome: number; totalExpenses: number; netSavings: number; netWorth: number }>();
-  readonly previousSummary = input.required<{ totalBalance: number; totalIncome: number; totalExpenses: number; netSavings: number; netWorth: number }>();
+  readonly summary = input.required<SummaryCardsData>();
+  readonly previousSummary = input.required<Omit<SummaryCardsData, 'entidades'>>();
 
   protected get cards(): CardConfig[] {
     const s = this.summary();
@@ -52,36 +59,36 @@ export class SummaryCardsComponent {
 
     return [
       {
-        label: 'Patrimonio Neto',
-        value: this.fmt(s.netWorth),
-        change: this.pct(s.netWorth, p.netWorth),
+        label: 'Patrimonio Total',
+        value: this.fmt(s.total),
+        change: this.pct(s.total, p.total),
         icon: `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
         gradient: 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
         accent: '#3B82F6',
       },
       {
-        label: 'Ingresos del Mes',
-        value: this.fmt(s.totalIncome),
-        change: this.pct(s.totalIncome, p.totalIncome),
+        label: 'Aportes del Mes',
+        value: this.fmt(s.aportes),
+        change: this.pct(s.aportes, p.aportes),
         icon: `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
         gradient: 'linear-gradient(135deg, #22C55E, #15803D)',
         accent: '#22C55E',
       },
       {
+        label: 'Entidades',
+        value: `${s.entidades}`,
+        change: null,
+        icon: `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>`,
+        gradient: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
+        accent: '#8B5CF6',
+      },
+      {
         label: 'Gastos del Mes',
-        value: this.fmt(s.totalExpenses),
-        change: this.pct(s.totalExpenses, p.totalExpenses),
+        value: this.fmt(s.gastos),
+        change: this.pct(s.gastos, p.gastos),
         icon: `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>`,
         gradient: 'linear-gradient(135deg, #EF4444, #B91C1C)',
         accent: '#EF4444',
-      },
-      {
-        label: 'Ahorro Neto',
-        value: this.fmt(s.netSavings),
-        change: null,
-        icon: `<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="14" x="3" y="3" rx="2"/><line x1="3" x2="21" y1="10" y2="10"/><circle cx="18" cy="14" r="1"/></svg>`,
-        gradient: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
-        accent: '#8B5CF6',
       },
     ];
   }

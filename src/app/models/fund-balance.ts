@@ -7,7 +7,7 @@ export interface FundBalance {
   fundId: string;
   year: number;
   month: number;
-  balance: number;
+  balance?: number;
   income?: number;
   contribution?: number;
   expenses?: number;

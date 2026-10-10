@@ -5,10 +5,24 @@ import { PlatformsDataService } from './platforms.service';
 import { SnapshotsDataService } from './snapshots.service';
 import { ExpensesDataService } from './expenses.service';
 import { IncomesDataService } from './incomes.service';
+import { NominaDataService } from './nomina.service';
 import { SalaryDataService } from './salary.service';
 import { InvestmentsDataService } from './investments.service';
 import { SummaryDataService } from './summary.service';
 import { MintosInterestDataService } from './mintos-interest.service';
+import { B100BalanceDataService } from './b100-balance.service';
+import { RevolutBalanceDataService } from './revolut-balance.service';
+import { MintosBalanceDataService } from './mintos-balance.service';
+import { BancoBalanceDataService } from './banco-balance.service';
+import { UrbanitaeBalanceDataService } from './urbanitae-balance.service';
+import { UrbanitaeCompraDataService } from './urbanitae-compra.service';
+import { EquitoBalanceDataService } from './equito-balance.service';
+import { EquitoCompraDataService } from './equito-compra.service';
+import { DashboardDataService } from './dashboard-data.service';
+import { DashboardCategoria } from '../../api/generated/model/dashboardCategoria';
+import { DashboardCategoriaBalance } from '../../api/generated/model/dashboardCategoriaBalance';
+import { DashboardResponse } from '../../api/generated/model/dashboardResponse';
+import { DashboardSerieBalance } from '../../api/generated/model/dashboardSerieBalance';
 import { roundMoney } from '../utils/money.util';
 
 import {
@@ -22,16 +36,35 @@ import {
   Expense,
   IncomeSource,
   MonthlySummary,
+  Nomina,
   SalaryAllocation,
   Commitment,
   PlatformMonthlyBalance,
+  B100Balance,
+  B100BalanceSave,
+  B100Subcuenta,
+  RevolutBalance,
+  RevolutBalanceSave,
+  MintosBalance,
+  MintosBalanceSave,
+  BancoBalance,
+  BancoBalanceSave,
+  UrbanitaeBalance,
+  UrbanitaeBalanceSave,
+  UrbanitaeCompra,
+  UrbanitaeCompraEstado,
+  UrbanitaeCompraSave,
+  EquitoBalance,
+  EquitoBalanceSave,
+  EquitoCompra,
+  EquitoCompraEstado,
+  EquitoCompraSave,
 } from '../../models';
 import { EXPENSES_PLATFORM_ID } from '../constants/platform.constants';
 
-import { SnapshotResponse } from '../../api/generated/model/snapshotResponse';
-import { NominaCreate } from '../../api/generated/model/nominaCreate';
-import { NominaResponse } from '../../api/generated/model/nominaResponse';
-import { ExpenseUpdate } from '../../api/generated/model/expenseUpdate';
+// TODO(BACKEND): modelos eliminados del swagger (solo queda B100). Se reactivarán al ampliar la nueva API.
+// import { SnapshotResponse } from '../../api/generated/model/snapshotResponse';
+// import { ExpenseUpdate } from '../../api/generated/model/expenseUpdate';
 
 @Injectable({ providedIn: 'root' })
 export class FinancialDataService {
@@ -39,10 +72,20 @@ export class FinancialDataService {
   private readonly snapshotsData = inject(SnapshotsDataService);
   private readonly expensesData = inject(ExpensesDataService);
   private readonly incomesData = inject(IncomesDataService);
+  private readonly nominaData = inject(NominaDataService);
   private readonly salaryData = inject(SalaryDataService);
   private readonly investmentsData = inject(InvestmentsDataService);
   private readonly summaryData = inject(SummaryDataService);
   private readonly mintosInterestData = inject(MintosInterestDataService);
+  private readonly b100Data = inject(B100BalanceDataService);
+  private readonly revolutData = inject(RevolutBalanceDataService);
+  private readonly mintosData = inject(MintosBalanceDataService);
+  private readonly bancoData = inject(BancoBalanceDataService);
+  private readonly urbanitaeBalanceData = inject(UrbanitaeBalanceDataService);
+  private readonly urbanitaeCompraData = inject(UrbanitaeCompraDataService);
+  private readonly equitoBalanceData = inject(EquitoBalanceDataService);
+  private readonly equitoCompraData = inject(EquitoCompraDataService);
+  private readonly dashboardData = inject(DashboardDataService);
 
   readonly platforms = computed(() => this.platformsData.platforms());
   readonly accounts = computed(() => this.platformsData.accounts());
@@ -59,6 +102,14 @@ export class FinancialDataService {
   readonly currentMonth = signal(new Date().getMonth() + 1);
 
   readonly platformMonthlyBalances = this.summaryData.platformMonthlyBalances;
+  readonly b100Balances = computed(() => this.b100Data.balances());
+  readonly revolutBalances = computed(() => this.revolutData.balances());
+  readonly mintosBalances = computed(() => this.mintosData.balances());
+  readonly bancoBalances = computed(() => this.bancoData.balances());
+  readonly urbanitaeBalances = computed(() => this.urbanitaeBalanceData.balances());
+  readonly urbanitaeCompras = computed(() => this.urbanitaeCompraData.compras());
+  readonly equitoBalances = computed(() => this.equitoBalanceData.balances());
+  readonly equitoCompras = computed(() => this.equitoCompraData.compras());
 
   private autoAdjustedToData = false;
 
@@ -145,33 +196,59 @@ export class FinancialDataService {
     this.summaryData.loadPlatformMonthlyBalances(year, month, months, force);
   }
 
-  fetchNominaFromBackend(year: number, month: number): Observable<NominaResponse | null> {
-    return this.incomesData.fetchNominaFromBackend(year, month);
+  getDashboardBalance(mes: string): DashboardResponse | undefined {
+    return this.dashboardData.getBalance(mes);
   }
 
-  createNomina(nomina: NominaCreate): Observable<NominaResponse | null> {
-    return this.incomesData.createNomina(nomina);
+  loadDashboardBalance(mes: string, force = false): void {
+    this.dashboardData.loadBalance(mes, force);
+  }
+
+  getDashboardSerie(entidad: string | undefined, mes: string, mesesAtras?: number): DashboardSerieBalance[] | undefined {
+    return this.dashboardData.getSerie(entidad, mes, mesesAtras);
+  }
+
+  loadDashboardSerie(entidad: string | undefined, mes: string, mesesAtras?: number, force = false): void {
+    this.dashboardData.loadSerie(entidad, mes, mesesAtras, force);
+  }
+
+  getDashboardCategoriaSerie(categoria: DashboardCategoria, mes: string, mesesAtras?: number): DashboardCategoriaBalance[] | undefined {
+    return this.dashboardData.getSerieCategoria(categoria, mes, mesesAtras);
+  }
+
+  loadDashboardCategoriaSerie(categoria: DashboardCategoria, mes: string, mesesAtras?: number, force = false): void {
+    this.dashboardData.loadSerieCategoria(categoria, mes, mesesAtras, force);
+  }
+
+  getNomina(year: number, month: number): Nomina | undefined {
+    return this.nominaData.getNomina(year, month);
+  }
+
+  loadNomina(year: number, month: number, force = false): Observable<Nomina | null> {
+    return this.nominaData.loadNomina(year, month, force);
+  }
+
+  saveNomina(year: number, month: number, cantidad: number, nota?: string): Observable<Nomina> {
+    return this.nominaData.saveNomina(year, month, cantidad, nota);
+  }
+
+  deleteNomina(year: number, month: number): Observable<void> {
+    return this.nominaData.deleteNomina(year, month);
   }
 
   getCrowdlendingByPlatform(platformId: string): CrowdlendingInvestment[] {
     return this.investmentsData.getCrowdlendingByPlatform(platformId);
   }
 
-  loadExpenses(snapshotId: string): void {
-    this.expensesData.loadExpenses(snapshotId);
-  }
-
   loadExpensesByPeriod(year: number, month: number, force = false): void {
     this.expensesData.loadExpensesByMonth(year, month, force);
   }
 
-  getExpensesBySnapshot(snapshotId: string): Expense[] {
-    return this.expensesData.getExpensesBySnapshot(snapshotId);
-  }
-
   getExpensesByPeriod(year: number, month: number): Expense[] {
-    const snapshotIds = new Set(this.getSnapshotsByMonth(year, month).map(s => s.id));
-    return this.expenses().filter(e => snapshotIds.has(e.snapshotId));
+    return this.expensesData.expenses().filter(e => {
+      const d = new Date(e.date);
+      return d.getFullYear() === year && d.getMonth() + 1 === month;
+    });
   }
 
   getIncomesBySnapshot(snapshotId: string): IncomeSource[] {
@@ -226,7 +303,7 @@ export class FinancialDataService {
     this.snapshotsData.updateSnapshot(id, data);
   }
 
-  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number, tax?: number): Observable<SnapshotResponse> {
+  upsertSnapshot(accountId: string, year: number, month: number, balance: number, incomeDelta: number, expenses?: number, contribution?: number, tax?: number): Observable<MonthlySnapshot> {
     return this.snapshotsData.upsertSnapshot(accountId, year, month, balance, incomeDelta, expenses, contribution, tax);
   }
 
@@ -234,16 +311,16 @@ export class FinancialDataService {
     this.snapshotsData.toggleChecklistItem(snapshotId, itemId);
   }
 
-  addExpense(expense: Expense): Observable<Expense> {
+  addExpense(expense: Omit<Expense, 'id'>): Observable<Expense> {
     return this.expensesData.addExpense(expense);
   }
 
-  updateExpense(id: string, data: ExpenseUpdate): Observable<Expense> {
+  updateExpense(id: string, data: Partial<Expense>): Observable<Expense> {
     return this.expensesData.updateExpense(id, data);
   }
 
-  deleteExpense(id: string, snapshotId: string): void {
-    this.expensesData.deleteExpense(id, snapshotId);
+  deleteExpense(id: string): Observable<void> {
+    return this.expensesData.deleteExpense(id);
   }
 
   addIncome(income: IncomeSource): void {
@@ -345,7 +422,7 @@ export class FinancialDataService {
   }
 
   getTotalFundBalanceForMonth(year: number, month: number): number {
-    return this.investmentsData.getFundBalancesByMonth(year, month).reduce((sum, b) => sum + b.balance, 0);
+    return this.investmentsData.getFundBalancesByMonth(year, month).reduce((sum, b) => sum + (b.balance ?? 0), 0);
   }
 
   addFundBalance(balance: FundBalance): Observable<FundBalance> {
@@ -366,5 +443,173 @@ export class FinancialDataService {
 
   saveMintosAnnualInterest(interest: MintosAnnualInterest): Observable<MintosAnnualInterest> {
     return this.mintosInterestData.save(interest);
+  }
+
+  loadB100History(tipo: B100Subcuenta, year: number, month: number, limit = 12, order = 'desc', force = false): void {
+    this.b100Data.loadHistory(tipo, year, month, limit, order, force);
+  }
+
+  getB100BalancesByTipo(tipo: B100Subcuenta): B100Balance[] {
+    return this.b100Data.getBalancesByTipo(tipo);
+  }
+
+  getB100Balance(tipo: B100Subcuenta, year: number, month: number): B100Balance | undefined {
+    return this.b100Data.getBalance(tipo, year, month);
+  }
+
+  saveB100Balance(tipo: B100Subcuenta, year: number, month: number, data: B100BalanceSave): Observable<B100Balance> {
+    return this.b100Data.save(tipo, year, month, data);
+  }
+
+  deleteB100Balance(id: string): Observable<any> {
+    return this.b100Data.delete(id);
+  }
+
+  loadRevolutHistory(year: number, month: number, limit = 12, order = 'desc', force = false): void {
+    this.revolutData.loadHistory(year, month, limit, order, force);
+  }
+
+  getRevolutBalances(): RevolutBalance[] {
+    return this.revolutData.getBalances();
+  }
+
+  getRevolutBalance(year: number, month: number): RevolutBalance | undefined {
+    return this.revolutData.getBalance(year, month);
+  }
+
+  saveRevolutBalance(year: number, month: number, data: RevolutBalanceSave): Observable<RevolutBalance> {
+    return this.revolutData.save(year, month, data);
+  }
+
+  deleteRevolutBalance(id: string): Observable<any> {
+    return this.revolutData.delete(id);
+  }
+
+  loadMintosHistory(year: number, month: number, force = false): void {
+    this.mintosData.loadHistory(year, month, force);
+  }
+
+  getMintosBalances(): MintosBalance[] {
+    return this.mintosData.getBalances();
+  }
+
+  getMintosBalance(year: number, month: number): MintosBalance | undefined {
+    return this.mintosData.getBalance(year, month);
+  }
+
+  saveMintosBalance(year: number, month: number, data: MintosBalanceSave): Observable<MintosBalance> {
+    return this.mintosData.save(year, month, data);
+  }
+
+  deleteMintosBalance(id: string): Observable<any> {
+    return this.mintosData.delete(id);
+  }
+
+  loadBancoHistory(entidad: string, year: number, month: number, force = false): void {
+    this.bancoData.loadHistory(entidad, year, month, force);
+  }
+
+  getBancoBalances(entidad: string): BancoBalance[] {
+    return this.bancoData.getBalances(entidad);
+  }
+
+  getBancoBalance(entidad: string, year: number, month: number): BancoBalance | undefined {
+    return this.bancoData.getBalance(entidad, year, month);
+  }
+
+  saveBancoBalance(entidad: string, year: number, month: number, data: BancoBalanceSave): Observable<BancoBalance> {
+    return this.bancoData.save(entidad, year, month, data);
+  }
+
+  deleteBancoBalance(id: string): Observable<any> {
+    return this.bancoData.delete(id);
+  }
+
+  loadUrbanitaeHistory(year: number, month: number, force = false): void {
+    this.urbanitaeBalanceData.loadHistory(year, month, force);
+  }
+
+  getUrbanitaeBalances(): UrbanitaeBalance[] {
+    return this.urbanitaeBalanceData.getBalances();
+  }
+
+  getUrbanitaeBalance(year: number, month: number): UrbanitaeBalance | undefined {
+    return this.urbanitaeBalanceData.getBalance(year, month);
+  }
+
+  saveUrbanitaeBalance(year: number, month: number, data: UrbanitaeBalanceSave): Observable<UrbanitaeBalance> {
+    return this.urbanitaeBalanceData.save(year, month, data);
+  }
+
+  deleteUrbanitaeBalance(id: string): Observable<any> {
+    return this.urbanitaeBalanceData.delete(id);
+  }
+
+  loadUrbanitaeCompras(force = false): void {
+    this.urbanitaeCompraData.loadCompras(force);
+  }
+
+  getUrbanitaeCompras(): UrbanitaeCompra[] {
+    return this.urbanitaeCompraData.getCompras();
+  }
+
+  saveUrbanitaeCompra(data: UrbanitaeCompraSave): Observable<UrbanitaeCompra> {
+    return this.urbanitaeCompraData.save(data);
+  }
+
+  updateUrbanitaeCompra(id: string, data: UrbanitaeCompraSave): Observable<UrbanitaeCompra> {
+    return this.urbanitaeCompraData.update(id, data);
+  }
+
+  setUrbanitaeCompraEstado(id: string, estado: UrbanitaeCompraEstado): Observable<UrbanitaeCompra> {
+    return this.urbanitaeCompraData.setEstado(id, estado);
+  }
+
+  deleteUrbanitaeCompra(id: string): Observable<any> {
+    return this.urbanitaeCompraData.delete(id);
+  }
+
+  loadEquitoHistory(year: number, month: number, force = false): void {
+    this.equitoBalanceData.loadHistory(year, month, force);
+  }
+
+  getEquitoBalances(): EquitoBalance[] {
+    return this.equitoBalanceData.getBalances();
+  }
+
+  getEquitoBalance(year: number, month: number): EquitoBalance | undefined {
+    return this.equitoBalanceData.getBalance(year, month);
+  }
+
+  saveEquitoBalance(year: number, month: number, data: EquitoBalanceSave): Observable<EquitoBalance> {
+    return this.equitoBalanceData.save(year, month, data);
+  }
+
+  deleteEquitoBalance(id: string): Observable<any> {
+    return this.equitoBalanceData.delete(id);
+  }
+
+  loadEquitoCompras(force = false): void {
+    this.equitoCompraData.loadCompras(force);
+  }
+
+  getEquitoCompras(): EquitoCompra[] {
+    return this.equitoCompraData.getCompras();
+  }
+
+  saveEquitoCompra(data: EquitoCompraSave): Observable<EquitoCompra> {
+    return this.equitoCompraData.save(data);
+  }
+
+  updateEquitoCompra(id: string, data: EquitoCompraSave): Observable<EquitoCompra> {
+    return this.equitoCompraData.update(id, data);
+  }
+
+  setEquitoCompraEstado(id: string, estado: EquitoCompraEstado): Observable<EquitoCompra> {
+    return this.equitoCompraData.setEstado(id, estado);
+  }
+
+  deleteEquitoCompra(id: string): Observable<any> {
+    return this.equitoCompraData.delete(id);
   }
 }

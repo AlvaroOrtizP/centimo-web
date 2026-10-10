@@ -15,7 +15,7 @@ export interface ChartDataset {
     <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-lg lg:p-5">
       <div class="mb-3 flex items-center justify-between sm:mb-4">
         <h2 class="text-sm font-semibold text-gray-900 sm:text-base">
-          {{ selectedPlatformName() || 'Evolución Patrimonio' }}
+          {{ selectedPlatformName() || title() }}
         </h2>
         <div class="flex items-center gap-2">
           @if (selectedPlatformName()) {
@@ -38,6 +38,7 @@ export class NetWorthChartComponent extends BaseChartComponent {
   readonly datasets = input<ChartDataset[]>([]);
   readonly platformColor = input<string>('');
   readonly selectedPlatformName = input<string>('');
+  readonly title = input<string>('Evolución Patrimonio');
   readonly clearSelection = output<void>();
 
   constructor() {

@@ -162,20 +162,18 @@ export class SalaryDistributionComponent {
   protected readonly allocationNote = signal('');
   protected readonly saved = signal(false);
 
-  protected readonly monthlySalary = signal(0);
+  protected readonly monthlySalary = computed(
+    () => this.service.getNomina(this.year(), this.month())?.cantidad ?? 0
+  );
 
   constructor() {
     effect(() => {
       const year = this.year();
       const month = this.month();
-      console.log('[SalaryDistribution] effect triggered', { year, month });
 
-      this.service.fetchNominaFromBackend(year, month)
+      this.service.loadNomina(year, month)
         .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(nomina => {
-          console.log('[SalaryDistribution] backend response', nomina);
-          this.monthlySalary.set(nomina?.value ?? 0);
-        });
+        .subscribe();
     });
   }
 

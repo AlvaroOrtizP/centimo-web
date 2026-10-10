@@ -1,8 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { tap, map, catchError } from 'rxjs/operators';
 
-import { ExpensesService } from '../../api/generated/api/expenses.service';
+import {
+  ExpensesService,
+} from '../../api/generated/api/expenses.service';
 import { ExpenseCreate } from '../../api/generated/model/expenseCreate';
 import { ExpenseUpdate } from '../../api/generated/model/expenseUpdate';
 import { Expense as ApiExpense } from '../../api/generated/model/expense';
@@ -12,11 +14,10 @@ import { LoggerService } from './logger.service';
 function toExpense(e: ApiExpense): Expense {
   return {
     id: e.id,
-    snapshotId: e.snapshotId,
-    category: e.category,
+    category: e.category as Expense['category'],
     amount: e.amount,
     date: e.date,
-    description: e.description ?? undefined,
+    description: e.description,
   };
 }
 
@@ -38,10 +39,6 @@ export class ExpensesDataService {
    */
   private readonly loadedPeriods = signal<Set<string>>(new Set());
 
-  getExpensesBySnapshot(snapshotId: string): Expense[] {
-    return this.expenses().filter(e => e.snapshotId === snapshotId);
-  }
-
   /**
    * Carga todos los gastos de un mes en UNA sola llamada (GET /expenses?year&month).
    * El merge se hace por fecha del gasto, de modo que es robusto aunque el backend
@@ -51,7 +48,7 @@ export class ExpensesDataService {
     const key = `${year}-${month}`;
     if (!force && this.loadedPeriods().has(key)) { return; }
 
-    this.expensesApi.listExpenses(undefined, year, month).pipe(
+    this.expensesApi.listExpenses(year, month, 'desc').pipe(
       map(list => list.map(toExpense)),
       catchError((err) => {
         this.logger.error('ExpensesData', 'loadExpensesByMonth error', err);
@@ -67,57 +64,55 @@ export class ExpensesDataService {
     });
   }
 
-  loadExpenses(snapshotId: string): void {
-    this.expensesApi.listExpenses(snapshotId).pipe(
-      map(list => list.map(toExpense)),
-      catchError((err) => {
-        this.logger.error('ExpensesData', 'loadExpenses error', err);
-        return of([]);
-      }),
-    ).subscribe(expenses => {
-      this.expenses.update(arr => {
-        if (expenses.length === 0) { return arr; }
-        const others = arr.filter(e => e.snapshotId !== snapshotId);
-        return [...others, ...expenses];
-      });
-    });
-  }
-
-  addExpense(expense: Expense): Observable<Expense> {
-    const create: ExpenseCreate = {
-      snapshotId: expense.snapshotId,
+  addExpense(expense: Omit<Expense, 'id'>): Observable<Expense> {
+    const request: ExpenseCreate = {
       category: expense.category,
       amount: expense.amount,
       date: expense.date,
-      description: expense.description ?? null,
+      description: expense.description,
     };
-    return this.expensesApi.createExpense(create).pipe(
-      map(created => {
-        const result = toExpense(created);
-        this.expenses.update(arr => [...arr, result]);
-        return result;
-      }),
-    );
-  }
 
-  updateExpense(id: string, data: ExpenseUpdate): Observable<Expense> {
-    return this.expensesApi.updateExpense(id, data).pipe(
-      map(updated => {
-        const expense = toExpense(updated);
-        this.expenses.update(arr => arr.map(e => e.id === id ? expense : e));
-        return expense;
+    return this.expensesApi.createExpense(request).pipe(
+      map(toExpense),
+      tap(item => {
+        this.expenses.update(arr => [...arr, item]);
       }),
       catchError((err) => {
-        this.logger.error('ExpensesData', 'updateExpense error', err);
-        return of(null as unknown as Expense);
+        this.logger.error('ExpensesData', 'addExpense error', err);
+        throw err;
       }),
     );
   }
 
-  deleteExpense(id: string, snapshotId: string): void {
-    this.expensesApi.deleteExpense(id, snapshotId).subscribe(() => {
-      this.expenses.update(arr => arr.filter(e => e.id !== id));
-    });
+  updateExpense(id: string, data: Partial<Expense>): Observable<Expense> {
+    const request: ExpenseUpdate = {
+      category: data.category,
+      amount: data.amount,
+      date: data.date,
+      description: data.description,
+    };
+
+    return this.expensesApi.updateExpense(id, request).pipe(
+      map(toExpense),
+      tap(item => {
+        this.expenses.update(arr => arr.map(e => e.id === id ? item : e));
+      }),
+      catchError((err) => {
+        this.logger.error('ExpensesData', `updateExpense(${id}) error`, err);
+        throw err;
+      }),
+    );
   }
 
+  deleteExpense(id: string): Observable<void> {
+    return this.expensesApi.deleteExpense(id).pipe(
+      tap(() => {
+        this.expenses.update(arr => arr.filter(e => e.id !== id));
+      }),
+      catchError((err) => {
+        this.logger.error('ExpensesData', `deleteExpense(${id}) error`, err);
+        throw err;
+      }),
+    );
+  }
 }
