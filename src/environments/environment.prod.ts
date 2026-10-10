@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://centimo-back-api.onrender.com',
+  apiUrl: 'https://centimo-back-api-go.onrender.com',
 };
