@@ -16,9 +16,11 @@ interface NavItem {
   template: `
     <aside class="flex h-full flex-col border-r border-gray-200 bg-white">
       <div class="flex items-center gap-3 border-b border-gray-100 px-5 py-5">
-        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-sm">
-          C
-        </div>
+        <img
+          src="assets/icons/icon-96x96.png"
+          alt=""
+          class="h-8 w-8 flex-shrink-0 rounded-lg object-contain shadow-sm"
+        />
         <span class="text-lg font-bold tracking-tight text-gray-900">Centimo</span>
         <button
           aria-label="Cerrar menú"
