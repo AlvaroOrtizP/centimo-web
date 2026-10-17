@@ -18,17 +18,26 @@ import { HealthService } from './core/services/health.service';
 export class AppComponent implements OnInit, OnDestroy {
   title = 'centimo';
 
+  /**
+   * Retardo antes de mostrar el spinner. Por debajo de ~200 ms el ojo lo lee
+   * como instantáneo, y un spinner que aparece y desaparece se percibe como un
+   * fallo: mejor no enseñarlo si el back contesta rápido.
+   */
+  private static readonly SPINNER_DELAY_MS = 250;
+
   private readonly swUpdate = inject(SwUpdate);
   private readonly router = inject(Router);
   private readonly health = inject(HealthService);
 
   protected readonly backendHealthy = signal(false);
   protected readonly connectionFailed = signal(false);
+  protected readonly showSpinner = signal(false);
   protected readonly sidebarOpen = signal(false);
   protected readonly updateAvailable = signal(false);
   protected readonly showShell = signal(true);
 
   private healthSub?: Subscription;
+  private spinnerTimer?: ReturnType<typeof setTimeout>;
 
   ngOnInit(): void {
     this.startHealthCheck();
@@ -55,35 +64,59 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private startHealthCheck(): void {
-    // Si el backend ya respondió sano hace menos de 30 min, no malgastamos
-    // una llamada /health: asumimos que sigue disponible.
+    this.clearSpinnerTimer();
+    this.healthSub?.unsubscribe();
+
+    // Si el backend ya respondió sano hace menos de 10 min, no malgastamos
+    // una llamada /health: entramos directos y sin spinner.
     if (this.health.isRecentlyHealthy()) {
       this.backendHealthy.set(true);
       this.connectionFailed.set(false);
+      this.showSpinner.set(false);
       return;
     }
 
     this.backendHealthy.set(false);
     this.connectionFailed.set(false);
-    this.healthSub?.unsubscribe();
+    this.showSpinner.set(false);
 
+    this.spinnerTimer = setTimeout(
+      () => this.showSpinner.set(true),
+      AppComponent.SPINNER_DELAY_MS,
+    );
+
+    // Sondea /health cada 2,5 s durante ~30 s. Si el back arranca (Render en
+    // frío tarda 30-60 s) o el usuario pulsa "Reintentar", las peticiones que
+    // estaban retenidas en el backendReadyInterceptor salen solas.
     this.healthSub = this.health
-      .pollUntilHealthy(2500, 30)
+      .pollUntilHealthy()
       .pipe(
         switchMap(() => this.health.check().pipe(catchError(() => EMPTY))),
       )
       .subscribe({
         next: () => {
+          this.clearSpinnerTimer();
+          this.showSpinner.set(false);
           this.backendHealthy.set(true);
           this.health.markHealthy();
           this.healthSub?.unsubscribe();
         },
         complete: () => {
+          // Completó sin emitir: se agotó el presupuesto sin respuesta.
+          this.clearSpinnerTimer();
+          this.showSpinner.set(false);
           if (!this.backendHealthy()) {
             this.connectionFailed.set(true);
           }
         },
       });
+  }
+
+  private clearSpinnerTimer(): void {
+    if (this.spinnerTimer !== undefined) {
+      clearTimeout(this.spinnerTimer);
+      this.spinnerTimer = undefined;
+    }
   }
 
   protected toggleSidebar(): void {
@@ -100,6 +133,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.clearSpinnerTimer();
     this.healthSub?.unsubscribe();
   }
 }

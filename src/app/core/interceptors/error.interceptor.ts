@@ -6,6 +6,7 @@ import { AuthService } from '../services/auth.service';
 import { NotificationService } from '../services/notification.service';
 import { LoggerService } from '../services/logger.service';
 import { Router } from '@angular/router';
+import { BACKEND_PROBE } from './http-context.tokens';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const notification = inject(NotificationService);
@@ -15,6 +16,12 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError(error => {
+      // Sondas de arranque (/health): que fallen mientras el back se levanta es
+      // lo esperado, no un error que deba ver el usuario ni ensuciar el log.
+      if (req.context.get(BACKEND_PROBE)) {
+        return throwError(() => error);
+      }
+
       const message = getErrorMessage(error);
       logger.error('HTTP', `${req.method} ${req.url}`, error);
 

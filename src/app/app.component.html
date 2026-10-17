@@ -1,13 +1,6 @@
 @if (!backendHealthy()) {
   <div class="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 text-center">
-    @if (!connectionFailed()) {
-      <div
-        class="mb-6 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-gray-900"
-        role="status"
-        aria-label="Cargando"
-      ></div>
-      <p class="text-sm text-gray-500">Conectando con el servidor…</p>
-    } @else {
+    @if (connectionFailed()) {
       <div class="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-2xl text-red-600">
         !
       </div>
@@ -19,6 +12,13 @@
       >
         Reintentar
       </button>
+    } @else if (showSpinner()) {
+      <div
+        class="mb-6 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-gray-900"
+        role="status"
+        aria-label="Cargando"
+      ></div>
+      <p class="text-sm text-gray-500">Conectando con el servidor…</p>
     }
   </div>
 } @else {
