@@ -26,7 +26,7 @@ import { roundMoney } from '../../../../core/utils/money.util';
             (ngModelChange)="fundsLocalMonth.set($event)"
           >
             @for (m of months; track m.value) {
-              <option [value]="m.value">{{ m.label }}</option>
+              <option [ngValue]="m.value">{{ m.label }}</option>
             }
           </select>
         </div>
