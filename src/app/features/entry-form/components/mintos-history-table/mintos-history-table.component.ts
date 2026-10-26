@@ -29,13 +29,16 @@ import { MONTHS } from '../../../../core/constants/date.constants';
               <th class="px-4 py-3">Mes</th>
               <th class="px-4 py-3 text-right">Valor final</th>
               <th class="px-4 py-3 text-right">Importe añadido</th>
+              <th class="px-4 py-3 text-right">Intereses</th>
+              <th class="px-4 py-3 text-right">Comisiones</th>
+              <th class="px-4 py-3 text-right">Impuestos</th>
               <th class="px-4 py-3 text-center">Acciones</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             @if (balances().length === 0) {
               <tr>
-                <td colspan="4" class="px-4 py-8 text-center text-sm text-gray-400">Sin registros todavía. Guarda un balance para este mes.</td>
+                <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-400">Sin registros todavía. Guarda un balance para este mes.</td>
               </tr>
             } @else {
               @for (b of balances(); track b.id) {
@@ -43,6 +46,9 @@ import { MONTHS } from '../../../../core/constants/date.constants';
                   <td class="px-4 py-3 font-semibold text-gray-900">{{ formatMes(b.mes) }}</td>
                   <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ b.valorFinal.toLocaleString('es-ES') }} €</td>
                   <td class="px-4 py-3 text-right text-gray-500">{{ b.importeAnadido.toLocaleString('es-ES') }} €</td>
+                  <td class="px-4 py-3 text-right text-emerald-600">{{ b.interesesTotales.toLocaleString('es-ES') }} €</td>
+                  <td class="px-4 py-3 text-right text-gray-500">{{ b.comisiones.toLocaleString('es-ES') }} €</td>
+                  <td class="px-4 py-3 text-right text-amber-600">{{ b.impuestos.toLocaleString('es-ES') }} €</td>
                   <td class="px-4 py-3 text-center">
                     <div class="flex items-center justify-center gap-1">
                       <button

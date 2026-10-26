@@ -14,6 +14,9 @@ Todos los campos son `NOT NULL` salvo los de auditoría.
 | `mes` | VARCHAR(7) | Fecha mes-año en **una sola columna** (formato `YYYY-MM`, p. ej. `2026-07`) |
 | `importe_añadido` | NUMERIC(12,2) | Importe añadido ese mes (el aporte extra; puede ser 0) |
 | `valor_final` | NUMERIC(12,2) | Valor final de la cartera al cerrar el mes |
+| `intereses_totales` | NUMERIC(12,2) | Intereses totales generados en el mes |
+| `comisiones` | NUMERIC(12,2) | Comisiones cobradas por la plataforma (no contabilizan) |
+| `impuestos` | NUMERIC(12,2) | Impuestos retenidos automáticamente (Hacienda/Lituania) |
 | `fecha_creacion` / `fecha_actualizacion` | TIMESTAMP | Auditoría |
 
 ## Identificador
@@ -32,6 +35,9 @@ CREATE TABLE mintos (
   mes                  VARCHAR(7)    NOT NULL UNIQUE,
   importe_añadido      NUMERIC(12,2) NOT NULL DEFAULT 0,
   valor_final          NUMERIC(12,2) NOT NULL,
+  intereses_totales    NUMERIC(12,2) NOT NULL DEFAULT 0,
+  comisiones           NUMERIC(12,2) NOT NULL DEFAULT 0,
+  impuestos            NUMERIC(12,2) NOT NULL DEFAULT 0,
   fecha_creacion       TIMESTAMP     DEFAULT NOW(),
   fecha_actualizacion  TIMESTAMP     DEFAULT NOW()
 );
@@ -42,6 +48,9 @@ COMMENT ON COLUMN mintos.id IS 'UUID generado por la aplicación';
 COMMENT ON COLUMN mintos.mes IS 'Fecha mes-año en una sola columna (YYYY-MM, p. ej. 2026-07)';
 COMMENT ON COLUMN mintos.importe_añadido IS 'Importe añadido ese mes (el aporte extra; puede ser 0)';
 COMMENT ON COLUMN mintos.valor_final IS 'Valor final de la cartera al cerrar el mes';
+COMMENT ON COLUMN mintos.intereses_totales IS 'Intereses totales generados en el mes';
+COMMENT ON COLUMN mintos.comisiones IS 'Comisiones cobradas por la plataforma (no contabilizan)';
+COMMENT ON COLUMN mintos.impuestos IS 'Impuestos retenidos automáticamente (Hacienda/Lituania)';
 COMMENT ON COLUMN mintos.fecha_creacion IS 'Auditoría: fecha de creación';
 COMMENT ON COLUMN mintos.fecha_actualizacion IS 'Auditoría: fecha de última actualización';
 ```
@@ -54,7 +63,7 @@ COMMENT ON COLUMN mintos.fecha_actualizacion IS 'Auditoría: fecha de última ac
 
 | Método | Path | Body | Uso |
 |---|---|---|---|
-| POST | `/mintos/intereses-anuales` | `MintosInterestAnnualCreate` (mes `YYYY-MM`, importeAñadido, valorFinal) | Crear el registro de intereses de un mes-año |
+| POST | `/mintos/intereses-anuales` | `MintosInterestAnnualCreate` (mes `YYYY-MM`, importeAñadido, valorFinal, interesesTotales, comisiones, impuestos) | Crear el registro de intereses de un mes-año |
 
 ### Listar intereses (GET)
 
@@ -68,7 +77,7 @@ Obtener la lista de intereses por mes-año, opcionalmente filtrada por mes.
 
 | Método | Path | Body | Uso |
 |---|---|---|---|
-| PUT | `/mintos/intereses-anuales/{id}` | `MintosInterestAnnualCreate` (mes `YYYY-MM`, importeAñadido, valorFinal) | Actualizar importe añadido y valor final del mes |
+| PUT | `/mintos/intereses-anuales/{id}` | `MintosInterestAnnualCreate` (mes `YYYY-MM`, importeAñadido, valorFinal, interesesTotales, comisiones, impuestos) | Actualizar importe añadido, valor final, intereses, comisiones e impuestos del mes |
 
 ### Eliminar intereses de un mes (DELETE)
 
@@ -78,10 +87,10 @@ Obtener la lista de intereses por mes-año, opcionalmente filtrada por mes.
 
 ## Reglas de diseño
 
-- Modelo de dominio: `InteresAnualMintos` (`id, mes, importeAñadido, valorFinal` + fechas), con `mes` de tipo `String` (`YYYY-MM`) y dinero en `BigDecimal`.
+- Modelo de dominio: `InteresAnualMintos` (`id, mes, importeAñadido, valorFinal, interesesTotales, comisiones, impuestos` + fechas), con `mes` de tipo `String` (`YYYY-MM`) y dinero en `BigDecimal`.
 - Entidad JPA: `InteresAnualMintosMO` (`@Table(name = "mintos")`); fechas con `@CreationTimestamp` y `@UpdateTimestamp`.
 - Sin FK a `cuentas`: los intereses son propios del ecosistema Mintos; no se guarda ninguna relación con plataformas/instantáneas.
-- `mes` inmutable en el `UPDATE`: solo se actualizan importe añadido y valor final.
+- `mes` inmutable en el `UPDATE`: solo se actualizan importe añadido, valor final, intereses, comisiones e impuestos.
 - Patrón hexagonal del proyecto, como `InteresAnualMintos` (referencia) o `BalanceFondo`.
 
 ## Capas de implementación previstas
@@ -89,6 +98,6 @@ Obtener la lista de intereses por mes-año, opcionalmente filtrada por mes.
 - **Capa de aplicación**: `InteresAnualMintos` (domain model), `InteresAnualMintosDrivingPort`, `InteresAnualMintosUseCase`, `InteresAnualMintosDrivenPort`.
 - **Capa driven**: `InteresAnualMintosMO`, `InteresAnualMintosRepository`, `InteresAnualMintosDatasourceAdapter`, `InteresAnualMintosDatasourceMapper`.
 - **Capa driving**: `InteresAnualMintosController` implementando `MintosInteresesAnualesApi` (swagger), `InteresAnualMintosApiMapper`.
-- **Swagger**: paths `/mintos/intereses-anuales` y schemas `MintosInterestAnnual`, `MintosInterestAnnualCreate` (mes `YYYY-MM`, importeAñadido, valorFinal; tag `MintosInteresesAnuales`).
+- **Swagger**: paths `/mintos/intereses-anuales` y schemas `MintosInterestAnnual`, `MintosInterestAnnualCreate` (mes `YYYY-MM`, importeAñadido, valorFinal, interesesTotales, comisiones, impuestos; tag `MintosInteresesAnuales`).
 - **Flyway**: ajustar `V15__create_mintos_intereses_anuales.sql` (o nueva migración) para la tabla `mintos` con `mes`, `importe_añadido` y `valor_final`, e incluir los `COMMENT ON COLUMN`.
 - **Tests**: no existe IT específico del CRUD de esta entidad. `MintosIT` cubre la pantalla de la plataforma Mintos (plataforma + cuenta + instantáneas mensuales), no el CRUD de intereses.

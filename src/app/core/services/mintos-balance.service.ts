@@ -50,6 +50,9 @@ export class MintosBalanceDataService {
       mes,
       importeAñadido: data.importeAnadido,
       valorFinal: data.valorFinal,
+      interesesTotales: data.interesesTotales,
+      comisiones: data.comisiones,
+      impuestos: data.impuestos,
     };
 
     const call$ = existing
@@ -84,6 +87,9 @@ export class MintosBalanceDataService {
       mes: r.mes,
       importeAnadido: r.importeAñadido,
       valorFinal: r.valorFinal,
+      interesesTotales: r.interesesTotales,
+      comisiones: r.comisiones,
+      impuestos: r.impuestos,
     };
   }
 
