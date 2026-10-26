@@ -15,6 +15,9 @@ describe('MintosBalanceDataService', () => {
     mes: '2026-08',
     importeAnadido: 100,
     valorFinal: 5000,
+    interesesTotales: 25,
+    comisiones: 2,
+    impuestos: 4.75,
   };
 
   const response = (overrides: Partial<MintosInterestAnnual> = {}): MintosInterestAnnual => ({
@@ -22,6 +25,9 @@ describe('MintosBalanceDataService', () => {
     mes: '2026-08',
     importeAñadido: 100,
     valorFinal: 5000,
+    interesesTotales: 25,
+    comisiones: 2,
+    impuestos: 4.75,
     ...overrides,
   });
 
@@ -87,13 +93,20 @@ describe('MintosBalanceDataService', () => {
   });
 
   it('save hace POST (create) cuando no existe balance para el mes', () => {
-    const data = { importeAnadido: 100, valorFinal: 5000 };
+    const data = { importeAnadido: 100, valorFinal: 5000, interesesTotales: 25, comisiones: 2, impuestos: 4.75 };
 
     let result: MintosBalance | undefined;
     service.save(2026, 8, data).subscribe(b => (result = b));
 
     const req = httpMock.expectOne(r => r.method === 'POST' && r.url.endsWith('/mintos/intereses-anuales'));
-    expect(req.request.body).toEqual({ mes: '2026-08', importeAñadido: 100, valorFinal: 5000 });
+    expect(req.request.body).toEqual({
+      mes: '2026-08',
+      importeAñadido: 100,
+      valorFinal: 5000,
+      interesesTotales: 25,
+      comisiones: 2,
+      impuestos: 4.75,
+    });
     req.flush(response());
 
     expect(result).toEqual(augustBalance);
@@ -102,12 +115,19 @@ describe('MintosBalanceDataService', () => {
 
   it('save hace PUT con el id cuando ya existe balance para el mes', () => {
     service.balances.set([augustBalance]);
-    const data = { importeAnadido: 100, valorFinal: 5200 };
+    const data = { importeAnadido: 100, valorFinal: 5200, interesesTotales: 25, comisiones: 2, impuestos: 4.75 };
 
     service.save(2026, 8, data).subscribe();
 
     const req = httpMock.expectOne(r => r.method === 'PUT' && r.url.endsWith('/mintos/intereses-anuales/uuid-1'));
-    expect(req.request.body).toEqual({ mes: '2026-08', importeAñadido: 100, valorFinal: 5200 });
+    expect(req.request.body).toEqual({
+      mes: '2026-08',
+      importeAñadido: 100,
+      valorFinal: 5200,
+      interesesTotales: 25,
+      comisiones: 2,
+      impuestos: 4.75,
+    });
     req.flush({ ...response(), valorFinal: 5200 });
 
     expect(service.balances()).toEqual([jasmine.objectContaining({ id: 'uuid-1', valorFinal: 5200 })]);

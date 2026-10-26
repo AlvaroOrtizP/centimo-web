@@ -33,11 +33,12 @@ import { roundMoney } from '../../../../core/utils/money.util';
 
         @if (previousBalance() !== null) {
           <div class="mb-4 rounded-lg bg-gray-50 px-4 py-2 text-sm text-gray-600">
-            Balance mes anterior: <strong>{{ previousBalance()!.toLocaleString('es-ES') }} €</strong>
+            Balance inicial: <strong>{{ previousBalance()!.toLocaleString('es-ES') }} €</strong>
+            <span class="text-xs text-gray-400">(cierre del mes anterior)</span>
           </div>
         }
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <div>
             <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Valor final de la cartera (€)</label>
             <input
@@ -61,6 +62,42 @@ import { roundMoney } from '../../../../core/utils/money.util';
               (ngModelChange)="importeAnadido.set($event)"
             />
             <p class="mt-0.5 text-xs text-gray-400">Importe añadido ese mes (el aporte extra; puede ser 0)</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Intereses totales (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 25"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              [ngModel]="interesesTotales()"
+              (ngModelChange)="interesesTotales.set($event)"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Intereses totales generados en el mes</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-gray-500">Comisiones (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 2"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              [ngModel]="comisiones()"
+              (ngModelChange)="comisiones.set($event)"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Comisiones de la plataforma (no contabilizan)</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium uppercase tracking-wider text-amber-600">Impuestos (€)</label>
+            <input
+              type="number"
+              step="any"
+              placeholder="ej: 4.75"
+              class="mt-1 w-full rounded-lg border border-amber-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+              [ngModel]="impuestos()"
+              (ngModelChange)="impuestos.set($event)"
+            />
+            <p class="mt-0.5 text-xs text-gray-400">Retenidos automáticamente (Hacienda/Lituania)</p>
           </div>
         </div>
 
@@ -109,6 +146,9 @@ export class MintosFormComponent {
 
   protected readonly valorFinal = signal<number | null>(null);
   protected readonly importeAnadido = signal<number | null>(null);
+  protected readonly interesesTotales = signal<number | null>(null);
+  protected readonly comisiones = signal<number | null>(null);
+  protected readonly impuestos = signal<number | null>(null);
   protected readonly saved = signal(false);
 
   protected readonly previousBalance = computed(() => this.getPreviousBalance());
@@ -133,6 +173,9 @@ export class MintosFormComponent {
         this.editing.set(balance);
         this.valorFinal.set(balance.valorFinal);
         this.importeAnadido.set(balance.importeAnadido);
+        this.interesesTotales.set(balance.interesesTotales);
+        this.comisiones.set(balance.comisiones);
+        this.impuestos.set(balance.impuestos);
       }
     }, { allowSignalWrites: true });
   }
@@ -156,6 +199,9 @@ export class MintosFormComponent {
   private resetFields(): void {
     this.valorFinal.set(null);
     this.importeAnadido.set(null);
+    this.interesesTotales.set(null);
+    this.comisiones.set(null);
+    this.impuestos.set(null);
   }
 
   private fillFromBalance(balance: MintosBalance): void {
@@ -164,6 +210,9 @@ export class MintosFormComponent {
     this.localMonth.set(month);
     this.valorFinal.set(balance.valorFinal);
     this.importeAnadido.set(balance.importeAnadido);
+    this.interesesTotales.set(balance.interesesTotales);
+    this.comisiones.set(balance.comisiones);
+    this.impuestos.set(balance.impuestos);
   }
 
   protected onEdit(balance: MintosBalance): void {
@@ -187,6 +236,9 @@ export class MintosFormComponent {
     const data: MintosBalanceSave = {
       importeAnadido: roundMoney(this.importeAnadido() ?? 0) ?? 0,
       valorFinal: valor,
+      interesesTotales: roundMoney(this.interesesTotales() ?? 0) ?? 0,
+      comisiones: roundMoney(this.comisiones() ?? 0) ?? 0,
+      impuestos: roundMoney(this.impuestos() ?? 0) ?? 0,
     };
 
     this.service.saveMintosBalance(this.localYear(), this.localMonth(), data).subscribe({

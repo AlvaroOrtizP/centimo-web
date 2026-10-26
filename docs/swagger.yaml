@@ -1399,7 +1399,7 @@ components:
     # ═══════════ MintosInteresesAnuales ═══════════
     MintosInterestAnnualCreate:
       type: object
-      required: [mes, valorFinal]
+      required: [mes, valorFinal, interesesTotales, comisiones, impuestos]
       properties:
         mes:
           type: string
@@ -1412,10 +1412,22 @@ components:
           type: number
           format: float
           description: Valor final de la cartera al cerrar el mes
+        interesesTotales:
+          type: number
+          format: float
+          description: Intereses totales generados en el mes
+        comisiones:
+          type: number
+          format: float
+          description: Comisiones cobradas por la plataforma (no contabilizan)
+        impuestos:
+          type: number
+          format: float
+          description: Impuestos retenidos automáticamente (Hacienda/Lituania)
 
     MintosInterestAnnual:
       type: object
-      required: [id, mes, importeAñadido, valorFinal]
+      required: [id, mes, importeAñadido, valorFinal, interesesTotales, comisiones, impuestos]
       properties:
         id:
           type: string
@@ -1425,6 +1437,15 @@ components:
           type: number
           format: float
         valorFinal:
+          type: number
+          format: float
+        interesesTotales:
+          type: number
+          format: float
+        comisiones:
+          type: number
+          format: float
+        impuestos:
           type: number
           format: float
 
